@@ -8,7 +8,7 @@ using Microsoft.Win32;
 
 namespace WinCrashDoctor.Detection
 {
-    /// <summary>Detection v2 checks shown under Matériel › Conflits (Windows support, GPU driver version, dump capture, live dumps).</summary>
+    /// <summary>Detection v2 checks shown under Hardware › Conflicts (Windows support, GPU driver version, dump capture, live dumps).</summary>
     public static class DetectionChecks
     {
         private static string L(string fr, string en, string es, string de, string it, string pt) { return Localizer.L(fr, en, es, de, it, pt); }

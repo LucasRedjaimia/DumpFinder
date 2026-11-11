@@ -17,3 +17,8 @@ branding/out/
 _preview/
 # Screenshots and reports generated on the developer's PC (PC name, crashes, hardware)
 design/captures*/
+
+# Internal working documents (redesign plan, mockups, logo explorations): kept locally
+PLAN_REFONTE.md
+design/
+branding/logo-concepts.html

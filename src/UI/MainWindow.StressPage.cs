@@ -12,7 +12,7 @@ using WinCrashDoctor.Stress;
 namespace WinCrashDoctor
 {
     /// <summary>
-    /// Matériel › Test de stabilité: verified CPU / GPU / VRAM / RAM / SSD tests, run alone or as
+    /// Hardware › Stability test: verified CPU / GPU / VRAM / RAM / SSD tests, run alone or as
     /// a Quick (~20 min) or Thorough (~3 h) plan, with a verdict and the matching fixes at the end.
     /// </summary>
     public partial class MainWindow

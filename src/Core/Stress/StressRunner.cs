@@ -74,7 +74,7 @@ namespace WinCrashDoctor.Stress
             return StressTile.Make(StressText.CpuTemp, CpuTempText, CpuTempSub, double.IsNaN(t) ? 0 : (t >= 95 ? 2 : 0));
         }
 
-        /// <summary>" Température CPU max : 81 °C." for the stage summary (empty without a reading).</summary>
+        /// <summary>" Max CPU temperature: 81 °C." (localized) for the stage summary (empty without a reading).</summary>
         public string CpuTempSummary
         {
             get

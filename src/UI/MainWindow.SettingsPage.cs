@@ -5,7 +5,7 @@ using System.Windows.Media;
 
 namespace WinCrashDoctor
 {
-    /// <summary>Paramètres: everything that used to crowd the sidebar, plus the AI assistant and MCP integrations.</summary>
+    /// <summary>Settings: everything that used to crowd the sidebar, plus the AI assistant and MCP integrations.</summary>
     public partial class MainWindow
     {
         private Grid _pageSettings;

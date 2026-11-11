@@ -187,7 +187,7 @@ namespace WinCrashDoctor
             {
                 Version = new Version(UpdateChecker.CurrentVersion.Major, UpdateChecker.CurrentVersion.Minor + 1, 0),
                 PublishedAt = DateTime.Now,
-                Notes = "## Nouveautés\n- Onglet **Optimiser** : réglages, applications, démarrage et nettoyage\n- Température CPU pendant le stress test\n\n## Corrections\n- Le conseil HMB ne s'affiche plus hors Windows 11 24H2\n- Bouton « C'est déjà la dernière version » sur l'alerte BIOS",
+                Notes = "## What's new\n- **Optimise** tab: settings, apps, startup and cleanup\n- CPU temperature during the stress test\n\n## Fixes\n- The HMB advice no longer shows outside Windows 11 24H2\n- \"It's already the latest version\" button on the BIOS warning",
                 DownloadUrl = UpdateChecker.RepoUrl + "/releases/latest",
                 PageUrl = UpdateChecker.RepoUrl + "/releases/latest"
             });

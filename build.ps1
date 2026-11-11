@@ -16,7 +16,7 @@ $compatExe = Join-Path $projDir "WinCrashDoctor.exe"
 
 $dotnet = (Get-Command dotnet -ErrorAction SilentlyContinue).Source
 if (-not $dotnet -and (Test-Path "$env:ProgramFiles\dotnet\dotnet.exe")) { $dotnet = "$env:ProgramFiles\dotnet\dotnet.exe" }
-if (-not $dotnet) { throw ".NET SDK introuvable. Installez-le : winget install Microsoft.DotNet.SDK.8" }
+if (-not $dotnet) { throw ".NET SDK not found. Install it: winget install Microsoft.DotNet.SDK.8" }
 
 # 1. Optional icon regeneration (WPF renderer, no dependency)
 if ($Icon) {

@@ -7,7 +7,7 @@ namespace WinCrashDoctor.Optimize
 {
     public enum OptGroup { Ads, Search, Ai, Privacy, Gaming }
 
-    /// <summary>One registry value a setting writes. Default = what "Rétablir" puts back (null = delete the value).</summary>
+    /// <summary>One registry value a setting writes. Default = what "Restore" puts back (null = delete the value).</summary>
     internal sealed class RegSet
     {
         public RegistryHive Hive;

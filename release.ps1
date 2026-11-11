@@ -24,7 +24,7 @@ $notesDir = Join-Path $root "release-notes"
 $notes = Join-Path $notesDir "v$Version.md"
 if (-not (Test-Path $notes)) {
     New-Item -ItemType Directory -Force $notesDir | Out-Null
-    $template = "## Nouveautes`n- `n`n## Corrections`n- `n"
+    $template = "## What's new`n- `n`n## Fixes`n- `n"
     [IO.File]::WriteAllText($notes, $template, (New-Object Text.UTF8Encoding($false)))
     Write-Output "Release notes template created: $notes"
     Write-Output "Fill it in (what is new / what is fixed), then run this script again."

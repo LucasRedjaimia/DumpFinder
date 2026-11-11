@@ -1,43 +1,43 @@
 # Dump Finder
 
-Dump Finder aide à comprendre pourquoi un PC Windows plante (écrans bleus, timeouts GPU, redémarrages brutaux) et propose des correctifs.
+Dump Finder helps you understand why a Windows PC crashes (blue screens, GPU timeouts, sudden reboots) and suggests fixes.
 
-**[Télécharger la dernière version](https://github.com/LucasRedjaimia/DumpFinder/releases/latest)** : un seul fichier `DumpFinder.exe`, sans installation (Windows 10 / 11, 64 bits).
+**[Download the latest version](https://github.com/LucasRedjaimia/DumpFinder/releases/latest)**: a single `DumpFinder.exe`, no installation needed (Windows 10 / 11, 64-bit).
 
-## Ce que fait l'app
+## Features
 
-- **Crashs** : lit les journaux Windows et les fichiers de vidage (minidumps), identifie le pilote ou le composant en cause et explique les causes fréquentes.
-- **Matériel** : BIOS, mémoire (EXPO/XMP), GPU, SSD (SMART), pilotes à risque, version de Windows.
-- **Stress test** : CPU (cœur par cœur), mémoire, GPU (OpenCL), disque, avec résultats vérifiés et température du CPU.
-- **Correctifs** : réglages Windows connus pour stabiliser un PC (TDR, MPO, HMB des SSD NVMe…), tous annulables.
-- **Optimiser** : réglages Windows officiels, applications préinstallées, programmes au démarrage, nettoyage de fichiers temporaires.
-- **Assistant IA** (optionnel, avec votre propre clé) et serveur MCP.
-- Interface en français, anglais, espagnol, allemand, italien et portugais.
+- **Crashes**: reads the Windows event logs and crash dumps (minidumps), identifies the driver or component involved and explains its common causes.
+- **Hardware**: BIOS, memory (EXPO/XMP), GPU, SSDs (SMART), risky drivers, Windows version.
+- **Stress test**: CPU (core by core), memory, GPU (OpenCL) and disk, with verified results and CPU temperature.
+- **Fixes**: well-known Windows settings that stabilise a PC (TDR, MPO, NVMe SSD HMB…), all reversible.
+- **Optimise**: official Windows settings, preinstalled apps, startup programs, temporary file cleanup.
+- **AI assistant** (optional, with your own API key) and an MCP server.
+- Interface in English, French, Spanish, German, Italian and Portuguese.
 
-Au lancement, l'app vérifie sur GitHub si une nouvelle version existe et affiche ses nouveautés avec un lien de téléchargement. Rien n'est téléchargé ni installé automatiquement ; la vérification peut être désactivée dans **Paramètres › Mises à jour**.
+At launch, the app checks GitHub for a newer version and shows what's new with a download link. Nothing is downloaded or installed automatically, and the check can be turned off in **Settings › Updates**.
 
-## Compiler
+## Build
 
-Prérequis : [SDK .NET 8](https://dotnet.microsoft.com/download) (le projet cible .NET Framework 4.8).
+Requirements: [.NET 8 SDK](https://dotnet.microsoft.com/download) (the project targets .NET Framework 4.8).
 
 ```powershell
 .\build.ps1
 ```
 
-L'exécutable est produit à la racine : `DumpFinder.exe`.
+The executable is written to the repository root: `DumpFinder.exe`.
 
-## Publier une nouvelle version
+## Publish a new version
 
-Prérequis : [GitHub CLI](https://cli.github.com/) connecté (`gh auth login`).
+Requirements: [GitHub CLI](https://cli.github.com/), signed in (`gh auth login`).
 
-1. Lancer `.\release.ps1 -Version 6.1.0`. La première fois, le script crée `release-notes\v6.1.0.md` et s'arrête.
-2. Écrire dans ce fichier les nouveautés et corrections (Markdown).
-3. Relancer `.\release.ps1 -Version 6.1.0`. Le script met à jour le numéro de version, compile, commit, crée le tag, pousse et publie la release avec `DumpFinder.exe`.
+1. Run `.\release.ps1 -Version 6.1.0`. The first time, the script creates `release-notes\v6.1.0.md` and stops.
+2. Write the new features and fixes in that file (Markdown).
+3. Run `.\release.ps1 -Version 6.1.0` again. The script bumps the version number, builds, commits, tags, pushes and publishes the release with `DumpFinder.exe`.
 
-Les utilisateurs voient la nouvelle version au prochain lancement de l'app.
+Users see the new version the next time they open the app.
 
-## Composants tiers
+## Third-party components
 
-- [LibreHardwareMonitorLib](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor) (MPL-2.0) : lecture de la température du CPU, via le pilote [PawnIO](https://pawnio.eu/).
+- [LibreHardwareMonitorLib](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor) (MPL-2.0): CPU temperature, through the [PawnIO](https://pawnio.eu/) driver.
 - [Anthropic SDK for C#](https://github.com/anthropics/anthropic-sdk-csharp) (MIT).
-- [Costura.Fody](https://github.com/Fody/Costura) (MIT) : regroupe les dépendances dans un seul exécutable.
+- [Costura.Fody](https://github.com/Fody/Costura) (MIT): bundles the dependencies into a single executable.

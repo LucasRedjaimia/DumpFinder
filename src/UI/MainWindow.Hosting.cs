@@ -7,7 +7,7 @@ namespace WinCrashDoctor
 {
     /// <summary>
     /// v6 information architecture: re-hosts blocks built by the legacy page builders
-    /// (stress test → Matériel, report → Outils) so their logic stays untouched.
+    /// (stress test → Hardware, report → Tools) so their logic stays untouched.
     /// </summary>
     public partial class MainWindow
     {
@@ -16,7 +16,7 @@ namespace WinCrashDoctor
         private Button _btnToolsSubReport;
         private int _toolsSubTab;
 
-        /// <summary>The stress test becomes the third sub-view of Matériel; its own page header is dropped.</summary>
+        /// <summary>The stress test becomes the third sub-view of Hardware; its own page header is dropped.</summary>
         private void HostStressInHardware()
         {
             var stressHeader = _lblStressTitle.Parent as FrameworkElement;
@@ -26,7 +26,7 @@ namespace WinCrashDoctor
             _pageHealth.Children.Add(_pageStress);
         }
 
-        // ==================== MATÉRIEL › PILOTES ====================
+        // ==================== HARDWARE › DRIVERS ====================
         private ScrollViewer _svHealthDrivers;
         private StackPanel _driversPanel;
         private Button _btnHealthSubDrivers;
