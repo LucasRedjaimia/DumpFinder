@@ -1,9 +1,10 @@
 # Builds Dump Finder (.NET Framework 4.8, single exe) with the .NET SDK.
-# Usage: .\build.ps1 [-Configuration Release|Debug] [-NoZip] [-Icon]
+# Usage: .\build.ps1 [-Configuration Release|Debug] [-Zip] [-Icon]
 #   -Icon  regenerates src\Assets\dumpfinder.ico from branding\make-icon.ps1 first
 param(
     [ValidateSet("Release", "Debug")][string]$Configuration = "Release",
-    [switch]$NoZip,
+    [switch]$NoZip,   # kept for compatibility: no zip is the default now
+    [switch]$Zip,     # also write DumpFinder_v<version>.zip
     [switch]$Icon
 )
 
@@ -47,7 +48,7 @@ foreach ($target in $outExe, $compatExe) {
 }
 
 $version = (Get-Item $outExe).VersionInfo.ProductVersion
-if (-not $NoZip) {
+if ($Zip -and -not $NoZip) {
     $zipPath = Join-Path $projDir ("DumpFinder_v{0}.zip" -f $version)
     Compress-Archive -Path $outExe -DestinationPath $zipPath -Force
 }
