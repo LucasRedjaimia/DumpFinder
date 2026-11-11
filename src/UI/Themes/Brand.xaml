@@ -1,0 +1,54 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Dump Finder "Stack Fault" mark — same geometry as branding/logo.svg (512 x 512) -->
+    <LinearGradientBrush x:Key="BrandTileBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Offset="0" Color="#1D1834"/>
+        <GradientStop Offset="1" Color="#0B0A13"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="BrandBarBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Offset="0" Color="#A495FF"/>
+        <GradientStop Offset="1" Color="#6A55F7"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="BrandBarDeepBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Offset="0" Color="#7F6BFB"/>
+        <GradientStop Offset="1" Color="#4A36E0"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="BrandFaultBrush" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Offset="0" Color="#FF5E62"/>
+        <GradientStop Offset="1" Color="#FFA24A"/>
+    </LinearGradientBrush>
+
+    <DrawingImage x:Key="BrandLogo">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <GeometryDrawing Brush="{StaticResource BrandTileBrush}">
+                    <GeometryDrawing.Geometry>
+                        <RectangleGeometry Rect="16,16,480,480" RadiusX="124" RadiusY="124"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <GeometryDrawing Brush="{StaticResource BrandBarBrush}">
+                    <GeometryDrawing.Geometry>
+                        <RectangleGeometry Rect="112,132,288,64" RadiusX="22" RadiusY="22"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <GeometryDrawing Brush="{StaticResource BrandBarDeepBrush}"
+                                 Geometry="M134 224H262L250 240L266 256L252 272L262 288H134A22 22 0 0 1 112 266V246A22 22 0 0 1 134 224Z"/>
+                <GeometryDrawing Brush="{StaticResource BrandFaultBrush}"
+                                 Geometry="M292 214H414A22 22 0 0 1 436 236V256A22 22 0 0 1 414 278H292L282 262L296 246L280 230Z"/>
+                <GeometryDrawing Brush="#B3FFA24A">
+                    <GeometryDrawing.Geometry>
+                        <RectangleGeometry Rect="450,226,18,18" RadiusX="5" RadiusY="5"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <DrawingGroup Opacity="0.85">
+                    <GeometryDrawing Brush="{StaticResource BrandBarDeepBrush}">
+                        <GeometryDrawing.Geometry>
+                            <RectangleGeometry Rect="112,316,288,64" RadiusX="22" RadiusY="22"/>
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                </DrawingGroup>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+</ResourceDictionary>

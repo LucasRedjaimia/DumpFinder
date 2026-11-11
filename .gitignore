@@ -1,0 +1,19 @@
+# Build output
+bin/
+obj/
+*.exe
+*.zip
+*.pdb
+
+# Local backups & tooling
+_backup/
+.vs/
+*.user
+
+# Generated icon exports (regenerate with branding/make-icon.ps1)
+branding/out/
+
+# Local previews containing personal PC data
+_preview/
+# Screenshots and reports generated on the developer's PC (PC name, crashes, hardware)
+design/captures*/

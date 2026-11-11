@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Dump Finder — monochrome glyph (tray / taskbar overlays). Uses currentColor. -->
+  <g fill="currentColor">
+    <rect x="80" y="76" width="352" height="96" rx="32"/>
+    <rect x="80" y="208" width="176" height="96" rx="32"/>
+    <rect x="288" y="196" width="160" height="96" rx="32" fill-opacity=".55"/>
+    <rect x="80" y="340" width="352" height="96" rx="32"/>
+  </g>
+</svg>

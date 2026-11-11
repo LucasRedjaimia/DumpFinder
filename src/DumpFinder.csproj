@@ -1,0 +1,58 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- .NET Framework 4.8: ships with Windows 10/11, so the exe stays install-free. -->
+    <TargetFramework>net48</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ImplicitUsings>disable</ImplicitUsings>
+
+    <AssemblyName>DumpFinder</AssemblyName>
+    <RootNamespace>WinCrashDoctor</RootNamespace>
+    <StartupObject>WinCrashDoctor.Program</StartupObject>
+    <ApplicationIcon>Assets\dumpfinder.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+
+    <!-- Assembly attributes live in Program.cs -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <Deterministic>true</Deterministic>
+    <DebugType>embedded</DebugType>
+    <!-- x64 only: LibreHardwareMonitorLib ships per-architecture assemblies (runtimes/win-x64), which Costura then embeds -->
+    <PlatformTarget>x64</PlatformTarget>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <Prefer32Bit>false</Prefer32Bit>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\dumpfinder.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Official Anthropic SDK (netstandard2.0 build) for the Claude advisor -->
+    <PackageReference Include="Anthropic" Version="13.8.0" />
+    <!-- Vector<T>: SIMD (SSE/AVX2) for the CPU stress workload; already a dependency of the SDK -->
+    <PackageReference Include="System.Numerics.Vectors" Version="4.6.1" />
+    <!-- CPU temperature through the signed PawnIO driver (no WinRing0). MPL-2.0. -->
+    <PackageReference Include="LibreHardwareMonitorLib" Version="0.9.6" />
+    <!-- Embeds the SDK and its dependencies into DumpFinder.exe: the app stays a single file -->
+    <PackageReference Include="Costura.Fody" Version="6.0.0" PrivateAssets="all" />
+    <PackageReference Include="Fody" Version="6.9.2" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Management" />
+    <Reference Include="System.ServiceProcess" />
+    <Reference Include="System.Web.Extensions" />
+    <!-- Needed by the XAML markup compiler to resolve System.Web.Extensions' dependencies -->
+    <Reference Include="System.Web" />
+    <Reference Include="System.Security" />
+  </ItemGroup>
+
+</Project>
