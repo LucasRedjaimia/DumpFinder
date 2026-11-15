@@ -25,10 +25,10 @@ namespace WinCrashDoctor.Optimize
             {
                 switch (Scope)
                 {
-                    case "cu": return Localizer.L("Registre (utilisateur)", "Registry (user)", "Registro (usuario)", "Registry (Benutzer)", "Registro (utente)", "Registro (usuário)");
-                    case "lm": case "lm32": return Localizer.L("Registre (tous les utilisateurs)", "Registry (all users)", "Registro (todos)", "Registry (alle Benutzer)", "Registro (tutti)", "Registro (todos)");
-                    case "fu": return Localizer.L("Dossier Démarrage", "Startup folder", "Carpeta Inicio", "Autostart-Ordner", "Cartella Esecuzione automatica", "Pasta Inicializar");
-                    default: return Localizer.L("Dossier Démarrage commun", "Common Startup folder", "Carpeta Inicio común", "Gemeinsamer Autostart-Ordner", "Cartella Esecuzione comune", "Pasta Inicializar comum");
+                    case "cu": return Localizer.S("opt_startup.registry_user");
+                    case "lm": case "lm32": return Localizer.S("opt_startup.registry_all_users");
+                    case "fu": return Localizer.S("opt_startup.startup_folder");
+                    default: return Localizer.S("opt_startup.common_startup_folder");
                 }
             }
         }
@@ -193,8 +193,8 @@ namespace WinCrashDoctor.Optimize
             bool disable;
             StartupEntry e = FromOp(op, out disable);
             if (e == null) return null;
-            return (disable ? Localizer.L("Démarrage automatique désactivé : ", "Startup disabled: ", "Inicio automático desactivado: ", "Autostart deaktiviert: ", "Avvio automatico disattivato: ", "Inicialização desativada: ")
-                            : Localizer.L("Démarrage automatique réactivé : ", "Startup re-enabled: ", "Inicio automático reactivado: ", "Autostart aktiviert: ", "Avvio automatico riattivato: ", "Inicialização reativada: ")) + e.Name;
+            return (disable ? Localizer.S("opt_startup.startup_disabled")
+                            : Localizer.S("opt_startup.startup_re_enabled")) + e.Name;
         }
 
         public static bool Execute(string op, out string messageFr, out string messageEn)

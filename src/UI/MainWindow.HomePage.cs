@@ -243,21 +243,21 @@ namespace WinCrashDoctor
             if (_lblHomeTitle == null) return;
             int h = DateTime.Now.Hour;
             _lblHomeTitle.Text = h >= 18 || h < 5
-                ? Localizer.L("Bonsoir", "Good evening", "Buenas noches", "Guten Abend", "Buonasera", "Boa noite")
-                : Localizer.L("Bonjour", "Hello", "Hola", "Hallo", "Buongiorno", "Olá");
-            _btnHomeExport.Content = Localizer.L("📄 Rapport", "📄 Report", "📄 Informe", "📄 Bericht", "📄 Rapporto", "📄 Relatório");
-            _btnRescan.Content = Localizer.L("⟳ Analyser", "⟳ Scan", "⟳ Analizar", "⟳ Analysieren", "⟳ Analizza", "⟳ Analisar");
-            _lblScoreCaption.Text = Localizer.L("/ 100 stabilité", "/ 100 stability", "/ 100 estabilidad", "/ 100 Stabilität", "/ 100 stabilità", "/ 100 estabilidade");
-            _lblTimelineTitle.Text = Localizer.L("Stabilité sur 30 jours", "Stability over 30 days", "Estabilidad en 30 días", "Stabilität über 30 Tage", "Stabilità su 30 giorni", "Estabilidade em 30 dias");
-            _lblHomeActionsTitle.Text = Localizer.L("Actions recommandées", "Recommended actions", "Acciones recomendadas", "Empfohlene Aktionen", "Azioni consigliate", "Ações recomendadas");
-            _btnHomeAllFixes.Content = Localizer.L("Tout voir", "See all", "Ver todo", "Alle", "Vedi tutto", "Ver tudo");
-            _lblHomeRecentTitle.Text = Localizer.L("Crashs récents", "Recent crashes", "Fallos recientes", "Letzte Abstürze", "Crash recenti", "Falhas recentes");
-            _btnHomeAllCrashes.Content = Localizer.L("Historique", "History", "Historial", "Verlauf", "Cronologia", "Histórico");
+                ? Localizer.S("home.good_evening")
+                : Localizer.S("home.hello");
+            _btnHomeExport.Content = Localizer.S("home.report");
+            _btnRescan.Content = Localizer.S("home.scan");
+            _lblScoreCaption.Text = Localizer.S("home.100_stability");
+            _lblTimelineTitle.Text = Localizer.S("home.stability_over_30_days");
+            _lblHomeActionsTitle.Text = Localizer.S("home.recommended_actions");
+            _btnHomeAllFixes.Content = Localizer.S("home.see_all");
+            _lblHomeRecentTitle.Text = Localizer.S("home.recent_crashes");
+            _btnHomeAllCrashes.Content = Localizer.S("crashes.history");
 
             _timelineLegend.Children.Clear();
-            _timelineLegend.Children.Add(LegendItem("DangerFg", Localizer.L("Écran bleu / reboot", "BSOD / reboot", "Pantalla azul", "Bluescreen", "Schermata blu", "Tela azul")));
-            _timelineLegend.Children.Add(LegendItem("WarnFg", Localizer.L("Autre crash", "Other crash", "Otro fallo", "Anderer Absturz", "Altro crash", "Outra falha")));
-            _timelineLegend.Children.Add(LegendItem("TextMuted", Localizer.L("Indice Windows", "Windows index", "Índice Windows", "Windows-Index", "Indice Windows", "Índice Windows")));
+            _timelineLegend.Children.Add(LegendItem("DangerFg", Localizer.S("home.bsod_reboot")));
+            _timelineLegend.Children.Add(LegendItem("WarnFg", Localizer.S("home.other_crash")));
+            _timelineLegend.Children.Add(LegendItem("TextMuted", Localizer.S("home.windows_index")));
         }
 
         private UIElement LegendItem(string brushKey, string text)
@@ -278,13 +278,7 @@ namespace WinCrashDoctor
             RefreshHomeLabels();
 
             DateTime now = DateTime.Now;
-            _lblHomeSub.Text = Localizer.L(
-                string.Format("Dernière analyse à {0:HH:mm} · 30 derniers jours · {1}", now, res.Hardware.GetProfileBadge()),
-                string.Format("Last scan {0:HH:mm} · last 30 days · {1}", now, res.Hardware.GetProfileBadge()),
-                string.Format("Último análisis {0:HH:mm} · 30 días · {1}", now, res.Hardware.GetProfileBadge()),
-                string.Format("Letzte Prüfung {0:HH:mm} · 30 Tage · {1}", now, res.Hardware.GetProfileBadge()),
-                string.Format("Ultima analisi {0:HH:mm} · 30 giorni · {1}", now, res.Hardware.GetProfileBadge()),
-                string.Format("Última análise {0:HH:mm} · 30 dias · {1}", now, res.Hardware.GetProfileBadge()));
+            _lblHomeSub.Text = Localizer.F("home.last_scan_0_hh_mm_last", now, res.Hardware.GetProfileBadge());
 
             var window = (res.Events ?? new List<CrashEventItem>()).Where(e => (now - e.Timestamp).TotalDays <= Stability.WindowDays).ToList();
             int ownScore = Stability.Score(window, now);
@@ -293,14 +287,8 @@ namespace WinCrashDoctor
             _homeScore = Stability.Blend(ownScore, winIndex);
             if (winIndex.HasValue)
             {
-                ((TextBlock)_homeWinPill.Child).Text = Localizer.L("Indice Windows ", "Windows index ", "Índice Windows ", "Windows-Index ", "Indice Windows ", "Índice Windows ") + winIndex.Value.ToString("0.0") + "/10";
-                _homeWinPill.ToolTip = Localizer.L(
-                    "Indice de fiabilité calculé par Windows (Moniteur de fiabilité). Le score combine 60 % d'analyse des crashs et 40 % de cet indice.",
-                    "Reliability index computed by Windows (Reliability Monitor). The score blends 60 % crash analysis and 40 % this index.",
-                    "Índice de fiabilidad de Windows. La puntuación combina 60 % de análisis de fallos y 40 % de este índice.",
-                    "Zuverlässigkeitsindex von Windows. Der Wert kombiniert 60 % Absturzanalyse und 40 % dieses Index.",
-                    "Indice di affidabilità di Windows. Il punteggio combina 60 % di analisi dei crash e 40 % di questo indice.",
-                    "Índice de confiabilidade do Windows. A pontuação combina 60 % de análise de falhas e 40 % deste índice.");
+                ((TextBlock)_homeWinPill.Child).Text = Localizer.S("home.windows_index_2") + winIndex.Value.ToString("0.0") + "/10";
+                _homeWinPill.ToolTip = Localizer.S("home.reliability_index_computed_by_windows_re");
                 _homeWinPill.Visibility = Visibility.Visible;
             }
             else _homeWinPill.Visibility = Visibility.Collapsed;
@@ -310,7 +298,7 @@ namespace WinCrashDoctor
             if (prev != null && prev.Score != _homeScore)
             {
                 int d = _homeScore - prev.Score;
-                ((TextBlock)_homeDeltaPill.Child).Text = (d > 0 ? "↑ +" : "↓ ") + d + Localizer.L(" depuis le ", " since ", " desde el ", " seit ", " dal ", " desde ") + prev.Time.ToString("d MMM", System.Globalization.CultureInfo.CurrentUICulture);
+                ((TextBlock)_homeDeltaPill.Child).Text = (d > 0 ? "↑ +" : "↓ ") + d + Localizer.S("home.since") + Localizer.DayMonth(prev.Time);
                 _homeDeltaPill.SetResourceReference(Border.BackgroundProperty, d > 0 ? "SuccessSoftBg" : "DangerSoftBg");
                 ((TextBlock)_homeDeltaPill.Child).SetResourceReference(TextBlock.ForegroundProperty, d > 0 ? "SuccessFg" : "DangerFg");
                 _homeDeltaPill.Visibility = Visibility.Visible;
@@ -323,15 +311,15 @@ namespace WinCrashDoctor
             {
                 case StabilityLevel.Stable:
                     fg = "SuccessFg"; soft = "SuccessSoftBg";
-                    label = Localizer.L("● Stable", "● Stable", "● Estable", "● Stabil", "● Stabile", "● Estável");
+                    label = Localizer.S("home.stable");
                     break;
                 case StabilityLevel.Fragile:
                     fg = "WarnFg"; soft = "WarnSoftBg";
-                    label = Localizer.L("● Fragile", "● Fragile", "● Frágil", "● Anfällig", "● Fragile", "● Frágil");
+                    label = Localizer.S("home.fragile");
                     break;
                 default:
                     fg = "DangerFg"; soft = "DangerSoftBg";
-                    label = Localizer.L("● Instable", "● Unstable", "● Inestable", "● Instabil", "● Instabile", "● Instável");
+                    label = Localizer.S("home.unstable");
                     break;
             }
             _scoreRing.SetResourceReference(ScoreRing.FillBrushProperty, fg);
@@ -349,20 +337,14 @@ namespace WinCrashDoctor
                 .ToList();
             int n = _homeRecommended.Count;
             _btnHeroPrimary.Content = n > 0
-                ? Localizer.L(
-                    n == 1 ? "⚡ Appliquer le correctif recommandé" : string.Format("⚡ Appliquer les {0} correctifs", n),
-                    n == 1 ? "⚡ Apply the recommended fix" : string.Format("⚡ Apply {0} fixes", n),
-                    string.Format("⚡ Aplicar {0} correcciones", n),
-                    string.Format("⚡ {0} Korrekturen anwenden", n),
-                    string.Format("⚡ Applica {0} correzioni", n),
-                    string.Format("⚡ Aplicar {0} correções", n))
-                : Localizer.L("⚡ Tester la stabilité", "⚡ Run a stress test", "⚡ Probar estabilidad", "⚡ Stabilität testen", "⚡ Testa stabilità", "⚡ Testar estabilidade");
+                ? Localizer.P("home.apply_fixes_button", n)
+                : Localizer.S("home.run_a_stress_test");
 
             _homeFocusCrash = _crashEntries.FirstOrDefault(c => (now - c.Time).TotalDays <= Stability.WindowDays && Stability.IsSevere(c.Category))
                               ?? _crashEntries.FirstOrDefault(c => (now - c.Time).TotalDays <= Stability.WindowDays);
             _btnHeroSecondary.Content = _homeFocusCrash != null
-                ? Localizer.L("Voir le crash", "View crash", "Ver fallo", "Absturz ansehen", "Vedi crash", "Ver falha")
-                : Localizer.L("🧠 Bilan IA", "🧠 AI check-up", "🧠 Análisis IA", "🧠 KI-Check", "🧠 Analisi IA", "🧠 Análise IA");
+                ? Localizer.S("home.view_crash")
+                : Localizer.S("home.ai_check_up");
 
             _stabilityChart.SetDays(Stability.Timeline(window, now), res.Reliability);
             RenderHomeActions();
@@ -376,7 +358,7 @@ namespace WinCrashDoctor
             if (top.Count == 0)
             {
                 _homeActionsList.Children.Add(MakeEmptyLine(Glyph.Completed, "SuccessFg",
-                    Localizer.L("Toutes les protections recommandées sont actives.", "All recommended protections are active.", "Todas las protecciones recomendadas están activas.", "Alle empfohlenen Schutzmaßnahmen sind aktiv.", "Tutte le protezioni consigliate sono attive.", "Todas as proteções recomendadas estão ativas.")));
+                    Localizer.S("home.all_recommended_protections_are_active")));
                 return;
             }
             for (int i = 0; i < top.Count; i++)
@@ -391,12 +373,12 @@ namespace WinCrashDoctor
                 row.Children.Add(MakeIconTile(GroupGlyph(fix.Group), "AccentSoftBg", "AccentText"));
                 StackPanel t = new StackPanel { Margin = new Thickness(12, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center };
                 t.Children.Add(ResFg(new TextBlock { Text = fix.Title, FontSize = 13, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis }, "TextPrimary"));
-                t.Children.Add(ResFg(new TextBlock { Text = fix.VendorTag + (fix.CanRestore ? Localizer.L(" · réversible", " · reversible", " · reversible", " · umkehrbar", " · reversibile", " · reversível") : ""), FontSize = 11, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 1, 0, 0) }, "TextMuted"));
+                t.Children.Add(ResFg(new TextBlock { Text = fix.VendorTag + (fix.CanRestore ? Localizer.S("home.reversible") : ""), FontSize = 11, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 1, 0, 0) }, "TextMuted"));
                 Grid.SetColumn(t, 1);
                 row.Children.Add(t);
-                Button apply = CreateFlatButton(Localizer.L("Appliquer", "Apply", "Aplicar", "Anwenden", "Applica", "Aplicar"), "BgCard", "AccentText", "BorderCard", new Thickness(12, 5, 12, 5), 12);
+                Button apply = CreateFlatButton(Localizer.S("opt_tweaks.apply"), "BgCard", "AccentText", "BorderCard", new Thickness(12, 5, 12, 5), 12);
                 apply.VerticalAlignment = VerticalAlignment.Center;
-                apply.Click += (s, e) => ExecuteSingleFix(fixId + "_apply", fixId);
+                apply.Click += (s, e) => ExecuteSingleFix(fixId + "_apply", fixId, s);
                 Grid.SetColumn(apply, 2);
                 row.Children.Add(apply);
 
@@ -412,7 +394,7 @@ namespace WinCrashDoctor
             if (recent.Count == 0)
             {
                 _homeRecentList.Children.Add(MakeEmptyLine(Glyph.Completed, "SuccessFg",
-                    Localizer.L("Aucun crash enregistré. Votre PC tient bon.", "No crash recorded. Your PC is holding up.", "Ningún fallo registrado.", "Keine Abstürze aufgezeichnet.", "Nessun crash registrato.", "Nenhuma falha registrada.")));
+                    Localizer.S("home.no_crash_recorded_your_pc_is")));
                 return;
             }
             for (int i = 0; i < recent.Count; i++)
@@ -526,10 +508,10 @@ namespace WinCrashDoctor
         private static string RelativeTime(DateTime t, DateTime now)
         {
             var d = now - t;
-            if (d.TotalMinutes < 60) return Localizer.L("il y a " + Math.Max(1, (int)d.TotalMinutes) + " min", Math.Max(1, (int)d.TotalMinutes) + " min ago", "hace " + Math.Max(1, (int)d.TotalMinutes) + " min", "vor " + Math.Max(1, (int)d.TotalMinutes) + " Min.", Math.Max(1, (int)d.TotalMinutes) + " min fa", "há " + Math.Max(1, (int)d.TotalMinutes) + " min");
+            if (d.TotalMinutes < 60) return Localizer.F("home.min_ago", Math.Max(1, (int)d.TotalMinutes));
             if (t.Date == now.Date) return t.ToString("HH:mm");
-            if (t.Date == now.Date.AddDays(-1)) return Localizer.L("hier ", "yesterday ", "ayer ", "gestern ", "ieri ", "ontem ") + t.ToString("HH:mm");
-            return t.ToString("d MMM HH:mm", System.Globalization.CultureInfo.CurrentUICulture);
+            if (t.Date == now.Date.AddDays(-1)) return Localizer.S("home.yesterday") + t.ToString("HH:mm");
+            return t.ToString("d MMM HH:mm", Localizer.Culture);
         }
     }
 }

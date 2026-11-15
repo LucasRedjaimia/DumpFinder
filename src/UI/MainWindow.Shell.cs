@@ -26,6 +26,9 @@ namespace WinCrashDoctor
     public partial class MainWindow
     {
         private Button _btnCaptionMax;
+        private Button _btnCaptionMin;
+        private Button _btnCaptionClose;
+        private Button _btnSidebarToggle;
         private Button _navSettingsButton;
         private StackPanel _toastHost;
         private Border _statusDot;
@@ -47,12 +50,11 @@ namespace WinCrashDoctor
             StackPanel left = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(10, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
 
             Button toggle = CreateNavButton(ResFg(Ds.Icon(Glyph.GlobalNav, 14), "TextSecondary"));
+            _btnSidebarToggle = toggle;
             toggle.Width = 40;
             toggle.Height = 32;
             toggle.Padding = new Thickness(0);
             toggle.Margin = new Thickness(0, 0, 8, 0);
-            toggle.ToolTip = Localizer.L("Réduire / développer le menu", "Collapse / expand menu", "Contraer / expandir menú", "Menü ein-/ausklappen", "Comprimi / espandi menu", "Recolher / expandir menu");
-            System.Windows.Automation.AutomationProperties.SetName(toggle, "Menu");
             toggle.Click += (s, e) => ApplySidebarCollapsed(!_sidebarCollapsed, true);
             WindowChrome.SetIsHitTestVisibleInChrome(toggle, true);
             left.Children.Add(toggle);
@@ -85,18 +87,19 @@ namespace WinCrashDoctor
             bar.Children.Add(left);
 
             StackPanel caps = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Top };
-            caps.Children.Add(CaptionButton(Glyph.Minimize, "DfCaptionButton", Localizer.L("Réduire", "Minimize", "Minimizar", "Minimieren", "Riduci", "Minimizar"),
-                () => WindowState = WindowState.Minimized));
-            _btnCaptionMax = CaptionButton(Glyph.Maximize, "DfCaptionButton", Localizer.L("Agrandir", "Maximize", "Maximizar", "Maximieren", "Ingrandisci", "Maximizar"),
+            _btnCaptionMin = CaptionButton(Glyph.Minimize, "DfCaptionButton", () => WindowState = WindowState.Minimized);
+            caps.Children.Add(_btnCaptionMin);
+            _btnCaptionMax = CaptionButton(Glyph.Maximize, "DfCaptionButton",
                 () => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized);
             caps.Children.Add(_btnCaptionMax);
-            caps.Children.Add(CaptionButton(Glyph.Close, "DfCaptionCloseButton", Localizer.L("Fermer", "Close", "Cerrar", "Schließen", "Chiudi", "Fechar"),
-                () => Close()));
+            _btnCaptionClose = CaptionButton(Glyph.Close, "DfCaptionCloseButton", () => Close());
+            caps.Children.Add(_btnCaptionClose);
             if (WindowShell.NativeCaptionButtons)
             {
                 // DWM paints the real buttons here; keep the space free (3 x 46 px).
                 caps.Children.Clear();
                 caps.Width = 138;
+                _btnCaptionMin = _btnCaptionMax = _btnCaptionClose = null;
             }
             Grid.SetColumn(caps, 2);
             bar.Children.Add(caps);
@@ -107,18 +110,44 @@ namespace WinCrashDoctor
                     _btnCaptionMax.Content = WindowState == WindowState.Maximized ? Glyph.Restore : Glyph.Maximize;
             };
 
+            RefreshShellLabels();
             return bar;
         }
 
-        private Button CaptionButton(string glyph, string styleKey, string name, Action onClick)
+        private Button CaptionButton(string glyph, string styleKey, Action onClick)
         {
             Button b = new Button { Content = glyph, Height = WindowShell.TitleBarHeight };
             b.SetResourceReference(StyleProperty, styleKey);
-            b.ToolTip = name;
-            System.Windows.Automation.AutomationProperties.SetName(b, name);
             b.Click += (s, e) => onClick();
             WindowChrome.SetIsHitTestVisibleInChrome(b, true);
             return b;
+        }
+
+        private static void SetCaptionName(Button b, string name)
+        {
+            if (b == null) return;
+            b.ToolTip = name;
+            System.Windows.Automation.AutomationProperties.SetName(b, name);
+        }
+
+        /// <summary>Title-bar tooltips / automation names and collapsed-sidebar tooltips (called on every language switch).</summary>
+        private void RefreshShellLabels()
+        {
+            if (_btnSidebarToggle != null)
+            {
+                _btnSidebarToggle.ToolTip = Localizer.S("shell.collapse_expand_menu");
+                System.Windows.Automation.AutomationProperties.SetName(_btnSidebarToggle, Localizer.S("shell.menu"));
+            }
+            SetCaptionName(_btnCaptionMin, Localizer.S("shell.minimize"));
+            SetCaptionName(_btnCaptionMax, Localizer.S("shell.maximize"));
+            SetCaptionName(_btnCaptionClose, Localizer.S("shell.close"));
+
+            // Collapsed sidebar: the icon tooltips carry the section names.
+            if (_sidebarCollapsed)
+            {
+                for (int i = 0; i < _navLabels.Length; i++)
+                    if (_navLabels[i] != null && _navButtons[i] != null) _navButtons[i].ToolTip = _navLabels[i].Text;
+            }
         }
 
         // ==================== SIDEBAR COLLAPSE ====================
@@ -190,8 +219,8 @@ namespace WinCrashDoctor
         /// <summary>Used by the --screenshot harness to capture the toast styles.</summary>
         public void ShowToastPreviewForCapture()
         {
-            ShowToast(Localizer.L("✓ Multiplane Overlay (MPO) désactivé (OverlayTestMode = 5).", "✓ Multiplane Overlay (MPO) disabled (OverlayTestMode = 5).", "✓ MPO desactivado.", "✓ MPO deaktiviert.", "✓ MPO disattivato.", "✓ MPO desativado."), ToastKind.Success);
-            ShowToast(Localizer.L("Opération annulée au contrôle Administrateur (UAC).", "Operation cancelled at the UAC Administrator prompt.", "Operación cancelada (UAC).", "Vorgang abgebrochen (UAC).", "Operazione annullata (UAC).", "Operação cancelada (UAC)."), ToastKind.Warning);
+            ShowToast(Localizer.S("shell.multiplane_overlay_mpo_disabled_overlayt"), ToastKind.Success);
+            ShowToast(Localizer.S("shell.operation_cancelled_at_the_uac_administr"), ToastKind.Warning);
         }
 
         private UIElement BuildToastHost()
@@ -278,7 +307,7 @@ namespace WinCrashDoctor
             close.Padding = new Thickness(0);
             close.Margin = new Thickness(0);
             close.VerticalAlignment = VerticalAlignment.Top;
-            System.Windows.Automation.AutomationProperties.SetName(close, Localizer.L("Fermer", "Dismiss", "Cerrar", "Schließen", "Chiudi", "Fechar"));
+            System.Windows.Automation.AutomationProperties.SetName(close, Localizer.S("shell.dismiss"));
             Grid.SetColumn(close, 2);
             g.Children.Add(close);
 

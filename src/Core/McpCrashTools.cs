@@ -52,7 +52,7 @@ namespace WinCrashDoctor
             if (e.Event != null)
             {
                 sb.AppendLine("Event: " + e.Event.Source + " / " + e.Event.CodeOrId);
-                sb.AppendLine("Windows message: " + e.Event.DetailsEn);
+                sb.AppendLine("Windows message: " + Privacy.Redact(e.Event.DetailsEn));
             }
             if (e.Dump != null)
             {

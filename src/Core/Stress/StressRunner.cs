@@ -80,17 +80,22 @@ namespace WinCrashDoctor.Stress
             get
             {
                 if (CpuTemp == null || double.IsNaN(CpuTemp.PeakTempC)) return "";
-                return " " + StressText.CpuTemp + " max : " + CpuTemp.PeakTempC.ToString("0") + " °C.";
+                return string.Format(Localizer.S("stress_runner.peak_c"),
+                                     StressText.CpuTemp, CpuTemp.PeakTempC.ToString("0"));
             }
         }
 
         public StressTile ErrorTile(int ownErrors)
         {
-            int ev = EventCount;
+            List<LiveEvent> all = Events;
+            List<LiveEvent> hard = all.Where(e => !e.WarningOnly).ToList();
+            int ev = hard.Count;
             int n = ownErrors + ev;
+            if (n == 0 && all.Count > 0) // only warnings (corrected WHEA, another disk…): shown, not counted as errors
+                return StressTile.Make(StressText.Errors, "0", all.Last().ToString(), 0);
             string sub = n == 0
-                ? Localizer.L("calculs + journal", "results + log", "cálculos + registro", "Ergebnisse + Protokoll", "calcoli + registro", "cálculos + log")
-                : (ev > 0 ? Events.Last().ToString() : Localizer.L("résultats faux", "wrong results", "resultados erróneos", "falsche Ergebnisse", "risultati errati", "resultados errados"));
+                ? Localizer.S("stress_runner.results_log")
+                : (ev > 0 ? hard.Last().ToString() : Localizer.S("stress_runner.wrong_results"));
             return StressTile.Make(StressText.Errors, n.ToString(), sub, n == 0 ? 1 : 2);
         }
 
@@ -177,69 +182,77 @@ namespace WinCrashDoctor.Stress
             double offset = 0;
 
             Native.SetThreadExecutionState(Native.ES_CONTINUOUS | Native.ES_SYSTEM_REQUIRED); // no sleep mid-test (same thread clears it)
-            using (var cpu = new CpuClockSensor())
-            using (var gpu = new GpuSensor())
+            try
             {
-                if (needsGpu) gpu.Start();
-                bool needsCpuTemp = cpuTemp && (plan.Uses(StressStageKind.CpuAllCore) || plan.Uses(StressStageKind.CpuPerCore) || plan.Uses(StressStageKind.Transient));
-                CpuTempFeed temp = needsCpuTemp ? CpuTempFeed.Start() : null;
-                Func<OpenClDevice> getDevice = () =>
+                using (var cpu = new CpuClockSensor())
+                using (var gpu = new GpuSensor())
                 {
-                    if (!deviceTried) { deviceTried = true; device = OpenClDevice.TryOpen(); }
-                    return device;
-                };
-
-                try
-                {
-                    for (int i = 0; i < plan.Stages.Count; i++)
+                    if (needsGpu) gpu.Start();
+                    bool needsCpuTemp = cpuTemp && (plan.Uses(StressStageKind.CpuAllCore) || plan.Uses(StressStageKind.CpuPerCore) || plan.Uses(StressStageKind.Transient));
+                    CpuTempFeed temp = needsCpuTemp ? CpuTempFeed.Start() : null;
+                    Func<OpenClDevice> getDevice = () =>
                     {
-                        StressStage st = plan.Stages[i];
-                        if (_stop) { record.Stages.Add(StressAdvice.NotRun(st.Kind)); continue; }
-                        bool gpuStage = st.Kind == StressStageKind.GpuCompute || st.Kind == StressStageKind.Vram || st.Kind == StressStageKind.Transient;
-                        if (gpuStage && gpuDriverDown) { record.Stages.Add(StressAdvice.SkippedAfterDriverReset(st.Kind)); offset += st.DurationSec; continue; }
+                        if (!deviceTried) { deviceTried = true; device = OpenClDevice.TryOpen(); }
+                        return device;
+                    };
 
-                        History.SaveStressMarker(new StressRunningMarker
+                    try
+                    {
+                        for (int i = 0; i < plan.Stages.Count; i++)
                         {
-                            Started = record.Time,
-                            Plan = plan.Kind,
-                            StageIndex = i,
-                            StageCount = plan.Stages.Count,
-                            Stage = st.Kind,
-                            StageStarted = DateTime.Now,
-                            Done = record.Stages.ToList()
-                        });
+                            StressStage st = plan.Stages[i];
+                            if (_stop) { record.Stages.Add(StressAdvice.NotRun(st.Kind)); continue; }
+                            bool gpuStage = st.Kind == StressStageKind.GpuCompute || st.Kind == StressStageKind.Vram || st.Kind == StressStageKind.Transient;
+                            if (gpuStage && gpuDriverDown) { record.Stages.Add(StressAdvice.SkippedAfterDriverReset(st.Kind)); offset += st.DurationSec; continue; }
 
-                        var ctx = new StageContext(this, emit)
-                        {
-                            Stage = st,
-                            Index = i,
-                            Count = plan.Stages.Count,
-                            RunOffsetSec = offset,
-                            RunTotalSec = plan.TotalSec,
-                            Cpu = cpu,
-                            Gpu = gpu,
-                            CpuTemp = temp,
-                            GpuDevice = getDevice
-                        };
-                        gpu.ResetPeaks();
-                        if (temp != null) temp.ResetPeak();
-                        StressStageResult res = RunStage(ctx);
-                        res.DurationSec = Math.Round(ctx.Elapsed);
-                        record.Stages.Add(res);
-                        if (gpuStage && res.Outcome == StressOutcome.Failed && res.FixIds != null && res.FixIds.Contains("tdr")) gpuDriverDown = true;
-                        offset += st.DurationSec;
+                            History.SaveStressMarker(new StressRunningMarker
+                            {
+                                Started = record.Time,
+                                Plan = plan.Kind,
+                                StageIndex = i,
+                                StageCount = plan.Stages.Count,
+                                Stage = st.Kind,
+                                StageStarted = DateTime.Now,
+                                Done = record.Stages.ToList()
+                            });
+
+                            var ctx = new StageContext(this, emit)
+                            {
+                                Stage = st,
+                                Index = i,
+                                Count = plan.Stages.Count,
+                                RunOffsetSec = offset,
+                                RunTotalSec = plan.TotalSec,
+                                Cpu = cpu,
+                                Gpu = gpu,
+                                CpuTemp = temp,
+                                GpuDevice = getDevice
+                            };
+                            gpu.ResetPeaks();
+                            if (temp != null) temp.ResetPeak();
+                            StressStageResult res = RunStage(ctx);
+                            res.DurationSec = Math.Round(ctx.Elapsed);
+                            record.Stages.Add(res);
+                            if (gpuStage && res.Outcome == StressOutcome.Failed && res.FixIds != null && res.FixIds.Contains("tdr")) gpuDriverDown = true;
+                            offset += st.DurationSec;
+                        }
+                    }
+                    finally
+                    {
+                        if (device != null) device.Dispose();
+                        if (temp != null) temp.Dispose();
                     }
                 }
-                finally
-                {
-                    if (device != null) device.Dispose();
-                    if (temp != null) temp.Dispose();
-                }
+            }
+            finally
+            {
+                // Always undone, even if something above throws: otherwise the PC could never sleep again until the
+                // app exits, and the next launch would report a false "crashed / abandoned during the test".
+                Native.SetThreadExecutionState(Native.ES_CONTINUOUS);
+                try { History.ClearStressMarker(); } catch (Exception ex) { Log.Warn(ex); }
             }
 
-            Native.SetThreadExecutionState(Native.ES_CONTINUOUS);
             record.Completed = !_stop;
-            History.ClearStressMarker();
             History.AddStressRun(record);
             return record;
         }
@@ -255,11 +268,14 @@ namespace WinCrashDoctor.Stress
                 var evs = watch.Poll();
                 if (evs.Count == 0) return;
                 ctx.AddEvents(evs);
-                foreach (var e in evs) ctx.Log("⚠ Windows : " + e);
-                // Errors tied to what is being tested end the stage right away.
-                if (evs.Any(e => e.Kind == LiveEventKind.Whea
-                              || (e.Kind == LiveEventKind.GpuDriver && gpuStage)
-                              || (e.Kind == LiveEventKind.Disk && kind == StressStageKind.Disk)))
+                string prefix = Localizer.S("stress_runner.windows");
+                foreach (var e in evs) ctx.Log(prefix + e);
+                // Errors tied to what is being tested end the stage right away. Warning-only events (corrected WHEA,
+                // a disk event about another disk) are recorded and reported, but the stage keeps running.
+                if (evs.Any(e => !e.WarningOnly
+                              && (e.Kind == LiveEventKind.Whea
+                                  || (e.Kind == LiveEventKind.GpuDriver && gpuStage)
+                                  || (e.Kind == LiveEventKind.Disk && kind == StressStageKind.Disk))))
                     ctx.Abort = true;
             }, null, 2000, 2000))
             {
@@ -356,7 +372,7 @@ namespace WinCrashDoctor.Stress
             {
                 if (dev != null && dev.Ready) { c.GpuName = dev.Name; c.GpuMemBytes = dev.GlobalMem; }
             }
-            if (System.IO.File.Exists(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "nvidia-smi.exe"))) c.GpuSensor = "nvidia-smi";
+            if (GpuSensor.NvidiaSmiPath != null) c.GpuSensor = "nvidia-smi";
             else if (AmdAdl.Exists) c.GpuSensor = "AMD ADL";
             return c;
         }

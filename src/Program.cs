@@ -86,14 +86,12 @@ namespace WinCrashDoctor
                     WindowShell.ForceSolidBackground = true; // RenderTargetBitmap cannot capture Mica
                     Localizer.ReadOnlySettings = true;       // captures must never alter the user's settings
                     AppSettings sSaved = Localizer.LoadSettings();
-                    // Capture-only language override (in memory; settings are read-only here): --lang fr|en|es|de|it|pt
+                    // Capture-only language override (in memory; settings are read-only here): --lang fr|en|es|de|it|pt|pl|nl|tr|ru|uk|zh|ja|ko
                     int langArg = Array.IndexOf(args, "--lang");
                     if (langArg > 0 && langArg + 1 < args.Length)
                     {
-                        string[] codes = { "fr", "en", "es", "de", "it", "pt" };
-                        AppLang[] langs = { AppLang.FR, AppLang.EN, AppLang.ES, AppLang.DE, AppLang.IT, AppLang.PT };
-                        int li = Array.IndexOf(codes, args[langArg + 1].ToLowerInvariant());
-                        if (li >= 0) { sSaved.Language = (int)langs[li]; Localizer.Current = langs[li]; }
+                        AppLang? chosen = Localizer.FromCode(args[langArg + 1]);
+                        if (chosen.HasValue) { sSaved.Language = (int)chosen.Value; Localizer.Current = chosen.Value; }
                     }
                     Application sApp = new Application();
                     MainWindow sWin = new MainWindow(sSaved);

@@ -45,6 +45,31 @@ namespace WinCrashDoctor
         private const int MaxJournal = 500;
         private static readonly object Sync = new object();
 
+        /// <summary>
+        /// Read-modify-write lock shared by every Dump Finder process of this session (main window, tray at logon,
+        /// MCP server, elevated child): a per-process lock alone let them overwrite each other's entries.
+        /// </summary>
+        private sealed class HistoryLock : IDisposable
+        {
+            private static readonly System.Threading.Mutex Mutex = new System.Threading.Mutex(false, @"Local\DumpFinder_History");
+            private readonly bool _owned;
+
+            private HistoryLock()
+            {
+                System.Threading.Monitor.Enter(Sync);
+                try { _owned = Mutex.WaitOne(10000); }
+                catch (System.Threading.AbandonedMutexException) { _owned = true; } // previous owner died: we own it now
+            }
+
+            public static HistoryLock Take() { return new HistoryLock(); }
+
+            public void Dispose()
+            {
+                if (_owned) { try { Mutex.ReleaseMutex(); } catch (Exception) { } }
+                System.Threading.Monitor.Exit(Sync);
+            }
+        }
+
         public static string Dir
         {
             get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DumpFinder", "history"); }
@@ -67,7 +92,7 @@ namespace WinCrashDoctor
 
         public static void AddScan(ScanRecord r)
         {
-            lock (Sync)
+            using (HistoryLock.Take())
             {
                 var list = Scans();
                 list.Add(r);
@@ -92,7 +117,7 @@ namespace WinCrashDoctor
 
         public static void AddJournal(IEnumerable<JournalEntry> entries)
         {
-            lock (Sync)
+            using (HistoryLock.Take())
             {
                 var list = Load<List<JournalEntry>>(JournalFile) ?? new List<JournalEntry>();
                 list.AddRange(entries);
@@ -103,7 +128,7 @@ namespace WinCrashDoctor
 
         public static void MarkReverted(string id)
         {
-            lock (Sync)
+            using (HistoryLock.Take())
             {
                 var list = Load<List<JournalEntry>>(JournalFile) ?? new List<JournalEntry>();
                 var e = list.FirstOrDefault(j => j.Id == id);
@@ -128,7 +153,7 @@ namespace WinCrashDoctor
         /// </summary>
         public static List<string> TakeNewCrashes(IEnumerable<string> currentKeys)
         {
-            lock (Sync)
+            using (HistoryLock.Take())
             {
                 bool firstRun = !File.Exists(SeenFile);
                 var seen = new HashSet<string>(Load<List<string>>(SeenFile) ?? new List<string>());
@@ -155,7 +180,7 @@ namespace WinCrashDoctor
 
         public static void AddStressRun(StressRunRecord r)
         {
-            lock (Sync)
+            using (HistoryLock.Take())
             {
                 var list = Load<List<StressRunRecord>>(StressFile) ?? new List<StressRunRecord>();
                 list.Add(r);
@@ -177,14 +202,35 @@ namespace WinCrashDoctor
         // ---------------- IO
         private static T Load<T>(string path) where T : class
         {
+            string json = null;
+            for (int attempt = 0; attempt < 3 && json == null; attempt++)
+            {
+                try
+                {
+                    if (!File.Exists(path)) return null;
+                    json = File.ReadAllText(path, Encoding.UTF8);
+                }
+                catch (IOException ex) // briefly locked by another Dump Finder process: retry
+                {
+                    if (attempt == 2) { Log.Warn(ex, path); return null; }
+                    System.Threading.Thread.Sleep(150);
+                }
+                catch (Exception ex)
+                {
+                    Log.Warn(ex, path);
+                    return null;
+                }
+            }
             try
             {
-                if (!File.Exists(path)) return null;
-                return new JavaScriptSerializer { MaxJsonLength = int.MaxValue }.Deserialize<T>(File.ReadAllText(path, Encoding.UTF8));
+                return new JavaScriptSerializer { MaxJsonLength = int.MaxValue }.Deserialize<T>(json);
             }
             catch (Exception ex)
             {
+                // Unreadable content: keep a copy before the next save replaces it (the undo journal lives here).
                 Log.Warn(ex, path);
+                try { File.Copy(path, path + ".corrupt-" + DateTime.Now.ToString("yyyyMMdd-HHmmss"), true); }
+                catch (Exception cex) { Log.Warn(cex, path); }
                 return null;
             }
         }

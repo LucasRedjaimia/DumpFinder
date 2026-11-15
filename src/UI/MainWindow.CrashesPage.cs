@@ -146,31 +146,19 @@ namespace WinCrashDoctor
         private void RefreshCrashesLabels()
         {
             if (_lblCrashesTitle == null) return;
-            _lblCrashesTitle.Text = Localizer.L("Crashs", "Crashes", "Fallos", "Abstürze", "Crash", "Falhas");
-            _lblCrashesSub.Text = Localizer.L(
-                "Chaque crash réunit l'événement Windows, le fichier .dmp associé, l'explication et les correctifs utiles.",
-                "Each crash brings together the Windows event, its .dmp file, a plain explanation and the fixes that help.",
-                "Cada fallo reúne el evento de Windows, su archivo .dmp, la explicación y las correcciones útiles.",
-                "Jeder Absturz vereint Windows-Ereignis, .dmp-Datei, Erklärung und passende Korrekturen.",
-                "Ogni crash riunisce l'evento Windows, il file .dmp, la spiegazione e le correzioni utili.",
-                "Cada falha reúne o evento do Windows, o arquivo .dmp, a explicação e as correções úteis.");
-            _btnCrashSubGuide.Content = Localizer.L("Pannes fréquentes", "Common crashes", "Fallos comunes", "Häufige Abstürze", "Crash comuni", "Falhas comuns");
-            _btnOpenDmpFile.Content = Localizer.L("📄 Ouvrir un .dmp…", "📄 Open a .dmp…", "📄 Abrir .dmp…", "📄 .dmp öffnen…", "📄 Apri .dmp…", "📄 Abrir .dmp…");
-            _btnAdminScanDumps.Content = Localizer.L("🛡 Lire C:\\Windows\\Minidump", "🛡 Read C:\\Windows\\Minidump", "🛡 Leer C:\\Windows\\Minidump", "🛡 C:\\Windows\\Minidump lesen", "🛡 Leggi C:\\Windows\\Minidump", "🛡 Ler C:\\Windows\\Minidump");
-            _btnAdminScanDumps.ToolTip = Localizer.L(
-                "Les dumps d'écran bleu sont protégés : une autorisation administrateur est demandée une seule fois.",
-                "Blue-screen dumps are protected: administrator approval is requested once.",
-                "Los volcados de pantalla azul están protegidos: se pide permiso de administrador una vez.",
-                "Bluescreen-Dumps sind geschützt: Adminrechte werden einmal angefragt.",
-                "I dump delle schermate blu sono protetti: viene chiesto l'accesso amministratore una volta.",
-                "Os dumps de tela azul são protegidos: a permissão de administrador é pedida uma vez.");
+            _lblCrashesTitle.Text = Localizer.S("crashes.crashes");
+            _lblCrashesSub.Text = Localizer.S("crashes.each_crash_brings_together_the_windows");
+            _btnCrashSubGuide.Content = Localizer.S("crashes.common_crashes");
+            _btnOpenDmpFile.Content = Localizer.S("crashes.open_a_dmp");
+            _btnAdminScanDumps.Content = Localizer.S("crashes.read_c_windows_minidump");
+            _btnAdminScanDumps.ToolTip = Localizer.S("crashes.blue_screen_dumps_are_protected_administ");
             UpdateCrashListTabLabel();
         }
 
         private void UpdateCrashListTabLabel()
         {
             int n = FilteredCrashes().Count();
-            string baseLabel = Localizer.L("Historique", "History", "Historial", "Verlauf", "Cronologia", "Histórico");
+            string baseLabel = Localizer.S("crashes.history");
             _btnCrashSubList.Content = n > 0 ? baseLabel + " (" + n + ")" : baseLabel;
         }
 
@@ -209,14 +197,8 @@ namespace WinCrashDoctor
             if (list.Count == 0)
             {
                 _crashListPanel.Children.Add(MakeEmptyState(Glyph.Completed, "SuccessFg",
-                    Localizer.L("Aucun crash sur cette période", "No crash in this period", "Ningún fallo en este período", "Kein Absturz in diesem Zeitraum", "Nessun crash in questo periodo", "Nenhuma falha neste período"),
-                    Localizer.L(
-                        "Élargissez la période ou la catégorie ci-dessus. Si un écran bleu vous a échappé, lisez le dossier C:\\Windows\\Minidump ou ouvrez un fichier .dmp à la main.",
-                        "Widen the period or category above. If a blue screen slipped through, read C:\\Windows\\Minidump or open a .dmp file by hand.",
-                        "Amplíe el período o la categoría. Si se le escapó una pantalla azul, lea C:\\Windows\\Minidump o abra un .dmp.",
-                        "Zeitraum oder Kategorie erweitern. Für verpasste Bluescreens C:\\Windows\\Minidump lesen oder eine .dmp öffnen.",
-                        "Allarga il periodo o la categoria. Per una schermata blu sfuggita, leggi C:\\Windows\\Minidump o apri un .dmp.",
-                        "Amplie o período ou a categoria. Se uma tela azul escapou, leia C:\\Windows\\Minidump ou abra um .dmp.")));
+                    Localizer.S("crashes.no_crash_in_this_period"),
+                    Localizer.S("crashes.widen_the_period_or_category_above")));
                 CloseCrashDrawer();
                 return;
             }
@@ -248,7 +230,7 @@ namespace WinCrashDoctor
             line1.Children.Add(ResFg(new TextBlock { Text = Localizer.CategoryName(c.Category), FontSize = 11, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center }, fg));
             if (_newCrashKeys.Contains(c.Key))
             {
-                Border nw = MakePill(Localizer.L("Nouveau", "New", "Nuevo", "Neu", "Nuovo", "Novo"), "DangerSoftBg", "DangerFg");
+                Border nw = MakePill(Localizer.S("crashes.new"), "DangerSoftBg", "DangerFg");
                 nw.Padding = new Thickness(6, 0, 6, 1);
                 nw.Margin = new Thickness(0, 0, 6, 0);
                 line1.Children.Add(nw);
@@ -342,6 +324,9 @@ namespace WinCrashDoctor
 
         private void ShowCrashDrawer(CrashEntry c)
         {
+            // Another crash: stop its AI stream so the new "Ask the AI" button starts instead of cancelling.
+            bool keepAiStream = PrepareDrawerAiFor(c.Key);
+            TextBox previousAiOutput = _drawerAiOutput;
             _crashDrawerColumn.Width = new GridLength(400);
             _crashDrawer.Visibility = Visibility.Visible;
 
@@ -365,14 +350,14 @@ namespace WinCrashDoctor
             catPill.Margin = new Thickness(0, 0, 6, 0);
             pills.Children.Add(catPill);
             if (c.Dump != null)
-                pills.Children.Add(MakePill(Localizer.L("Dump analysé", "Dump decoded", "Volcado analizado", "Dump analysiert", "Dump analizzato", "Dump analisado"), "BgSubtle", "TextSecondary"));
+                pills.Children.Add(MakePill(Localizer.S("crashes.dump_decoded"), "BgSubtle", "TextSecondary"));
             top.Children.Add(pills);
             Button close = CreateNavButton(ResFg(Ds.Icon(Glyph.Cancel, 11), "TextMuted"));
             close.Width = 28;
             close.Height = 28;
             close.Padding = new Thickness(0);
             close.Margin = new Thickness(0);
-            close.ToolTip = Localizer.L("Fermer le panneau", "Close panel", "Cerrar panel", "Bereich schließen", "Chiudi pannello", "Fechar painel");
+            close.ToolTip = Localizer.S("crashes.close_panel");
             close.Click += (s, e) => CloseCrashDrawer();
             Grid.SetColumn(close, 1);
             top.Children.Add(close);
@@ -393,7 +378,7 @@ namespace WinCrashDoctor
                     Margin = new Thickness(0, 16, 0, 0)
                 }, "BgSubtle"), "BorderCard");
                 TextBlock tb = ResFg(new TextBlock { FontSize = 13, TextWrapping = TextWrapping.Wrap, LineHeight = 19 }, "TextSecondary");
-                var lead = new System.Windows.Documents.Run(Localizer.L("En clair : ", "In plain words: ", "En pocas palabras: ", "Kurz gesagt: ", "In breve: ", "Em resumo: ")) { FontWeight = FontWeights.SemiBold };
+                var lead = new System.Windows.Documents.Run(Localizer.S("crashes.in_plain_words")) { FontWeight = FontWeights.SemiBold };
                 lead.SetResourceReference(System.Windows.Documents.TextElement.ForegroundProperty, "TextPrimary");
                 tb.Inlines.Add(lead);
                 tb.Inlines.Add(new System.Windows.Documents.Run(plain));
@@ -404,32 +389,26 @@ namespace WinCrashDoctor
             // Dump analysis
             if (c.Dump != null)
             {
-                p.Children.Add(DrawerLabel(Localizer.L("Analyse du dump", "Dump analysis", "Análisis del volcado", "Dump-Analyse", "Analisi del dump", "Análise do dump")));
+                p.Children.Add(DrawerLabel(Localizer.S("crashes.dump_analysis")));
                 Grid kv = new Grid();
                 kv.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
                 kv.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                AddKv(kv, Localizer.L("Module fautif", "Faulting module", "Módulo culpable", "Fehlerhaftes Modul", "Modulo colpevole", "Módulo culpado"), c.Dump.PrimaryCulpritModule, "DangerFg");
-                AddKv(kv, Localizer.L("Code", "Code", "Código", "Code", "Codice", "Código"), c.Dump.BugCheckOrException, null);
+                AddKv(kv, Localizer.S("crashes.faulting_module"), c.Dump.PrimaryCulpritModule, "DangerFg");
+                AddKv(kv, Localizer.S("crashes.code"), c.Dump.BugCheckOrException, null);
                 if (!string.Equals(c.Dump.ProcessName, "System", StringComparison.OrdinalIgnoreCase))
-                    AddKv(kv, Localizer.L("Processus", "Process", "Proceso", "Prozess", "Processo", "Processo"), c.Dump.ProcessName, null);
+                    AddKv(kv, Localizer.S("crashes.process"), c.Dump.ProcessName, null);
                 if (c.Dump.StackModules != null && c.Dump.StackModules.Count > 0)
-                    AddKv(kv, Localizer.L("Pilotes sur la pile", "Drivers on the stack", "Drivers en la pila", "Treiber im Stack", "Driver nello stack", "Drivers na pilha"), string.Join(" → ", c.Dump.StackModules), null);
+                    AddKv(kv, Localizer.S("crashes.drivers_on_the_stack"), string.Join(" → ", c.Dump.StackModules), null);
                 if (c.Dump.BugCheckParameters != null && c.Dump.BugCheckParameters.Count == 4)
-                    AddKv(kv, Localizer.L("Paramètres", "Parameters", "Parámetros", "Parameter", "Parametri", "Parâmetros"), string.Join("\n", c.Dump.BugCheckParameters), null);
+                    AddKv(kv, Localizer.S("crashes.parameters"), string.Join("\n", c.Dump.BugCheckParameters), null);
                 if (c.Dump.OsBuild > 0)
-                    AddKv(kv, Localizer.L("Build Windows", "Windows build", "Build de Windows", "Windows-Build", "Build di Windows", "Build do Windows"), c.Dump.OsBuild.ToString(), null);
-                AddKv(kv, Localizer.L("Fichier", "File", "Archivo", "Datei", "File", "Arquivo"), c.Dump.FileName + "  (" + CrashCatalog.FormatSize(c.Dump.FileSizeBytes) + ")", null);
+                    AddKv(kv, Localizer.S("crashes.windows_build"), c.Dump.OsBuild.ToString(), null);
+                AddKv(kv, Localizer.S("crashes.file"), c.Dump.FileName + "  (" + CrashCatalog.FormatSize(c.Dump.FileSizeBytes) + ")", null);
                 p.Children.Add(kv);
 
                 string evidence = c.Dump.StructuredParse
                     ? Localizer.T(c.Dump.CulpritEvidenceFr, c.Dump.CulpritEvidenceEn)
-                    : Localizer.L(
-                        "Dump non structuré : le module indiqué est déduit des noms de pilotes présents dans le fichier, sans certitude.",
-                        "Unstructured dump: the module shown is inferred from driver names found in the file, without certainty.",
-                        "Volcado no estructurado: el módulo se deduce de los nombres encontrados, sin certeza.",
-                        "Unstrukturierter Dump: Das Modul wird aus gefundenen Treibernamen abgeleitet, ohne Gewissheit.",
-                        "Dump non strutturato: il modulo è dedotto dai nomi trovati, senza certezza.",
-                        "Dump não estruturado: o módulo é deduzido dos nomes encontrados, sem certeza.");
+                    : Localizer.S("crashes.unstructured_dump_the_module_shown_is");
                 if (!string.IsNullOrEmpty(evidence))
                 {
                     StackPanel ev = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
@@ -444,17 +423,17 @@ namespace WinCrashDoctor
                 DriverInfo drv = _lastResult != null ? DriverInventory.FindByImage(_lastResult.Drivers, c.Dump.PrimaryCulpritModule) : null;
                 if (drv != null)
                 {
-                    p.Children.Add(DrawerLabel(Localizer.L("Pilote installé", "Installed driver", "Controlador instalado", "Installierter Treiber", "Driver installato", "Driver instalado")));
+                    p.Children.Add(DrawerLabel(Localizer.S("crashes.installed_driver")));
                     Border db = ResBorder(new Border { CornerRadius = new CornerRadius(10), BorderThickness = new Thickness(1), Padding = new Thickness(12, 9, 10, 9) }, "BorderCard");
                     Grid dg = new Grid();
                     dg.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                     dg.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
                     StackPanel dt = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) };
                     dt.Children.Add(ResFg(new TextBlock { Text = drv.DeviceName, FontSize = 12, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap }, "TextPrimary"));
-                    string ver = drv.Provider + " " + drv.Version + (drv.Date.HasValue ? " · " + drv.Date.Value.ToString("d MMM yyyy", System.Globalization.CultureInfo.CurrentUICulture) : "");
+                    string ver = drv.Provider + " " + drv.Version + (drv.Date.HasValue ? " · " + Localizer.DayMonthYear(drv.Date.Value) : "");
                     dt.Children.Add(ResFg(new TextBlock { Text = ver, FontSize = 11, FontFamily = Ds.MonoFont, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) }, drv.IsOld ? "WarnFg" : "TextMuted"));
                     dg.Children.Add(dt);
-                    Button upd = CreateFlatButton(Localizer.L("🔍 Mise à jour", "🔍 Update", "🔍 Actualizar", "🔍 Update", "🔍 Aggiorna", "🔍 Atualizar"), "BgCard", "AccentText", "BorderCard", new Thickness(10, 4, 10, 4), 12);
+                    Button upd = CreateFlatButton(Localizer.S("crashes.update"), "BgCard", "AccentText", "BorderCard", new Thickness(10, 4, 10, 4), 12);
                     upd.VerticalAlignment = VerticalAlignment.Center;
                     string q = drv.Provider + " " + drv.DeviceName + " driver download";
                     upd.Click += (s, e) => ExecuteQuickAction(null, q);
@@ -468,14 +447,14 @@ namespace WinCrashDoctor
             }
             else if (c.Event != null && (c.Category == CrashCategory.BSOD) && _lastResult != null && _lastResult.MinidumpFolderNeedsAdmin)
             {
-                p.Children.Add(DrawerLabel(Localizer.L("Analyse du dump", "Dump analysis", "Análisis del volcado", "Dump-Analyse", "Analisi del dump", "Análise do dump")));
-                Button unlock = CreateFlatButton(_btnAdminScanDumps.Content as string ?? Localizer.L("🛡 Lire C:\\Windows\\Minidump", "🛡 Read C:\\Windows\\Minidump", "🛡 Leer Minidump", "🛡 Minidump lesen", "🛡 Leggi Minidump", "🛡 Ler Minidump"),
+                p.Children.Add(DrawerLabel(Localizer.S("crashes.dump_analysis")));
+                Button unlock = CreateFlatButton(_btnAdminScanDumps.Content as string ?? Localizer.S("crashes.read_c_windows_minidump_2"),
                     "AccentSoftBg", "AccentText", "AccentSoftBg", new Thickness(12, 6, 12, 6), 12);
                 unlock.HorizontalAlignment = HorizontalAlignment.Left;
                 unlock.Click += OnRunAdminDeepScanClick;
                 p.Children.Add(ResFg(new TextBlock
                 {
-                    Text = Localizer.L("Le fichier .dmp de cet écran bleu est protégé par Windows.", "This blue screen's .dmp file is protected by Windows.", "El .dmp de esta pantalla azul está protegido.", "Die .dmp-Datei dieses Bluescreens ist geschützt.", "Il .dmp di questa schermata blu è protetto.", "O .dmp desta tela azul está protegido."),
+                    Text = Localizer.S("crashes.this_blue_screen_s_dmp_file"),
                     FontSize = 12,
                     TextWrapping = TextWrapping.Wrap,
                     Margin = new Thickness(0, 0, 0, 8)
@@ -490,7 +469,7 @@ namespace WinCrashDoctor
                 if (!string.IsNullOrWhiteSpace(raw) && raw.Trim() != plain)
                 {
                     Expander ex = new Expander { Margin = new Thickness(0, 14, 0, 0) };
-                    ex.Header = ResFg(new TextBlock { Text = Localizer.L("Message Windows complet", "Full Windows message", "Mensaje completo de Windows", "Vollständige Windows-Meldung", "Messaggio Windows completo", "Mensagem completa do Windows"), FontSize = 12, FontWeight = FontWeights.SemiBold }, "TextSecondary");
+                    ex.Header = ResFg(new TextBlock { Text = Localizer.S("crashes.full_windows_message"), FontSize = 12, FontWeight = FontWeights.SemiBold }, "TextSecondary");
                     ex.SetResourceReference(Control.ForegroundProperty, "TextSecondary");
                     TextBox rawBox = ResFg(new TextBox
                     {
@@ -517,13 +496,13 @@ namespace WinCrashDoctor
                 : new List<RegistryFixItem>();
             if (related.Count > 0)
             {
-                p.Children.Add(DrawerLabel(Localizer.L("Correctifs liés", "Related fixes", "Correcciones relacionadas", "Passende Korrekturen", "Correzioni collegate", "Correções relacionadas")));
+                p.Children.Add(DrawerLabel(Localizer.S("crashes.related_fixes")));
                 foreach (var f in related)
                     p.Children.Add(BuildDrawerFixRow(f));
             }
 
             // AI answer area
-            p.Children.Add(DrawerLabel(Localizer.L("Avis de l'IA", "AI opinion", "Opinión de la IA", "KI-Einschätzung", "Parere dell'IA", "Opinião da IA")));
+            p.Children.Add(DrawerLabel(Localizer.S("crashes.ai_opinion")));
             _drawerAiOutput = ResFg(new TextBox
             {
                 IsReadOnly = true,
@@ -541,24 +520,26 @@ namespace WinCrashDoctor
             fg2.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             fg2.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(8) });
             fg2.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            _btnDrawerAi = CreatePrimaryButton(Localizer.L("🧠 Demander à l'IA", "🧠 Ask the AI", "🧠 Preguntar a la IA", "🧠 KI fragen", "🧠 Chiedi all'IA", "🧠 Perguntar à IA"), "Accent", "OnAccent", new Thickness(12, 7, 12, 7), 13);
+            _btnDrawerAi = CreatePrimaryButton(Localizer.S("crashes.ask_the_ai"), "Accent", "OnAccent", new Thickness(12, 7, 12, 7), 13);
             _btnDrawerAi.HorizontalAlignment = HorizontalAlignment.Stretch;
             CrashEntry captured = c;
-            _btnDrawerAi.Click += (s, e) => RunDrawerAi(AiAssistant.BuildStructuredPrompt(_lastResult, CrashCatalog.AiFocusQuestion(captured)));
+            string capturedKey = c.Key;
+            _btnDrawerAi.Click += (s, e) => RunDrawerAi(AiAssistant.BuildStructuredPrompt(_lastResult, CrashCatalog.AiFocusQuestion(captured)), capturedKey);
             fg2.Children.Add(_btnDrawerAi);
-            Button forum = CreateFlatButton(Localizer.L("📋 Copier pour forum", "📋 Copy for forum", "📋 Copiar para foro", "📋 Für Forum kopieren", "📋 Copia per forum", "📋 Copiar para fórum"), "BgCard", "TextPrimary", "BorderStrong", new Thickness(12, 7, 12, 7), 13);
+            if (keepAiStream) ReattachDrawerAi(previousAiOutput);
+            Button forum = CreateFlatButton(Localizer.S("crashes.copy_for_forum"), "BgCard", "TextPrimary", "BorderStrong", new Thickness(12, 7, 12, 7), 13);
             forum.HorizontalAlignment = HorizontalAlignment.Stretch;
             forum.Click += (s, e) =>
             {
                 try
                 {
                     Clipboard.SetText(CrashCatalog.ForumMarkdown(captured, _lastResult));
-                    SetToast(Localizer.L("Résumé copié, prêt à coller sur un forum.", "Summary copied, ready to paste on a forum.", "Resumen copiado.", "Zusammenfassung kopiert.", "Riepilogo copiato.", "Resumo copiado."), "SuccessFg");
+                    SetToast(Localizer.S("crashes.summary_copied_ready_to_paste_on"), "SuccessFg");
                 }
                 catch (Exception ex)
                 {
                     Log.Warn(ex, "Clipboard");
-                    SetToast(Localizer.L("Le presse-papiers est occupé, réessayez.", "Clipboard busy, try again.", "Portapapeles ocupado.", "Zwischenablage belegt.", "Appunti occupati.", "Área de transferência ocupada."), "WarnFg");
+                    SetToast(Localizer.S("ai.clipboard_busy_try_again"), "WarnFg");
                 }
             };
             Grid.SetColumn(forum, 2);
@@ -591,7 +572,7 @@ namespace WinCrashDoctor
         private UIElement BuildDeepAnalysisSection(CrashEntry c)
         {
             StackPanel host = new StackPanel();
-            host.Children.Add(DrawerLabel(Localizer.L("Analyse WinDbg", "WinDbg analysis", "Análisis WinDbg", "WinDbg-Analyse", "Analisi WinDbg", "Análise WinDbg")));
+            host.Children.Add(DrawerLabel(Localizer.S("crashes.windbg_analysis")));
             string path = ReadableDumpPath(c.Dump);
             DeepAnalysisResult cached = path != null ? DeepAnalyzer.TryLoadCached(path) : null;
 
@@ -601,13 +582,13 @@ namespace WinCrashDoctor
                 kv.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
                 kv.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 AddKv(kv, "Bucket", cached.BucketId, "DangerFg");
-                AddKv(kv, Localizer.L("Image", "Image", "Imagen", "Image", "Immagine", "Imagem"), cached.ImageName + (string.IsNullOrEmpty(cached.ImageVersion) ? "" : "  (" + cached.ImageVersion + ")"), null);
-                AddKv(kv, Localizer.L("Symbole", "Symbol", "Símbolo", "Symbol", "Simbolo", "Símbolo"), cached.SymbolName, null);
+                AddKv(kv, Localizer.S("crashes.image"), cached.ImageName + (string.IsNullOrEmpty(cached.ImageVersion) ? "" : "  (" + cached.ImageVersion + ")"), null);
+                AddKv(kv, Localizer.S("crashes.symbol"), cached.SymbolName, null);
                 host.Children.Add(kv);
                 if (cached.StackFrames != null && cached.StackFrames.Count > 0)
                 {
                     Expander ex = new Expander { Margin = new Thickness(0, 4, 0, 0) };
-                    ex.Header = ResFg(new TextBlock { Text = Localizer.L("Pile d'appels symbolisée", "Symbolized call stack", "Pila simbolizada", "Symbolisierter Aufrufstapel", "Stack simbolizzato", "Pilha simbolizada"), FontSize = 12, FontWeight = FontWeights.SemiBold }, "TextSecondary");
+                    ex.Header = ResFg(new TextBlock { Text = Localizer.S("crashes.symbolized_call_stack"), FontSize = 12, FontWeight = FontWeights.SemiBold }, "TextSecondary");
                     ex.SetResourceReference(Control.ForegroundProperty, "TextSecondary");
                     ex.Content = ResFg(new TextBox
                     {
@@ -631,25 +612,19 @@ namespace WinCrashDoctor
 
             if (path == null)
             {
-                status.Text = Localizer.L("Le fichier .dmp est protégé : lisez d'abord C:\\Windows\\Minidump.", "The .dmp file is protected: read C:\\Windows\\Minidump first.", "El .dmp está protegido: lea primero C:\\Windows\\Minidump.", "Die .dmp-Datei ist geschützt: zuerst C:\\Windows\\Minidump lesen.", "Il .dmp è protetto: leggi prima C:\\Windows\\Minidump.", "O .dmp está protegido: leia primeiro C:\\Windows\\Minidump.");
+                status.Text = Localizer.S("crashes.the_dmp_file_is_protected_read");
                 return host;
             }
 
             if (!DeepAnalyzer.IsAvailable)
             {
-                status.Text = Localizer.L(
-                    "Le débogueur de Microsoft (WinDbg) donne le diagnostic de référence : pile symbolisée et « bucket » d'erreur. Gratuit, environ 100 Mo.",
-                    "Microsoft's debugger (WinDbg) gives the reference diagnosis: symbolized stack and failure bucket. Free, about 100 MB.",
-                    "El depurador de Microsoft (WinDbg) da el diagnóstico de referencia. Gratuito, ~100 MB.",
-                    "Der Microsoft-Debugger (WinDbg) liefert die Referenzdiagnose. Kostenlos, ca. 100 MB.",
-                    "Il debugger Microsoft (WinDbg) fornisce la diagnosi di riferimento. Gratuito, ~100 MB.",
-                    "O depurador da Microsoft (WinDbg) fornece o diagnóstico de referência. Grátis, ~100 MB.");
-                Button install = CreateFlatButton(Localizer.L("📄 Installer WinDbg", "📄 Install WinDbg", "📄 Instalar WinDbg", "📄 WinDbg installieren", "📄 Installa WinDbg", "📄 Instalar WinDbg"), "BgCard", "AccentText", "BorderCard", new Thickness(12, 6, 12, 6), 12);
+                status.Text = Localizer.S("crashes.microsoft_s_debugger_windbg_gives_the");
+                Button install = CreateFlatButton(Localizer.S("crashes.install_windbg"), "BgCard", "AccentText", "BorderCard", new Thickness(12, 6, 12, 6), 12);
                 install.HorizontalAlignment = HorizontalAlignment.Left;
                 install.Click += (s, e) =>
                 {
                     if (DeepAnalyzer.LaunchInstaller())
-                        SetToast(Localizer.L("Installation de WinDbg lancée. Revenez sur ce crash une fois terminée.", "WinDbg install started. Come back to this crash once it is done.", "Instalación de WinDbg iniciada.", "WinDbg-Installation gestartet.", "Installazione di WinDbg avviata.", "Instalação do WinDbg iniciada."), "AccentText");
+                        SetToast(Localizer.S("crashes.windbg_install_started_come_back_to"), "AccentText");
                 };
                 host.Children.Add(install);
                 return host;
@@ -657,11 +632,11 @@ namespace WinCrashDoctor
 
             bool running = _deepRunning.Contains(path);
             status.Text = running
-                ? Localizer.L("Analyse en cours… (≈ 20 s, plus long la première fois : téléchargement des symboles Microsoft)", "Analyzing… (≈ 20 s, longer the first time: Microsoft symbols download)", "Analizando… (≈ 20 s)", "Analysiere… (≈ 20 s)", "Analisi in corso… (≈ 20 s)", "Analisando… (≈ 20 s)")
+                ? Localizer.S("crashes.analyzing_20_s_longer_the_first")
                 : (cached != null && !cached.Ok
-                    ? Localizer.L("La dernière analyse a échoué : ", "The last analysis failed: ", "El último análisis falló: ", "Die letzte Analyse schlug fehl: ", "L'ultima analisi è fallita: ", "A última análise falhou: ") + cached.Error
-                    : Localizer.L("WinDbg est installé : lancez « !analyze -v » sur ce dump pour obtenir la pile symbolisée.", "WinDbg is installed: run \"!analyze -v\" on this dump to get the symbolized stack.", "WinDbg está instalado: ejecute «!analyze -v».", "WinDbg ist installiert: „!analyze -v“ ausführen.", "WinDbg è installato: esegui «!analyze -v».", "WinDbg está instalado: execute «!analyze -v»."));
-            Button run = CreateFlatButton(Localizer.L("🔍 Lancer l'analyse WinDbg", "🔍 Run WinDbg analysis", "🔍 Ejecutar WinDbg", "🔍 WinDbg-Analyse starten", "🔍 Avvia analisi WinDbg", "🔍 Executar WinDbg"), "AccentSoftBg", "AccentText", "AccentSoftBg", new Thickness(12, 6, 12, 6), 12);
+                    ? Localizer.S("crashes.the_last_analysis_failed") + cached.Error
+                    : Localizer.S("crashes.windbg_is_installed_run_analyze_v"));
+            Button run = CreateFlatButton(Localizer.S("crashes.run_windbg_analysis"), "AccentSoftBg", "AccentText", "AccentSoftBg", new Thickness(12, 6, 12, 6), 12);
             run.HorizontalAlignment = HorizontalAlignment.Left;
             run.IsEnabled = !running;
             string key = c.Key;
@@ -679,8 +654,8 @@ namespace WinCrashDoctor
                     _deepRunning.Remove(path);
                 }
                 SetToast(r.Ok
-                        ? Localizer.L("Analyse WinDbg terminée : ", "WinDbg analysis done: ", "Análisis WinDbg terminado: ", "WinDbg-Analyse fertig: ", "Analisi WinDbg completata: ", "Análise WinDbg concluída: ") + r.BucketId
-                        : Localizer.L("Échec de l'analyse WinDbg : ", "WinDbg analysis failed: ", "Fallo de WinDbg: ", "WinDbg-Analyse fehlgeschlagen: ", "Analisi WinDbg fallita: ", "Falha do WinDbg: ") + r.Error,
+                        ? Localizer.S("crashes.windbg_analysis_done") + r.BucketId
+                        : Localizer.S("crashes.windbg_analysis_failed") + r.Error,
                     r.Ok ? "SuccessFg" : "WarnFg");
                 if (_selectedCrashKey == key) RenderCrashList();
             };
@@ -733,18 +708,18 @@ namespace WinCrashDoctor
             UIElement right;
             if (f.Status == FixStatus.Applied)
             {
-                right = MakePill(Localizer.L("✓ Actif", "✓ Active", "✓ Activo", "✓ Aktiv", "✓ Attivo", "✓ Ativo"), "SuccessSoftBg", "SuccessFg");
+                right = MakePill(Localizer.S("crashes.active"), "SuccessSoftBg", "SuccessFg");
             }
             else
             {
                 string id = f.Id;
-                Button apply = CreateFlatButton(Localizer.L("Appliquer", "Apply", "Aplicar", "Anwenden", "Applica", "Aplicar"),
+                Button apply = CreateFlatButton(Localizer.S("opt_tweaks.apply"),
                     f.Status == FixStatus.Recommended ? "Accent" : "BgCard",
                     f.Status == FixStatus.Recommended ? "OnAccent" : "AccentText",
                     f.Status == FixStatus.Recommended ? "Accent" : "BorderCard",
                     new Thickness(11, 4, 11, 4), 12);
                 apply.VerticalAlignment = VerticalAlignment.Center;
-                apply.Click += (s, e) => ExecuteSingleFix(id + "_apply", id);
+                apply.Click += (s, e) => ExecuteSingleFix(id + "_apply", id, s);
                 right = apply;
             }
             Grid.SetColumn(right, 1);
@@ -758,23 +733,53 @@ namespace WinCrashDoctor
             var prov = Localizer.CachedSettings != null ? (AiProviderType)Localizer.CachedSettings.AiProvider : AiProviderType.Gemini;
             bool ready = prov == AiProviderType.OllamaLocal || (Localizer.CachedSettings != null && !string.IsNullOrEmpty(Localizer.CachedSettings.AiApiKey));
             return ready
-                ? Localizer.L("« Demander à l'IA » envoie ce crash et le profil de votre PC à l'assistant configuré dans Paramètres.",
-                              "\"Ask the AI\" sends this crash and your PC profile to the assistant set up in Settings.",
-                              "«Preguntar a la IA» envía este fallo y el perfil de su PC al asistente configurado en Ajustes.",
-                              "„KI fragen“ sendet diesen Absturz und Ihr PC-Profil an den in den Einstellungen gewählten Assistenten.",
-                              "«Chiedi all'IA» invia questo crash e il profilo del PC all'assistente configurato nelle Impostazioni.",
-                              "«Perguntar à IA» envia esta falha e o perfil do PC ao assistente configurado em Configurações.")
-                : Localizer.L("Aucun assistant IA configuré. Ajoutez une clé dans Paramètres › Assistant IA, ou utilisez « Copier pour forum ».",
-                              "No AI assistant set up yet. Add a key in Settings › AI assistant, or use \"Copy for forum\".",
-                              "Ningún asistente IA configurado. Añada una clave en Ajustes › Asistente IA.",
-                              "Kein KI-Assistent eingerichtet. Schlüssel unter Einstellungen › KI-Assistent hinzufügen.",
-                              "Nessun assistente IA configurato. Aggiungi una chiave in Impostazioni › Assistente IA.",
-                              "Nenhum assistente IA configurado. Adicione uma chave em Configurações › Assistente IA.");
+                ? Localizer.S("crashes.ask_the_ai_sends_this_crash")
+                : Localizer.S("crashes.no_ai_assistant_set_up_yet");
         }
 
         private System.Threading.CancellationTokenSource _aiCts;
+        /// <summary>Crash key (or <see cref="SystemReviewAiKey"/>) the running AI stream belongs to.</summary>
+        private string _drawerAiKey;
+        private const string SystemReviewAiKey = "\u0001system-review";
 
-        private async void RunDrawerAi(string prompt)
+        /// <summary>Stops the running drawer AI stream (if any) and frees the panel for a new request.</summary>
+        private void CancelDrawerAi()
+        {
+            var cts = _aiCts;
+            _aiCts = null;          // the old run sees it is no longer current and leaves the UI alone
+            _drawerAiBusy = false;
+            _drawerAiKey = null;
+            if (cts != null)
+            {
+                try { cts.Cancel(); }
+                catch (ObjectDisposedException) { }
+            }
+        }
+
+        /// <summary>
+        /// Called before the drawer is rebuilt for <paramref name="key"/>: a stream for another crash is
+        /// cancelled; a stream for the same crash keeps running and is re-attached to the new controls.
+        /// </summary>
+        private bool PrepareDrawerAiFor(string key)
+        {
+            if (!_drawerAiBusy) return false;
+            if (_drawerAiKey == key) return true;
+            CancelDrawerAi();
+            return false;
+        }
+
+        /// <summary>Re-attaches a still-running stream to a rebuilt drawer (same crash).</summary>
+        private void ReattachDrawerAi(TextBox previousOutput)
+        {
+            if (_btnDrawerAi != null) _btnDrawerAi.Content = Localizer.S("crashes.stop");
+            if (_drawerAiOutput != null && previousOutput != null && !ReferenceEquals(previousOutput, _drawerAiOutput))
+            {
+                _drawerAiOutput.Text = previousOutput.Text;
+                _drawerAiOutput.SetResourceReference(Control.ForegroundProperty, "TextPrimary");
+            }
+        }
+
+        private async void RunDrawerAi(string prompt, string aiKey)
         {
             if (_drawerAiOutput == null) return;
             if (_drawerAiBusy)
@@ -791,67 +796,85 @@ namespace WinCrashDoctor
                          : null;
             if (provider != AiProviderType.OllamaLocal && string.IsNullOrEmpty(key))
             {
-                SetToast(Localizer.L("Configurez d'abord un assistant IA dans Paramètres.", "Set up an AI assistant in Settings first.", "Configure primero un asistente IA en Ajustes.", "Richten Sie zuerst einen KI-Assistenten ein.", "Configura prima un assistente IA.", "Configure primeiro um assistente IA."), "WarnFg");
+                SetToast(Localizer.S("crashes.set_up_an_ai_assistant_in"), "WarnFg");
                 SwitchTab(TabSettings);
                 return;
             }
 
             _drawerAiBusy = true;
-            _aiCts = new System.Threading.CancellationTokenSource();
-            TextBox target = _drawerAiOutput;
-            Button btn = _btnDrawerAi;
-            object btnContent = btn != null ? btn.Content : null;
-            if (btn != null) btn.Content = Localizer.L("■ Arrêter", "■ Stop", "■ Detener", "■ Stoppen", "■ Ferma", "■ Parar");
-            target.Text = Localizer.L("Analyse en cours…", "Thinking…", "Analizando…", "Analysiere…", "Analisi in corso…", "Analisando…");
-            target.SetResourceReference(Control.ForegroundProperty, "TextMuted");
+            _drawerAiKey = aiKey;
+            var cts = new System.Threading.CancellationTokenSource();
+            _aiCts = cts;
+            // The drawer can be rebuilt for the same crash while streaming: always write to the
+            // current controls, and only while this run is still the current one.
+            Func<bool> isCurrent = () => ReferenceEquals(_aiCts, cts);
+            object btnContent = _btnDrawerAi != null ? _btnDrawerAi.Content : null;
+            if (_btnDrawerAi != null) _btnDrawerAi.Content = Localizer.S("crashes.stop");
+            _drawerAiOutput.Text = Localizer.S("crashes.thinking");
+            _drawerAiOutput.SetResourceReference(Control.ForegroundProperty, "TextMuted");
 
             bool first = true;
             Action<string> onDelta = chunk => Dispatcher.BeginInvoke(new Action(() =>
             {
+                TextBox target = _drawerAiOutput;
+                if (!isCurrent() || target == null) return;
                 if (first) { target.Text = ""; target.SetResourceReference(Control.ForegroundProperty, "TextPrimary"); first = false; }
                 target.AppendText(chunk);
             }));
 
             try
             {
-                AiReply reply = await AiAssistant.StreamAsync(provider, key, model, prompt, onDelta, _aiCts.Token);
+                AiReply reply = await AiAssistant.StreamAsync(provider, key, model, prompt, onDelta, cts.Token);
                 // Let queued chunks land, then show the authoritative final text.
                 await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background);
-                target.Text = reply.Text;
-                target.SetResourceReference(Control.ForegroundProperty, reply.Ok ? "TextPrimary" : "WarnFg");
+                if (isCurrent() && _drawerAiOutput != null)
+                {
+                    _drawerAiOutput.Text = reply.Text;
+                    _drawerAiOutput.SetResourceReference(Control.ForegroundProperty, reply.Ok ? "TextPrimary" : "WarnFg");
+                }
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "AI query");
-                target.Text = ex.Message;
-                target.SetResourceReference(Control.ForegroundProperty, "DangerFg");
+                if (isCurrent() && _drawerAiOutput != null)
+                {
+                    _drawerAiOutput.Text = ex.Message;
+                    _drawerAiOutput.SetResourceReference(Control.ForegroundProperty, "DangerFg");
+                }
             }
             finally
             {
-                _drawerAiBusy = false;
-                if (btn != null) btn.Content = btnContent;
-                _aiCts.Dispose();
-                _aiCts = null;
+                if (isCurrent())
+                {
+                    _drawerAiBusy = false;
+                    _drawerAiKey = null;
+                    _aiCts = null;
+                    if (_btnDrawerAi != null) _btnDrawerAi.Content = btnContent;
+                }
+                cts.Dispose();
             }
         }
         /// <summary>Whole-system AI review from the home page when there is no crash to focus on.</summary>
         private void OpenSystemAiReview()
         {
             SwitchTab(TabCrashes);
+            bool keepAiStream = PrepareDrawerAiFor(SystemReviewAiKey);
+            TextBox previousAiOutput = _drawerAiOutput;
             if (_crashGuideActive) SwitchCrashSubTab(false);
             _crashDrawerColumn.Width = new GridLength(400);
             _crashDrawer.Visibility = Visibility.Visible;
 
             StackPanel p = new StackPanel { Margin = new Thickness(20, 18, 20, 16) };
-            p.Children.Add(MakePill(Localizer.L("Bilan complet", "Full check-up", "Análisis completo", "Gesamtcheck", "Analisi completa", "Análise completa"), "AccentSoftBg", "AccentText"));
-            p.Children.Add(ResFg(new TextBlock { Text = Localizer.L("Bilan IA du système", "AI system check-up", "Análisis IA del sistema", "KI-Systemcheck", "Analisi IA del sistema", "Análise IA do sistema"), FontSize = 18, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 12, 0, 12) }, "TextPrimary"));
+            p.Children.Add(MakePill(Localizer.S("crashes.full_check_up"), "AccentSoftBg", "AccentText"));
+            p.Children.Add(ResFg(new TextBlock { Text = Localizer.S("crashes.ai_system_check_up"), FontSize = 18, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 12, 0, 12) }, "TextPrimary"));
             _drawerAiOutput = ResFg(new TextBox { IsReadOnly = true, TextWrapping = TextWrapping.Wrap, Background = Brushes.Transparent, BorderThickness = new Thickness(0), FontSize = 13, Text = AiHintText() }, "TextSecondary");
             p.Children.Add(_drawerAiOutput);
-            _btnDrawerAi = CreatePrimaryButton(Localizer.L("🧠 Lancer le bilan", "🧠 Run check-up", "🧠 Iniciar", "🧠 Starten", "🧠 Avvia", "🧠 Iniciar"), "Accent", "OnAccent", new Thickness(14, 7, 14, 7), 13);
+            _btnDrawerAi = CreatePrimaryButton(Localizer.S("crashes.run_check_up"), "Accent", "OnAccent", new Thickness(14, 7, 14, 7), 13);
             _btnDrawerAi.HorizontalAlignment = HorizontalAlignment.Left;
             _btnDrawerAi.Margin = new Thickness(0, 14, 0, 0);
-            _btnDrawerAi.Click += (s, e) => RunDrawerAi(AiAssistant.BuildStructuredPrompt(_lastResult, ""));
+            _btnDrawerAi.Click += (s, e) => RunDrawerAi(AiAssistant.BuildStructuredPrompt(_lastResult, ""), SystemReviewAiKey);
             p.Children.Add(_btnDrawerAi);
+            if (keepAiStream) ReattachDrawerAi(previousAiOutput);
             _crashDrawer.Child = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = p };
         }
 

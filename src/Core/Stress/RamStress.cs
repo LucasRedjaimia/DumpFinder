@@ -25,15 +25,14 @@ namespace WinCrashDoctor.Stress
             public string Pattern;
         }
 
-        private static string L(string fr, string en, string es, string de, string it, string pt) { return Localizer.L(fr, en, es, de, it, pt); }
 
         private static string PatternName(int k)
         {
             switch (k)
             {
-                case 0: return L("valeur liée à l'adresse", "address-derived value", "valor según la dirección", "adressabhängiger Wert", "valore legato all'indirizzo", "valor ligado ao endereço");
-                case 1: return L("inversions mobiles", "moving inversions", "inversiones móviles", "wandernde Inversion", "inversioni mobili", "inversões móveis");
-                default: return L("flux pseudo-aléatoire", "pseudo-random stream", "flujo pseudoaleatorio", "Pseudozufallsfolge", "flusso pseudocasuale", "fluxo pseudoaleatório");
+                case 0: return Localizer.S("ram_stress.address_derived_value");
+                case 1: return Localizer.S("ram_stress.moving_inversions");
+                default: return Localizer.S("ram_stress.pseudo_random_stream");
             }
         }
 
@@ -69,17 +68,12 @@ namespace WinCrashDoctor.Stress
                     if (tick.ElapsedMilliseconds >= 500)
                     {
                         tick.Restart();
-                        ctx.Publish(L("Réservation de la mémoire… ", "Reserving memory… ", "Reservando memoria… ", "Speicher wird belegt… ", "Riservando memoria… ", "Reservando memória… ") + StressText.Gb(chunks.Count * (double)ChunkBytes),
+                        ctx.Publish(Localizer.S("ram_stress.reserving_memory") + StressText.Gb(chunks.Count * (double)ChunkBytes),
                             Tiles(ctx, chunks.Count * ChunkBytes, total, 0, 0, 0), double.NaN, double.NaN);
                     }
                 }
                 if (chunks.Count == 0)
-                    return StressAdvice.Skipped(ctx, L("Pas assez de mémoire libre pour tester : ferme des applications puis relance.",
-                                                       "Not enough free memory to test: close some apps and try again.",
-                                                       "No hay suficiente memoria libre: cierra aplicaciones y vuelve a intentarlo.",
-                                                       "Nicht genug freier Speicher: Anwendungen schließen und erneut versuchen.",
-                                                       "Memoria libera insufficiente: chiudi delle app e riprova.",
-                                                       "Memória livre insuficiente: feche aplicativos e tente de novo."));
+                    return StressAdvice.Skipped(ctx, Localizer.S("ram_stress.not_enough_free_memory_to_test"));
 
                 long testedBytes = chunks.Count * ChunkBytes;
 
@@ -125,9 +119,9 @@ namespace WinCrashDoctor.Stress
                     passes = int.MaxValue;
                     foreach (int p in passByThread) passes = Math.Min(passes, p);
                     double coverage = vb * 100.0 / testedBytes;
-                    ctx.Publish(string.Format(L("Passe {0} · {1}", "Pass {0} · {1}", "Pasada {0} · {1}", "Durchlauf {0} · {1}", "Passaggio {0} · {1}", "Passagem {0} · {1}"), passes + 1, PatternName(curPattern)),
+                    ctx.Publish(string.Format(Localizer.S("ram_stress.pass"), passes + 1, PatternName(curPattern)),
                         Tiles(ctx, testedBytes, total, coverage, gbps, 0), gbps, double.NaN,
-                        L("Violet : débit de vérification (Go/s)", "Violet: verification throughput (GB/s)", "Violeta: velocidad de verificación (GB/s)", "Violett: Prüfdurchsatz (GB/s)", "Viola: velocità di verifica (GB/s)", "Violeta: taxa de verificação (GB/s)"));
+                        Localizer.S("ram_stress.violet_verification_throughput_gb_s"));
                 }
                 stop.Set();
                 foreach (var w in workers) w.Join(10000);
@@ -136,13 +130,7 @@ namespace WinCrashDoctor.Stress
                     return StressAdvice.RamFailed(ctx, fail.WordOffset * 8.0, Popcount(fail.Expected ^ fail.Actual), fail.Pattern);
 
                 double cov = Interlocked.Read(ref verifiedBytes) * 100.0 / testedBytes;
-                return StressAdvice.Passed(ctx, string.Format(L(
-                    "{0} testés sur {1} de RAM (couverture {2:N0} %), aucune erreur.",
-                    "{0} tested out of {1} of RAM ({2:N0} % coverage), no errors.",
-                    "{0} probados de {1} de RAM (cobertura {2:N0} %), sin errores.",
-                    "{0} von {1} RAM getestet ({2:N0} % Abdeckung), keine Fehler.",
-                    "{0} testati su {1} di RAM (copertura {2:N0} %), nessun errore.",
-                    "{0} testados de {1} de RAM (cobertura {2:N0} %), nenhum erro."),
+                return StressAdvice.Passed(ctx, string.Format(Localizer.S("ram_stress.tested_out_of_of_ram_2"),
                     StressText.Gb(testedBytes), StressText.Gb(total), cov));
             }
             finally
@@ -160,9 +148,9 @@ namespace WinCrashDoctor.Stress
         {
             return new[]
             {
-                StressTile.Make(StressText.Tested, StressText.Gb(tested), L("sur ", "of ", "de ", "von ", "su ", "de ") + StressText.Gb(total)),
-                StressTile.Make(StressText.Coverage, coverage > 0 ? coverage.ToString("N0") + " %" : "—", L("1 passe = 100 %", "1 pass = 100 %", "1 pasada = 100 %", "1 Durchlauf = 100 %", "1 passaggio = 100 %", "1 passagem = 100 %")),
-                StressTile.Make(StressText.Throughput, gbps > 0 ? gbps.ToString("N1") + " " + L("Go/s", "GB/s", "GB/s", "GB/s", "GB/s", "GB/s") : "—", L("écriture + vérification", "write + verify", "escritura + verificación", "Schreiben + Prüfen", "scrittura + verifica", "gravação + verificação")),
+                StressTile.Make(StressText.Tested, StressText.Gb(tested), Localizer.S("gpu_stress.of") + StressText.Gb(total)),
+                StressTile.Make(StressText.Coverage, coverage > 0 ? coverage.ToString("N0") + " %" : "—", Localizer.S("ram_stress.1_pass_100")),
+                StressTile.Make(StressText.Throughput, gbps > 0 ? gbps.ToString("N1") + " " + Localizer.S("gpu_stress.gb_s") : "—", Localizer.S("ram_stress.write_verify")),
                 ctx.ErrorTile(errors)
             };
         }

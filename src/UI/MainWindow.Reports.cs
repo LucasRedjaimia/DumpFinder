@@ -42,12 +42,12 @@ namespace WinCrashDoctor
         private void RefreshReportLabels()
         {
             if (_btnExportHtml == null) return;
-            _btnExportHtml.Content = Localizer.L("📄 Rapport HTML", "📄 HTML report", "📄 Informe HTML", "📄 HTML-Bericht", "📄 Rapporto HTML", "📄 Relatório HTML");
-            _btnExportJson.Content = Localizer.L("💾 JSON", "💾 JSON", "💾 JSON", "💾 JSON", "💾 JSON", "💾 JSON");
-            _btnCopyMarkdown.Content = Localizer.L("📋 Markdown (forum)", "📋 Markdown (forum)", "📋 Markdown (foro)", "📋 Markdown (Forum)", "📋 Markdown (forum)", "📋 Markdown (fórum)");
-            _btnCopyReport.Content = Localizer.L("📋 Texte brut", "📋 Plain text", "📋 Texto plano", "📋 Klartext", "📋 Testo semplice", "📋 Texto simples");
-            _btnExportHtml.ToolTip = Localizer.L("Une page autonome, lisible dans n'importe quel navigateur et imprimable en PDF.", "A standalone page, readable in any browser and printable to PDF.", "Página autónoma, imprimible en PDF.", "Eigenständige Seite, als PDF druckbar.", "Pagina autonoma, stampabile in PDF.", "Página autônoma, imprimível em PDF.");
-            _btnCopyMarkdown.ToolTip = Localizer.L("Résumé prêt à coller sur Reddit ou un forum constructeur.", "Summary ready to paste on Reddit or a vendor forum.", "Resumen listo para pegar en un foro.", "Zusammenfassung zum Einfügen in ein Forum.", "Riepilogo da incollare in un forum.", "Resumo pronto para colar em um fórum.");
+            _btnExportHtml.Content = Localizer.S("reports.html_report");
+            _btnExportJson.Content = Localizer.S("reports.json");
+            _btnCopyMarkdown.Content = Localizer.S("reports.markdown_forum");
+            _btnCopyReport.Content = Localizer.S("reports.plain_text");
+            _btnExportHtml.ToolTip = Localizer.S("reports.a_standalone_page_readable_in_any");
+            _btnCopyMarkdown.ToolTip = Localizer.S("reports.summary_ready_to_paste_on_reddit");
         }
 
         private ReportData BuildReportData()
@@ -82,7 +82,7 @@ namespace WinCrashDoctor
             try
             {
                 File.WriteAllText(path, ReportBuilder.Html(data), new UTF8Encoding(false));
-                SetToast(Localizer.L("Rapport HTML enregistré : ", "HTML report saved: ", "Informe HTML guardado: ", "HTML-Bericht gespeichert: ", "Rapporto HTML salvato: ", "Relatório HTML salvo: ") + Path.GetFileName(path), "SuccessFg");
+                SetToast(Localizer.S("reports.html_report_saved") + Path.GetFileName(path), "SuccessFg");
                 Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
             }
             catch (Exception ex)
@@ -101,7 +101,7 @@ namespace WinCrashDoctor
             try
             {
                 File.WriteAllText(path, ReportBuilder.Json(data), new UTF8Encoding(false));
-                SetToast(Localizer.L("Export JSON enregistré : ", "JSON export saved: ", "JSON guardado: ", "JSON gespeichert: ", "JSON salvato: ", "JSON salvo: ") + Path.GetFileName(path), "SuccessFg");
+                SetToast(Localizer.S("reports.json_export_saved") + Path.GetFileName(path), "SuccessFg");
             }
             catch (Exception ex)
             {
@@ -117,12 +117,12 @@ namespace WinCrashDoctor
             try
             {
                 Clipboard.SetText(ReportBuilder.Markdown(data));
-                SetToast(Localizer.L("Résumé Markdown copié, prêt à coller sur un forum.", "Markdown summary copied, ready to paste on a forum.", "Resumen Markdown copiado.", "Markdown-Zusammenfassung kopiert.", "Riepilogo Markdown copiato.", "Resumo Markdown copiado."), "SuccessFg");
+                SetToast(Localizer.S("reports.markdown_summary_copied_ready_to_paste"), "SuccessFg");
             }
             catch (Exception ex)
             {
                 Log.Warn(ex, "Clipboard");
-                SetToast(Localizer.L("Le presse-papiers est occupé, réessayez.", "Clipboard busy, try again.", "Portapapeles ocupado.", "Zwischenablage belegt.", "Appunti occupati.", "Área de transferência ocupada."), "WarnFg");
+                SetToast(Localizer.S("ai.clipboard_busy_try_again"), "WarnFg");
             }
         }
 

@@ -155,5 +155,114 @@ namespace WinCrashDoctor.Stress
         {
             if (p != IntPtr.Zero) VirtualFree(p, UIntPtr.Zero, 0x8000 /* RELEASE */);
         }
+
+        // ---------------- Which physical disk(s) hold a volume
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool DeviceIoControl(SafeFileHandle h, uint code, IntPtr inBuf, uint inSize, IntPtr outBuf, uint outSize, out uint returned, IntPtr overlapped);
+
+        private const uint IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS = 0x00560000; // FILE_ANY_ACCESS: no admin needed
+        private const uint OPEN_EXISTING = 3, FILE_SHARE_READ_WRITE = 3;
+
+        /// <summary>Physical disk numbers ("\Device\HarddiskN") behind a volume such as "C:"; empty when unknown.</summary>
+        public static List<int> VolumeDiskNumbers(string drive)
+        {
+            var list = new List<int>();
+            IntPtr buf = IntPtr.Zero;
+            try
+            {
+                string vol = @"\\.\" + drive.TrimEnd('\\');
+                using (SafeFileHandle h = CreateFileW(vol, 0, FILE_SHARE_READ_WRITE, IntPtr.Zero, OPEN_EXISTING, 0, IntPtr.Zero))
+                {
+                    if (h.IsInvalid) return list;
+                    const int max = 16;
+                    uint size = 8 + 24 * max; // VOLUME_DISK_EXTENTS: count (+pad), then DISK_EXTENT {DiskNumber(+pad), offset, length}
+                    buf = Marshal.AllocHGlobal((int)size);
+                    uint ret;
+                    if (!DeviceIoControl(h, IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS, IntPtr.Zero, 0, buf, size, out ret, IntPtr.Zero)) return list;
+                    int n = Math.Min(max, Marshal.ReadInt32(buf, 0));
+                    for (int i = 0; i < n; i++)
+                    {
+                        int disk = Marshal.ReadInt32(buf, 8 + 24 * i);
+                        if (!list.Contains(disk)) list.Add(disk);
+                    }
+                }
+            }
+            catch (Exception ex) { Log.Warn(ex); }
+            finally { if (buf != IntPtr.Zero) Marshal.FreeHGlobal(buf); }
+            return list;
+        }
+
+        // ---------------- Kill-on-close job for helper processes (nvidia-smi -lms runs until killed)
+        [StructLayout(LayoutKind.Sequential)]
+        private struct JOBOBJECT_BASIC_LIMIT_INFORMATION
+        {
+            public long PerProcessUserTimeLimit;
+            public long PerJobUserTimeLimit;
+            public uint LimitFlags;
+            public UIntPtr MinimumWorkingSetSize;
+            public UIntPtr MaximumWorkingSetSize;
+            public uint ActiveProcessLimit;
+            public UIntPtr Affinity;
+            public uint PriorityClass;
+            public uint SchedulingClass;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct IO_COUNTERS
+        {
+            public ulong ReadOperationCount, WriteOperationCount, OtherOperationCount, ReadTransferCount, WriteTransferCount, OtherTransferCount;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct JOBOBJECT_EXTENDED_LIMIT_INFORMATION
+        {
+            public JOBOBJECT_BASIC_LIMIT_INFORMATION BasicLimitInformation;
+            public IO_COUNTERS IoInfo;
+            public UIntPtr ProcessMemoryLimit;
+            public UIntPtr JobMemoryLimit;
+            public UIntPtr PeakProcessMemoryUsed;
+            public UIntPtr PeakJobMemoryUsed;
+        }
+
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        private static extern IntPtr CreateJobObjectW(IntPtr security, string name);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool SetInformationJobObject(IntPtr job, int infoClass, ref JOBOBJECT_EXTENDED_LIMIT_INFORMATION info, uint size);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool AssignProcessToJobObject(IntPtr job, IntPtr process);
+
+        private static readonly object JobLock = new object();
+        private static IntPtr _killJob;
+
+        /// <summary>
+        /// Puts a child process in a job that Windows closes when this process exits (handle never closed on purpose),
+        /// which kills the child even if the app is terminated without running its cleanup. Best effort.
+        /// </summary>
+        public static void KillWithThisProcess(System.Diagnostics.Process p)
+        {
+            try
+            {
+                lock (JobLock)
+                {
+                    if (_killJob == IntPtr.Zero)
+                    {
+                        IntPtr job = CreateJobObjectW(IntPtr.Zero, null);
+                        if (job == IntPtr.Zero) return;
+                        var info = new JOBOBJECT_EXTENDED_LIMIT_INFORMATION();
+                        info.BasicLimitInformation.LimitFlags = 0x2000; // JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+                        if (!SetInformationJobObject(job, 9 /* JobObjectExtendedLimitInformation */, ref info, (uint)Marshal.SizeOf(typeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION))))
+                            return; // handle intentionally leaked (tiny, once)
+                        _killJob = job;
+                    }
+                    AssignProcessToJobObject(_killJob, p.Handle);
+                }
+            }
+            catch (Exception ex) { Log.Warn(ex); }
+        }
     }
 }

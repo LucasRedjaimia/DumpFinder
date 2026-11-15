@@ -35,6 +35,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- UI texts, one file per language (key → text), and engine texts keyed by their English version.
+         Embedded as "Locales.<name>.json": the app stays a single exe. -->
+    <EmbeddedResource Include="Locales\*.json" LogicalName="Locales.%(Filename).json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Official Anthropic SDK (netstandard2.0 build) for the Claude advisor -->
     <PackageReference Include="Anthropic" Version="13.8.0" />
     <!-- Vector<T>: SIMD (SSE/AVX2) for the CPU stress workload; already a dependency of the SDK -->

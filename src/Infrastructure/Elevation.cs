@@ -56,11 +56,23 @@ namespace WinCrashDoctor
         /// <summary>Runs any executable elevated and waits for it. Blocking.</summary>
         public static ElevationOutcome Run(string fileName, string arguments, int timeoutMs)
         {
+            return Run(fileName, arguments, timeoutMs, null);
+        }
+
+        /// <summary>Runs this exe elevated; <paramref name="onStarted"/> receives the child's process id as soon as it exists.</summary>
+        public static ElevationOutcome RunSelf(string arguments, int timeoutMs, Action<int> onStarted)
+        {
+            return Run(ExePath, arguments, timeoutMs, onStarted);
+        }
+
+        private static ElevationOutcome Run(string fileName, string arguments, int timeoutMs, Action<int> onStarted)
+        {
             try
             {
                 var psi = new ProcessStartInfo
                 {
-                    FileName = fileName,
+                    // Bare tool names ("cmd.exe") are resolved in System32, never in the exe's own folder.
+                    FileName = SysTools.Path(fileName),
                     Arguments = arguments ?? "",
                     Verb = "runas",
                     UseShellExecute = true
@@ -68,6 +80,10 @@ namespace WinCrashDoctor
                 using (Process p = Process.Start(psi))
                 {
                     if (p == null) return ElevationOutcome.Failed;
+                    if (onStarted != null)
+                    {
+                        try { onStarted(p.Id); } catch (Exception ex) { Log.Warn(ex); }
+                    }
                     if (!p.WaitForExit(timeoutMs))
                     {
                         Log.Warn("Elevated process timed out after " + timeoutMs + " ms: " + arguments);
@@ -92,7 +108,7 @@ namespace WinCrashDoctor
             {
                 var psi = new ProcessStartInfo
                 {
-                    FileName = fileName,
+                    FileName = SysTools.Path(fileName),
                     Arguments = arguments ?? "",
                     Verb = "runas",
                     UseShellExecute = true

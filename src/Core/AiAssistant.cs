@@ -17,13 +17,7 @@ namespace WinCrashDoctor
         {
             StringBuilder sb = new StringBuilder();
 
-            string roleInstruction = Localizer.L(
-                "Tu es un ingénieur expert en diagnostic matériel PC, noyau Windows (BSOD, WHEA, TDR GPU, PCIe, DDR5, NVMe) et pilotes graphiques (NVIDIA, AMD, Intel Arc). Analyse le rapport technique réel ci-dessous issu de Dump Finder 6 et donne : 1) La cause racine la plus probable, 2) Les vérifications ou réglages précis (Registre, BIOS, pilote, matériel) par ordre de priorité, 3) Ce qu'il faut éviter de toucher inutilement. Réponds en français de façon claire et structurée.",
-                "You are a senior PC hardware and Windows kernel crash engineer (BSOD, WHEA, GPU TDR, PCIe, DDR5, NVMe, NVIDIA/AMD/Intel Arc drivers). Analyze the real Dump Finder 6 telemetry below and provide: 1) Most likely root cause, 2) Prioritized actionable fixes (Registry, BIOS, driver, hardware), 3) What NOT to touch unnecessarily. Reply concisely in English.",
-                "Eres un ingeniero experto en hardware de PC y fallos del kernel de Windows (BSOD, WHEA, GPU TDR, PCIe, DDR5, NVMe). Analiza el informe real de Dump Finder 6 y explica: 1) Causa raíz más probable, 2) Soluciones prioritarias paso a paso, 3) Qué no tocar innecesariamente. Responde en español.",
-                "Du bist ein erfahrener Ingenieur für PC-Hardware und Windows-Kernel-Abstürze (BSOD, WHEA, GPU-TDR, PCIe, DDR5, NVMe). Analysiere den echten Dump Finder 6-Bericht unten und nenne: 1) Wahrscheinlichste Ursache, 2) Priorisierte Lösungsschritte, 3) Was nicht unnötig geändert werden sollte. Antworte auf Deutsch.",
-                "Sei un ingegnere esperto in hardware PC e crash del kernel Windows (BSOD, WHEA, GPU TDR, PCIe, DDR5, NVMe). Analizza il report reale di Dump Finder 6 qui sotto e indica: 1) Causa principale più probabile, 2) Soluzioni prioritarie passo dopo passo, 3) Cosa evitare di toccare. Rispondi in italiano.",
-                "Você é um engenheiro especialista em hardware de PC e falhas de kernel do Windows (BSOD, WHEA, GPU TDR, PCIe, DDR5, NVMe). Analise o relatório real do Dump Finder 6 abaixo e forneça: 1) Causa raiz mais provável, 2) Soluções prioritárias passo a passo, 3) O que evitar alterar sem necessidade. Responda em português.");
+            string roleInstruction = Localizer.S("ai_assistant.you_are_a_senior_pc_hardware");
 
             sb.AppendLine(roleInstruction);
             sb.AppendLine();
@@ -112,7 +106,9 @@ namespace WinCrashDoctor
         {
             try
             {
-                ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
+                // .NET 4.8 defaults to SystemDefault (TLS 1.2 + 1.3 per Windows); OR-ing Tls12 into it would pin TLS 1.2 only.
+                if (ServicePointManager.SecurityProtocol != SecurityProtocolType.SystemDefault)
+                    ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
                 switch (provider)
                 {
                     case AiProviderType.Claude:

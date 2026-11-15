@@ -71,10 +71,10 @@ namespace WinCrashDoctor
             var fixesBar = _btnRestoreSnapshot != null ? _btnRestoreSnapshot.Parent as Panel : null;
             if (fixesBar != null)
             {
-                Button journal = CreateFlatButton(Localizer.L("📖 Journal", "📖 Journal", "📖 Registro", "📖 Protokoll", "📖 Registro", "📖 Registro"), "BgCard", "TextPrimary", "BorderStrong", new Thickness(12, 6, 12, 6), 12);
+                Button journal = CreateFlatButton(Localizer.S("history.journal"), "BgCard", "TextPrimary", "BorderStrong", new Thickness(12, 6, 12, 6), 12);
                 journal.Margin = new Thickness(0, 0, 8, 0);
                 journal.VerticalAlignment = VerticalAlignment.Center;
-                journal.ToolTip = Localizer.L("Toutes les modifications faites par Dump Finder, annulables une par une.", "Every change Dump Finder made, undoable one by one.", "Todos los cambios, reversibles uno a uno.", "Alle Änderungen, einzeln umkehrbar.", "Tutte le modifiche, annullabili una per una.", "Todas as alterações, reversíveis uma a uma.");
+                journal.ToolTip = Localizer.S("history.every_change_dump_finder_made_undoable");
                 journal.Click += (s, e) => { SwitchTab(TabTools); SwitchToolsSubTab(2); };
                 fixesBar.Children.Insert(Math.Max(0, fixesBar.Children.IndexOf(_btnRestoreSnapshot)), journal);
             }
@@ -83,16 +83,10 @@ namespace WinCrashDoctor
         private void RefreshHistoryLabels()
         {
             if (_btnToolsSubHistory == null) return;
-            _btnToolsSubHistory.Content = Localizer.L("Historique", "History", "Historial", "Verlauf", "Cronologia", "Histórico");
-            _lblHistTrendTitle.Text = Localizer.L("Évolution de la stabilité", "Stability over time", "Evolución de la estabilidad", "Stabilitätsverlauf", "Andamento della stabilità", "Evolução da estabilidade");
-            _lblHistJournalTitle.Text = Localizer.L("Journal des modifications", "Change journal", "Registro de cambios", "Änderungsprotokoll", "Registro delle modifiche", "Registro de alterações");
-            _lblHistJournalHint.Text = Localizer.L(
-                "Chaque correctif note la valeur exacte qu'il remplace. « Annuler » remet précisément l'état d'avant, pas une valeur par défaut.",
-                "Every fix records the exact value it replaces. \"Undo\" puts back precisely the previous state, not a default value.",
-                "Cada corrección guarda el valor exacto que reemplaza. «Deshacer» restaura el estado anterior.",
-                "Jede Korrektur speichert den exakten vorherigen Wert. „Rückgängig“ stellt genau diesen Zustand wieder her.",
-                "Ogni correzione salva il valore esatto che sostituisce. «Annulla» ripristina lo stato precedente.",
-                "Cada correção guarda o valor exato que substitui. «Desfazer» restaura o estado anterior.");
+            _btnToolsSubHistory.Content = Localizer.S("crashes.history");
+            _lblHistTrendTitle.Text = Localizer.S("history.stability_over_time");
+            _lblHistJournalTitle.Text = Localizer.S("history.change_journal");
+            _lblHistJournalHint.Text = Localizer.S("history.every_fix_records_the_exact_value");
         }
 
         // ==================== SCAN RECORDING ====================
@@ -106,13 +100,8 @@ namespace WinCrashDoctor
             if (_newCrashKeys.Count > 0)
             {
                 int severe = recent.Count(c => _newCrashKeys.Contains(c.Key) && Stability.IsSevere(c.Category));
-                SetToast(Localizer.L(
-                    _newCrashKeys.Count + " nouveau(x) crash(s) depuis la dernière analyse" + (severe > 0 ? ", dont " + severe + " grave(s)." : "."),
-                    _newCrashKeys.Count + " new crash(es) since the last scan" + (severe > 0 ? ", " + severe + " severe." : "."),
-                    _newCrashKeys.Count + " fallo(s) nuevo(s) desde el último análisis.",
-                    _newCrashKeys.Count + " neue(r) Absturz/Abstürze seit der letzten Prüfung.",
-                    _newCrashKeys.Count + " nuovo/i crash dall'ultima analisi.",
-                    _newCrashKeys.Count + " nova(s) falha(s) desde a última análise."), severe > 0 ? "DangerFg" : "WarnFg");
+                SetToast(Localizer.P("history.new_crashes", _newCrashKeys.Count)
+                         + (severe > 0 ? Localizer.P("history.new_crashes_severe", severe) : Localizer.S("common.sentence_end")), severe > 0 ? "DangerFg" : "WarnFg");
                 RenderCrashList();
             }
 
@@ -146,7 +135,7 @@ namespace WinCrashDoctor
             _histScansList.Children.Clear();
             if (_histDaily.Count == 0)
             {
-                _lblHistTrendSummary.Text = Localizer.L("L'historique se construit à chaque analyse.", "History builds up with every scan.", "El historial se construye con cada análisis.", "Der Verlauf entsteht mit jeder Prüfung.", "La cronologia si costruisce a ogni analisi.", "O histórico se forma a cada análise.");
+                _lblHistTrendSummary.Text = Localizer.S("history.history_builds_up_with_every_scan");
                 DrawHistorySpark();
                 return;
             }
@@ -155,16 +144,9 @@ namespace WinCrashDoctor
             var first = _histDaily[0];
             int delta = last.Score - first.Score;
             _lblHistTrendSummary.Text = _histDaily.Count == 1
-                ? Localizer.L("Première analyse enregistrée : " + last.Score + "/100. Revenez dans quelques jours pour voir l'effet de vos correctifs.",
-                              "First scan recorded: " + last.Score + "/100. Come back in a few days to see the effect of your fixes.",
-                              "Primer análisis: " + last.Score + "/100.", "Erste Prüfung: " + last.Score + "/100.", "Prima analisi: " + last.Score + "/100.", "Primeira análise: " + last.Score + "/100.")
-                : Localizer.L(
-                    string.Format("{0}/100 aujourd'hui, {1}/100 le {2:d MMM} ({3}{4} points sur {5} jours d'analyses).", last.Score, first.Score, first.Time, delta >= 0 ? "+" : "", delta, (last.Time.Date - first.Time.Date).Days),
-                    string.Format("{0}/100 today, {1}/100 on {2:d MMM} ({3}{4} points over {5} days of scans).", last.Score, first.Score, first.Time, delta >= 0 ? "+" : "", delta, (last.Time.Date - first.Time.Date).Days),
-                    string.Format("{0}/100 hoy, {1}/100 el {2:d MMM}.", last.Score, first.Score, first.Time),
-                    string.Format("{0}/100 heute, {1}/100 am {2:d MMM}.", last.Score, first.Score, first.Time),
-                    string.Format("{0}/100 oggi, {1}/100 il {2:d MMM}.", last.Score, first.Score, first.Time),
-                    string.Format("{0}/100 hoje, {1}/100 em {2:d MMM}.", last.Score, first.Score, first.Time));
+                ? Localizer.F("history.first_scan_recorded_100_come_back", last.Score)
+                : Localizer.F("history.trend_summary", last.Score, first.Score, Localizer.DayMonth(first.Time), delta >= 0 ? "+" : "", delta,
+                              (last.Time.Date - first.Time.Date).Days);
 
             foreach (var s in _histDaily.AsEnumerable().Reverse().Take(8))
             {
@@ -172,14 +154,14 @@ namespace WinCrashDoctor
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(130) });
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                row.Children.Add(ResFg(new TextBlock { Text = s.Time.ToString("ddd d MMM", CultureInfo.CurrentUICulture), FontSize = 12, VerticalAlignment = VerticalAlignment.Center }, "TextSecondary"));
+                row.Children.Add(ResFg(new TextBlock { Text = s.Time.ToString("ddd d MMM", Localizer.Culture), FontSize = 12, VerticalAlignment = VerticalAlignment.Center }, "TextSecondary"));
                 StabilityLevel lv = Stability.LevelOf(s.Score);
                 Border pill = MakePill(s.Score + "/100", lv == StabilityLevel.Stable ? "SuccessSoftBg" : lv == StabilityLevel.Fragile ? "WarnSoftBg" : "DangerSoftBg", lv == StabilityLevel.Stable ? "SuccessFg" : lv == StabilityLevel.Fragile ? "WarnFg" : "DangerFg");
                 Grid.SetColumn(pill, 1);
                 row.Children.Add(pill);
                 TextBlock d = ResFg(new TextBlock
                 {
-                    Text = Localizer.L(s.Crashes30 + " crash(s) sur 30 j", s.Crashes30 + " crash(es) in 30 d", s.Crashes30 + " fallo(s) en 30 d", s.Crashes30 + " Absturz/Abstürze in 30 T", s.Crashes30 + " crash in 30 g", s.Crashes30 + " falha(s) em 30 d")
+                    Text = Localizer.F("history.crash_es_in_30_d", s.Crashes30)
                            + (s.WindowsIndex.HasValue ? "  ·  Windows " + s.WindowsIndex.Value.ToString("0.0") : ""),
                     FontSize = 12,
                     Margin = new Thickness(12, 0, 0, 0),
@@ -219,7 +201,7 @@ namespace WinCrashDoctor
             if (entries.Count == 0)
             {
                 _journalList.Children.Add(MakeEmptyLine(Glyph.Info, "TextMuted",
-                    Localizer.L("Aucune modification pour l'instant. Les correctifs appliqués apparaîtront ici.", "No changes yet. Applied fixes will show up here.", "Ningún cambio todavía.", "Noch keine Änderungen.", "Nessuna modifica per ora.", "Nenhuma alteração ainda.")));
+                    Localizer.S("history.no_changes_yet_applied_fixes_will")));
                 return;
             }
             for (int i = 0; i < Math.Min(60, entries.Count); i++)
@@ -242,9 +224,9 @@ namespace WinCrashDoctor
             t.Children.Add(ResFg(new TextBlock { Text = j.Title, FontSize = 13, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis }, "TextPrimary"));
             int n = j.Changes != null ? j.Changes.Count : 0;
             string sub = j.Time.ToString("g", CultureInfo.CurrentUICulture) + "  ·  "
-                + (j.Ok ? Localizer.L(n + " valeur(s) modifiée(s)", n + " value(s) changed", n + " valor(es)", n + " Wert(e)", n + " valore/i", n + " valor(es)") : j.Message);
+                + (j.Ok ? Localizer.F("history.value_s_changed", n) : j.Message);
             if (reverted)
-                sub += "  ·  " + Localizer.L("annulé le ", "undone on ", "deshecho el ", "rückgängig am ", "annullato il ", "desfeito em ") + j.RevertedAt.Value.ToString("g", CultureInfo.CurrentUICulture);
+                sub += "  ·  " + Localizer.S("history.undone_on") + j.RevertedAt.Value.ToString("g", CultureInfo.CurrentUICulture);
             t.Children.Add(ResFg(new TextBlock { Text = sub, FontSize = 11, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 2, 0, 0) }, "TextMuted"));
             if (n > 0)
             {
@@ -256,14 +238,14 @@ namespace WinCrashDoctor
             UIElement right;
             if (j.Ok && j.Reversible && !reverted)
             {
-                Button undo = CreateFlatButton(Localizer.L("↺ Annuler", "↺ Undo", "↺ Deshacer", "↺ Rückgängig", "↺ Annulla", "↺ Desfazer"), "BgCard", "TextPrimary", "BorderStrong", new Thickness(12, 5, 12, 5), 12);
+                Button undo = CreateFlatButton(Localizer.S("history.undo"), "BgCard", "TextPrimary", "BorderStrong", new Thickness(12, 5, 12, 5), 12);
                 undo.VerticalAlignment = VerticalAlignment.Center;
-                undo.Click += async (s, e) => await UndoJournalEntry(j);
+                undo.Click += async (s, e) => await UndoJournalEntry(j, s);
                 right = undo;
             }
             else if (j.Ok && !j.Reversible)
             {
-                right = MakePill(Localizer.L("Non annulable", "Not undoable", "No reversible", "Nicht umkehrbar", "Non annullabile", "Não reversível"), "BgSubtle", "TextMuted");
+                right = MakePill(Localizer.S("history.not_undoable"), "BgSubtle", "TextMuted");
             }
             else right = new Border();
             Grid.SetColumn(right, 2);
@@ -272,27 +254,31 @@ namespace WinCrashDoctor
             return ResBorder(new Border { BorderThickness = new Thickness(0, first ? 0 : 1, 0, 0), Padding = new Thickness(0, 10, 0, 10), Child = row }, "BorderCard");
         }
 
-        private async Task UndoJournalEntry(JournalEntry j)
+        private async Task UndoJournalEntry(JournalEntry j, object sender = null)
         {
             bool ok;
             string error = null;
-            using (BeginBusy(Localizer.L("Annulation en cours…", "Undoing…", "Deshaciendo…", "Wird rückgängig gemacht…", "Annullamento…", "Desfazendo…")))
+            using (IDisposable fixLock = TryBeginFix(sender))
             {
-                ok = await Task.Run(() => FixRunner.Revert(j.Changes, out error));
-                if (ok)
+                if (fixLock == null) return;
+                using (BeginBusy(Localizer.S("history.undoing")))
                 {
-                    History.MarkReverted(j.Id);
-                    if (_lastResult != null)
+                    ok = await Task.Run(() => FixRunner.Revert(j.Changes, out error));
+                    if (ok)
                     {
-                        _lastResult.Fixes = await Task.Run(() => DiagnosticsEngine.InspectAllFixes(false));
-                        RenderScanResult(_lastResult);
+                        History.MarkReverted(j.Id);
+                        if (_lastResult != null)
+                        {
+                            _lastResult.Fixes = await Task.Run(() => DiagnosticsEngine.InspectAllFixes(false));
+                            RenderScanResult(_lastResult);
+                        }
                     }
                 }
             }
             RenderJournal();
             SetToast(ok
-                    ? Localizer.L("Modification annulée : ", "Change undone: ", "Cambio deshecho: ", "Änderung rückgängig: ", "Modifica annullata: ", "Alteração desfeita: ") + j.Title
-                    : Localizer.L("Annulation impossible : ", "Could not undo: ", "No se pudo deshacer: ", "Rückgängig nicht möglich: ", "Impossibile annullare: ", "Não foi possível desfazer: ") + error,
+                    ? Localizer.S("history.change_undone") + j.Title
+                    : Localizer.S("history.could_not_undo") + error,
                 ok ? "SuccessFg" : "WarnFg");
         }
     }

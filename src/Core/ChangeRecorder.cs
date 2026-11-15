@@ -166,13 +166,29 @@ namespace WinCrashDoctor
         /// <summary>True when undoing requires administrator rights (HKLM or power plan).</summary>
         public static bool RequiresAdmin(IEnumerable<ChangeRecord> changes)
         {
-            return changes != null && changes.Any(c =>
-                c.Kind == "power" ||
+            return changes != null && changes.Any(IsAdminRecord);
+        }
+
+        /// <summary>True for a record that needs administrator rights to undo (HKLM value or power plan).</summary>
+        public static bool IsAdminRecord(ChangeRecord c)
+        {
+            return c != null && (c.Kind == "power" ||
                 (c.Kind == "reg" && c.KeyPath != null && c.KeyPath.StartsWith("HKEY_LOCAL_MACHINE", StringComparison.OrdinalIgnoreCase)));
         }
 
         /// <summary>Puts every recorded state back, newest first. Returns the number of items restored.</summary>
         public static int Revert(List<ChangeRecord> changes, out string error)
+        {
+            return Revert(changes, false, out error);
+        }
+
+        /// <summary>
+        /// Puts every recorded state back, newest first. Records come from a user-writable journal or a command
+        /// line, so each one is validated again here (exact keys, safe values, known files) before anything is written.
+        /// <paramref name="adminOnly"/> (elevated child): user-profile records (HKCU, files) are refused, because the
+        /// elevated process may run under another account's profile; the caller undoes those unelevated.
+        /// </summary>
+        public static int Revert(List<ChangeRecord> changes, bool adminOnly, out string error)
         {
             error = null;
             int done = 0;
@@ -180,26 +196,36 @@ namespace WinCrashDoctor
             for (int i = changes.Count - 1; i >= 0; i--)
             {
                 var c = changes[i];
+                if (c == null) continue;
                 try
                 {
+                    if (adminOnly && !IsAdminRecord(c)) { error = "refused (user record in elevated undo): " + c.Describe(); continue; }
                     switch (c.Kind)
                     {
                         case "reg":
-                            if (!IsAllowedKey(c.KeyPath)) { error = "refused: " + c.KeyPath; continue; }
-                            RevertRegistry(c);
-                            done++;
+                            string why = RegistryRefusal(c);
+                            if (why != null) { error = "refused: " + c.KeyPath + " \\ " + c.ValueName + " (" + why + ")"; continue; }
+                            if (RevertRegistry(c)) done++;
+                            else error = "key missing: " + c.KeyPath;
                             break;
                         case "file":
-                            if (string.IsNullOrEmpty(c.BackupPath) || !System.IO.File.Exists(c.BackupPath)) { error = "backup missing: " + c.FilePath; continue; }
-                            if (!c.BackupPath.StartsWith(BackupDir, StringComparison.OrdinalIgnoreCase)) { error = "refused: " + c.BackupPath; continue; }
-                            System.IO.File.Copy(c.BackupPath, c.FilePath, true);
+                            string target, backup;
+                            string fileWhy = FileRefusal(c, out target, out backup);
+                            if (fileWhy != null) { error = "refused: " + c.FilePath + " (" + fileWhy + ")"; continue; }
+                            System.IO.File.Copy(backup, target, true);
                             done++;
                             break;
                         case "power":
-                            if (!AllowedPowerSettings.Contains(c.PowerSetting, StringComparer.OrdinalIgnoreCase)) { error = "refused: " + c.PowerSetting; continue; }
-                            RunHidden("powercfg", "/setacvalueindex SCHEME_CURRENT " + c.PowerSub + " " + c.PowerSetting + " " + c.PowerOldAc);
-                            RunHidden("powercfg", "/setactive SCHEME_CURRENT");
+                            Guid sub;
+                            if (!AllowedPowerSettings.Contains(c.PowerSetting, StringComparer.OrdinalIgnoreCase)
+                                || !Guid.TryParse(c.PowerSub, out sub) || c.PowerOldAc < 0 || c.PowerOldAc > 100)
+                            { error = "refused: " + c.PowerSetting; continue; }
+                            RunHidden(SysTools.Path("powercfg.exe"), "/setacvalueindex SCHEME_CURRENT " + sub.ToString("D") + " " + c.PowerSetting + " " + c.PowerOldAc);
+                            RunHidden(SysTools.Path("powercfg.exe"), "/setactive SCHEME_CURRENT");
                             done++;
+                            break;
+                        default:
+                            error = "refused: unknown kind " + c.Kind;
                             break;
                     }
                 }
@@ -212,20 +238,106 @@ namespace WinCrashDoctor
             return done;
         }
 
+        private const string ServicesRoot = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\";
+
+        /// <summary>Values that could make Windows run code or change a service's identity: an undo never writes them.</summary>
+        private static readonly HashSet<string> ForbiddenValues = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "ImagePath", "ServiceDll", "Type", "ObjectName", "FailureCommand", "FailureActions", "DependOnService",
+            "DependOnGroup", "Group", "RequiredPrivileges", "ServiceSidType", "Security", "Debugger", "GlobalFlag", "Owners"
+        };
+
+        /// <summary>The only values an undo may write directly under a service key (startup type, AMD issue detection).</summary>
+        private static readonly HashSet<string> ServiceRootValues = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Start", "EnableIssueDetection"
+        };
+
+        /// <summary>Null when the registry record may be undone, else the reason it is refused.</summary>
+        private static string RegistryRefusal(ChangeRecord c)
+        {
+            if (!IsAllowedKey(c.KeyPath)) return "key not allowed";
+            if (c.ValueName == null || ForbiddenValues.Contains(c.ValueName)) return "value not allowed";
+            if (c.KeyPath.StartsWith(ServicesRoot, StringComparison.OrdinalIgnoreCase))
+            {
+                string rest = c.KeyPath.Substring(ServicesRoot.Length);
+                bool serviceRoot = rest.Length > 0 && rest.IndexOf('\\') < 0;
+                if (serviceRoot && !ServiceRootValues.Contains(c.ValueName)) return "value not allowed on a service key";
+                if (c.Existed && c.ValueName.Equals("Start", StringComparison.OrdinalIgnoreCase))
+                {
+                    uint start;
+                    if (c.ValueKind != RegistryValueKind.DWord.ToString() || !uint.TryParse(c.Data, out start) || start > 4) return "invalid Start value";
+                }
+            }
+            if (c.Existed)
+            {
+                RegistryValueKind kind;
+                if (!Enum.TryParse(c.ValueKind, out kind) || kind == RegistryValueKind.Unknown || kind == RegistryValueKind.None) return "invalid value kind";
+            }
+            return null;
+        }
+
+        /// <summary>Exact key, or a subkey of an allowed root (a sibling key that merely shares the prefix is refused).</summary>
         private static bool IsAllowedKey(string keyPath)
         {
-            if (keyPath == null) return false;
-            return AllowedRegistryPrefixes.Any(p => keyPath.StartsWith(p, StringComparison.OrdinalIgnoreCase))
+            if (keyPath == null || keyPath.Contains("..")) return false;
+            return AllowedRegistryPrefixes.Any(p => keyPath.Equals(p, StringComparison.OrdinalIgnoreCase)
+                                                     || keyPath.StartsWith(p + "\\", StringComparison.OrdinalIgnoreCase))
                 || Detection.RiskyDrivers.IsRevertableKey(keyPath) // only services that load a catalog driver
                 || Optimize.OptOps.IsAllowedKey(keyPath);                // Optimiser settings and startup approvals
         }
 
-        private static void RevertRegistry(ChangeRecord c)
+        /// <summary>Settings files a fix may rewrite (Discord settings, Chromium "Local State"): an undo targets nothing else.</summary>
+        private static readonly string[] AllowedFileNames = { "settings.json", "Local State" };
+
+        /// <summary>Null when the file record may be undone (canonical paths returned), else the reason it is refused.</summary>
+        private static string FileRefusal(ChangeRecord c, out string target, out string backup)
+        {
+            target = backup = null;
+            if (string.IsNullOrEmpty(c.FilePath) || string.IsNullOrEmpty(c.BackupPath)) return "incomplete record";
+            try
+            {
+                target = Path.GetFullPath(c.FilePath);
+                backup = Path.GetFullPath(c.BackupPath);
+            }
+            catch (Exception) { return "invalid path"; }
+
+            string backupDir = Path.GetFullPath(BackupDir).TrimEnd('\\');
+            if (!string.Equals(Path.GetDirectoryName(backup), backupDir, StringComparison.OrdinalIgnoreCase)) return "backup outside the backup folder";
+            if (!System.IO.File.Exists(backup)) return "backup missing";
+            if (!AllowedFileNames.Contains(Path.GetFileName(target), StringComparer.OrdinalIgnoreCase)) return "file not allowed";
+
+            string targetPath = target;
+            string root = new[]
+                {
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)
+                }
+                .Where(r => !string.IsNullOrEmpty(r))
+                .Select(r => Path.GetFullPath(r).TrimEnd('\\') + "\\")
+                .FirstOrDefault(r => targetPath.StartsWith(r, StringComparison.OrdinalIgnoreCase));
+            if (root == null) return "file outside the user profile";
+
+            // No junction or symbolic link between the profile folder and the file: it could redirect the write.
+            for (string d = Path.GetDirectoryName(target); d != null && d.Length >= root.Length - 1; d = Path.GetDirectoryName(d))
+            {
+                if (Directory.Exists(d) && (System.IO.File.GetAttributes(d) & FileAttributes.ReparsePoint) != 0) return "link in path";
+            }
+            if (System.IO.File.Exists(target) && (System.IO.File.GetAttributes(target) & FileAttributes.ReparsePoint) != 0) return "target is a link";
+            if ((System.IO.File.GetAttributes(backup) & FileAttributes.ReparsePoint) != 0) return "backup is a link";
+            return null;
+        }
+
+        /// <summary>Returns false when the key no longer exists and may not be recreated (service keys).</summary>
+        private static bool RevertRegistry(ChangeRecord c)
         {
             int slash = c.KeyPath.IndexOf('\\');
             string root = slash > 0 ? c.KeyPath.Substring(0, slash) : c.KeyPath;
             string sub = slash > 0 ? c.KeyPath.Substring(slash + 1) : "";
-            RegistryHive hive = root.Equals("HKEY_CURRENT_USER", StringComparison.OrdinalIgnoreCase) ? RegistryHive.CurrentUser : RegistryHive.LocalMachine;
+            RegistryHive hive;
+            if (root.Equals("HKEY_CURRENT_USER", StringComparison.OrdinalIgnoreCase)) hive = RegistryHive.CurrentUser;
+            else if (root.Equals("HKEY_LOCAL_MACHINE", StringComparison.OrdinalIgnoreCase)) hive = RegistryHive.LocalMachine;
+            else return false;
             using (var bk = RegistryKey.OpenBaseKey(hive, RegistryView.Registry64))
             {
                 if (!c.Existed)
@@ -234,13 +346,18 @@ namespace WinCrashDoctor
                     {
                         if (k != null && k.GetValue(c.ValueName) != null) k.DeleteValue(c.ValueName, false);
                     }
-                    return;
+                    return true;
                 }
-                using (var k = bk.CreateSubKey(sub, RegistryKeyPermissionCheck.ReadWriteSubTree))
+                RegistryValueKind kind = (RegistryValueKind)Enum.Parse(typeof(RegistryValueKind), c.ValueKind);
+                object data = Deserialize(c.Data, kind);
+                // A service key that disappeared (driver uninstalled) is never recreated by an undo.
+                bool serviceKey = c.KeyPath.StartsWith(ServicesRoot, StringComparison.OrdinalIgnoreCase);
+                using (var k = serviceKey ? bk.OpenSubKey(sub, true) : bk.CreateSubKey(sub, RegistryKeyPermissionCheck.ReadWriteSubTree))
                 {
-                    RegistryValueKind kind = (RegistryValueKind)Enum.Parse(typeof(RegistryValueKind), c.ValueKind);
-                    k.SetValue(c.ValueName, Deserialize(c.Data, kind), kind);
+                    if (k == null) return false;
+                    k.SetValue(c.ValueName, data, kind);
                 }
+                return true;
             }
         }
 
@@ -270,8 +387,7 @@ namespace WinCrashDoctor
 
         private static void RunHidden(string exe, string args)
         {
-            var psi = new ProcessStartInfo(exe, args) { CreateNoWindow = true, UseShellExecute = false };
-            using (var p = Process.Start(psi)) { p.WaitForExit(5000); }
+            SysTools.Run(exe, args, 5000);
         }
 
         // ---- Command-line transport (elevated child): base64 JSON, never a file another process could swap.

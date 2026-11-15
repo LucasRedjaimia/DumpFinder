@@ -26,7 +26,7 @@ namespace WinCrashDoctor
                 string since = ManagementDateTimeConverter.ToDmtfDateTime(DateTime.Now.Date.AddDays(-days));
                 var q = new ObjectQuery("SELECT TimeGenerated, SystemStabilityIndex FROM Win32_ReliabilityStabilityMetrics WHERE TimeGenerated >= '" + since + "'");
                 var samples = new List<KeyValuePair<DateTime, double>>();
-                using (var searcher = new ManagementObjectSearcher(new ManagementScope(@"root\cimv2"), q))
+                using (var searcher = Wmi.Searcher(new ManagementScope(@"root\cimv2"), q))
                 using (var col = searcher.Get())
                 {
                     foreach (ManagementObject mo in col)

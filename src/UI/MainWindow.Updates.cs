@@ -103,18 +103,18 @@ namespace WinCrashDoctor
             _shownUpdate = u;
             string ver = u.Version.ToString(3);
 
-            _lblUpdKicker.Text = Localizer.L("NOUVELLE VERSION DISPONIBLE", "NEW VERSION AVAILABLE", "NUEVA VERSIÓN DISPONIBLE", "NEUE VERSION VERFÜGBAR", "NUOVA VERSIONE DISPONIBILE", "NOVA VERSÃO DISPONÍVEL");
+            _lblUpdKicker.Text = Localizer.S("updates.new_version_available");
             _lblUpdTitle.Text = "Dump Finder " + ver;
             string date = u.PublishedAt.HasValue ? u.PublishedAt.Value.ToLocalTime().ToString("d", Localizer.Culture) : null;
-            _lblUpdSub.Text = Localizer.L("Tu utilises la version ", "You are using version ", "Usas la versión ", "Du nutzt Version ", "Stai usando la versione ", "Você usa a versão ") + UpdateChecker.CurrentVersionText +
-                (date != null ? Localizer.L(" · publiée le ", " · released on ", " · publicada el ", " · veröffentlicht am ", " · pubblicata il ", " · publicada em ") + date : "");
+            _lblUpdSub.Text = Localizer.S("updates.you_are_using_version") + UpdateChecker.CurrentVersionText +
+                (date != null ? Localizer.S("updates.released_on") + date : "");
 
             RenderReleaseNotes(u.Notes);
 
-            _btnUpdDownload.Content = Localizer.L("Télécharger ", "Download ", "Descargar ", "Herunterladen ", "Scarica ", "Baixar ") + ver;
-            _btnUpdLater.Content = Localizer.L("Plus tard", "Later", "Más tarde", "Später", "Più tardi", "Mais tarde");
-            _btnUpdSkip.Content = Localizer.L("Ignorer cette version", "Skip this version", "Omitir esta versión", "Diese Version überspringen", "Salta questa versione", "Ignorar esta versão");
-            _btnUpdPage.Content = Localizer.L("Voir sur GitHub", "View on GitHub", "Ver en GitHub", "Auf GitHub ansehen", "Vedi su GitHub", "Ver no GitHub");
+            _btnUpdDownload.Content = Localizer.S("updates.download") + ver;
+            _btnUpdLater.Content = Localizer.S("updates.later");
+            _btnUpdSkip.Content = Localizer.S("updates.skip_this_version");
+            _btnUpdPage.Content = Localizer.S("updates.view_on_github");
 
             _updateOverlay.Visibility = Visibility.Visible;
             _btnUpdDownload.Focus();
@@ -132,7 +132,7 @@ namespace WinCrashDoctor
             {
                 _appSettings.SkippedUpdateVersion = _shownUpdate.Version.ToString(3);
                 Localizer.SaveFullSettings(_appSettings);
-                SetToast(Localizer.L("Cette version ne sera plus proposée. La suivante le sera.", "This version won't be offered again. The next one will.", "Esta versión no se volverá a ofrecer.", "Diese Version wird nicht mehr angeboten.", "Questa versione non verrà più proposta.", "Esta versão não será mais oferecida."), "TextSecondary");
+                SetToast(Localizer.S("updates.this_version_won_t_be_offered"), "TextSecondary");
             }
             HideUpdate();
         }
@@ -143,7 +143,7 @@ namespace WinCrashDoctor
             _updNotes.Children.Clear();
             if (string.IsNullOrWhiteSpace(md))
             {
-                _updNotes.Children.Add(ResFg(new TextBlock { FontSize = 13, TextWrapping = TextWrapping.Wrap, Text = Localizer.L("Pas de description pour cette version.", "No description for this release.", "Sin descripción.", "Keine Beschreibung.", "Nessuna descrizione.", "Sem descrição.") }, "TextSecondary"));
+                _updNotes.Children.Add(ResFg(new TextBlock { FontSize = 13, TextWrapping = TextWrapping.Wrap, Text = Localizer.S("updates.no_description_for_this_release") }, "TextSecondary"));
                 return;
             }
             bool firstLine = true;
@@ -227,11 +227,11 @@ namespace WinCrashDoctor
                 using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15)))
                     latest = await UpdateChecker.GetLatestAsync(cts.Token);
                 if (latest == null)
-                    SetToast(Localizer.L("Impossible de joindre GitHub pour le moment.", "Could not reach GitHub right now.", "No se pudo contactar con GitHub.", "GitHub ist gerade nicht erreichbar.", "Impossibile contattare GitHub.", "Não foi possível acessar o GitHub."), "WarnFg");
+                    SetToast(Localizer.S("updates.could_not_reach_github_right_now"), "WarnFg");
                 else if (latest.Version > UpdateChecker.CurrentVersion)
                     ShowUpdate(latest); // on demand: shown even if this version was skipped
                 else
-                    SetToast(Localizer.L("Tu as déjà la dernière version (", "You already have the latest version (", "Ya tienes la última versión (", "Du hast bereits die neueste Version (", "Hai già l'ultima versione (", "Você já tem a versão mais recente (") + UpdateChecker.CurrentVersionText + ").", "SuccessFg");
+                    SetToast(Localizer.S("updates.you_already_have_the_latest_version") + UpdateChecker.CurrentVersionText + ").", "SuccessFg");
             }
             finally { if (_btnUpdCheckNow != null) _btnUpdCheckNow.IsEnabled = true; }
         }
@@ -262,20 +262,14 @@ namespace WinCrashDoctor
             if (_btnUpdToggle == null) return;
             bool on = _appSettings == null || !_appSettings.UpdateCheckDisabled;
             _btnUpdToggle.Content = on
-                ? Localizer.L("● Activé", "● On", "● Activado", "● An", "● Attivo", "● Ativado")
-                : Localizer.L("○ Désactivé", "○ Off", "○ Desactivado", "○ Aus", "○ Disattivo", "○ Desativado");
+                ? Localizer.S("sentinel.on")
+                : Localizer.S("sentinel.off");
             _btnUpdToggle.SetResourceReference(Button.BackgroundProperty, on ? "SuccessSoftBg" : "BgCard");
             _btnUpdToggle.SetResourceReference(Button.ForegroundProperty, on ? "SuccessFg" : "TextSecondary");
             _btnUpdToggle.SetResourceReference(Button.BorderBrushProperty, on ? "SuccessBorder" : "BorderCard");
-            _btnUpdCheckNow.Content = Localizer.L("Vérifier maintenant", "Check now", "Comprobar ahora", "Jetzt prüfen", "Controlla ora", "Verificar agora");
-            _lblSetUpdTitle.Text = Localizer.L("Mises à jour", "Updates", "Actualizaciones", "Updates", "Aggiornamenti", "Atualizações");
-            _lblSetUpdDesc.Text = Localizer.L(
-                "Version " + UpdateChecker.CurrentVersionText + ". Au lancement, l'app regarde sur GitHub si une nouvelle version est sortie et te montre ses nouveautés.",
-                "Version " + UpdateChecker.CurrentVersionText + ". At launch, the app checks GitHub for a new version and shows you what's new.",
-                "Versión " + UpdateChecker.CurrentVersionText + ". Al iniciar, la app busca en GitHub una versión nueva.",
-                "Version " + UpdateChecker.CurrentVersionText + ". Beim Start prüft die App auf GitHub, ob es eine neue Version gibt.",
-                "Versione " + UpdateChecker.CurrentVersionText + ". All'avvio, l'app controlla su GitHub se esiste una nuova versione.",
-                "Versão " + UpdateChecker.CurrentVersionText + ". Ao iniciar, o app verifica no GitHub se há uma nova versão.");
+            _btnUpdCheckNow.Content = Localizer.S("updates.check_now");
+            _lblSetUpdTitle.Text = Localizer.S("updates.updates");
+            _lblSetUpdDesc.Text = Localizer.F("updates.version_at_launch_the_app_checks", UpdateChecker.CurrentVersionText);
         }
     }
 }

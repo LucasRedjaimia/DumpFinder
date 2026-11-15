@@ -11,7 +11,8 @@ namespace WinCrashDoctor.Stress
     /// SSD test: writes several GB of known data with unbuffered I/O (straight to the drive, past the Windows
     /// cache), reads everything back from the drive and compares it, then does random 4K reads (verified too).
     /// A large span goes past the SLC cache and the HMB mapping window, where DRAM-less drives misbehave.
-    /// The file is created with delete-on-close, so it disappears even if the app is killed.
+    /// The file is created with delete-on-close, so it disappears even if the app is killed — but not after a blue
+    /// screen or power loss (exactly what this test can provoke): <see cref="SweepOrphans"/> removes those leftovers.
     /// </summary>
     internal static class DiskStress
     {
@@ -19,8 +20,54 @@ namespace WinCrashDoctor.Stress
         private const int BlockPages = 1024;            // 4 MB per I/O
         private const int Block = Page * BlockPages;
         private const double SpikeMs = 2000;
+        private const string FilePrefix = "dumpfinder_stress_";
 
-        private static string L(string fr, string en, string es, string de, string it, string pt) { return Localizer.L(fr, en, es, de, it, pt); }
+
+        /// <summary>
+        /// Deletes test files (%TEMP%\dumpfinder_stress_&lt;pid&gt;.bin) left behind by a run that ended in a crash or
+        /// power loss. A file still in use by a running test is held open without sharing, so its deletion simply
+        /// fails and is skipped. Safe to call at any time (app startup, start of the disk stage); never throws.
+        /// </summary>
+        public static void SweepOrphans()
+        {
+            try
+            {
+                string dir = Path.GetTempPath();
+                foreach (string f in Directory.GetFiles(dir, FilePrefix + "*.bin"))
+                {
+                    try
+                    {
+                        // "*.bin" also matches ".bin?" (8.3 quirk): only touch exactly our file names.
+                        string name = Path.GetFileName(f);
+                        if (!name.StartsWith(FilePrefix, StringComparison.OrdinalIgnoreCase) || !name.EndsWith(".bin", StringComparison.OrdinalIgnoreCase)) continue;
+                        int pid;
+                        if (!int.TryParse(name.Substring(FilePrefix.Length, name.Length - FilePrefix.Length - 4), out pid)) continue;
+                        File.Delete(f);
+                        Log.Info("Removed leftover stress test file " + name);
+                    }
+                    catch (IOException) { }                 // in use by a running test
+                    catch (UnauthorizedAccessException) { }
+                    catch (Exception ex) { Log.Warn(ex); }
+                }
+            }
+            catch (Exception ex) { Log.Warn(ex); }
+        }
+
+        /// <summary>
+        /// The read-back may run a little past the stage time so that what was written still gets verified, but it is
+        /// bounded (25 % of the stage, at least 30 s) and stops at once on user stop / abort.
+        /// </summary>
+        private static bool VerifyMustStop(StageContext ctx)
+        {
+            if (ctx.UserStopped || ctx.Abort) return true;
+            int d = ctx.Stage.DurationSec;
+            return ctx.Elapsed >= d + Math.Max(30, d / 4);
+        }
+
+        private static long FreeBytes(string root)
+        {
+            try { return new DriveInfo(root).AvailableFreeSpace; } catch { return long.MaxValue; }
+        }
 
         private sealed class Stats
         {
@@ -32,18 +79,20 @@ namespace WinCrashDoctor.Stress
 
         public static StressStageResult Run(StageContext ctx)
         {
-            long span = ctx.Stage.DiskSpanBytes;
-            span -= span % Block;
+            SweepOrphans(); // leftovers of a crashed run would eat the free space measured below
             string drive = StressPlanner.TestDrive;
+            string root = Path.GetPathRoot(Path.GetTempPath());
+            long reserve = 10L << 30;
+            try { reserve = StressPlanner.DiskReserve(new DriveInfo(root).TotalSize); } catch (Exception ex) { Log.Warn(ex); }
+            // Free space may have changed since the plan was built (it can be hours old): measure it again now.
+            long span = Math.Min(ctx.Stage.DiskSpanBytes, StressPlanner.DiskSpanFor(ctx.Stage.DiskSpanBytes));
+            span -= span % Block;
             if (span < 1L << 30)
-                return StressAdvice.Skipped(ctx, string.Format(L("Pas assez d'espace libre sur {0} pour un test fiable (il faut au moins 11 Go).",
-                                                                  "Not enough free space on {0} for a meaningful test (at least 11 GB needed).",
-                                                                  "No hay espacio libre suficiente en {0} (se necesitan al menos 11 GB).",
-                                                                  "Zu wenig freier Speicher auf {0} (mindestens 11 GB nötig).",
-                                                                  "Spazio libero insufficiente su {0} (servono almeno 11 GB).",
-                                                                  "Espaço livre insuficiente em {0} (são necessários pelo menos 11 GB)."), drive));
+                return StressAdvice.Skipped(ctx, string.Format(Localizer.S("disk_stress.not_enough_free_space_on_for"), drive, StressText.Gb(reserve + (1L << 30))));
 
-            string path = Path.Combine(Path.GetTempPath(), "dumpfinder_stress_" + Process.GetCurrentProcess().Id + ".bin");
+            long writeCap = StressPlanner.DiskWriteCap(span);
+            bool capped = false;
+            string path = Path.Combine(Path.GetTempPath(), FilePrefix + Process.GetCurrentProcess().Id + ".bin");
             IntPtr buf = Native.AllocAligned(Block);
             if (buf == IntPtr.Zero) throw new OutOfMemoryException("VirtualAlloc");
             var st = new Stats();
@@ -58,9 +107,11 @@ namespace WinCrashDoctor.Stress
                     int cycle = 0;
                     while (!ctx.ShouldStop)
                     {
+                        // Total write volume cap: the stage ends early (and passes) rather than wearing the SSD for nothing.
+                        if (cycle > 0 && st.Written + span > writeCap) { capped = true; break; }
                         ulong cs = CpuWork.Mix(seed + (ulong)cycle);
                         long written;
-                        StressStageResult r = WritePass(ctx, h, buf, span, cs, st, out written);
+                        StressStageResult r = WritePass(ctx, h, buf, span, cs, st, root, reserve / 2, out written);
                         if (r != null) return r;
                         r = VerifyPass(ctx, h, buf, written, cs, st);
                         if (r != null) return r;
@@ -76,22 +127,18 @@ namespace WinCrashDoctor.Stress
                 try { if (File.Exists(path)) File.Delete(path); } catch { }
             }
 
-            string summary = string.Format(L(
-                "{0} écrits puis relus directement sur {1} et vérifiés, aucune donnée corrompue. Écriture : {2} en moyenne, {3} au plus bas ; latence max {4:N0} ms.",
-                "{0} written then read back from {1} and verified, no corrupted data. Writes: {2} average, {3} at the lowest; peak latency {4:N0} ms.",
-                "{0} escritos y releídos de {1} y verificados, sin datos corruptos. Escritura: {2} de media, {3} como mínimo; latencia máx. {4:N0} ms.",
-                "{0} auf {1} geschrieben, direkt zurückgelesen und geprüft, keine beschädigten Daten. Schreiben: {2} im Mittel, {3} minimal; max. Latenz {4:N0} ms.",
-                "{0} scritti e riletti da {1} e verificati, nessun dato corrotto. Scrittura: {2} in media, {3} al minimo; latenza max {4:N0} ms.",
-                "{0} gravados e relidos de {1} e verificados, nenhum dado corrompido. Gravação: {2} em média, {3} no mínimo; latência máx. {4:N0} ms."),
+            string summary = string.Format(Localizer.S("disk_stress.written_then_read_back_from_and"),
                 StressText.Gb(st.Verified), drive,
                 st.WriteMs > 0 ? StressText.MbPerSec(st.Written / (st.WriteMs / 1000.0) / (1024.0 * 1024)) : "—",
                 double.IsNaN(st.MinWriteMbps) ? "—" : StressText.MbPerSec(st.MinWriteMbps),
                 st.MaxLatencyMs);
+            if (capped)
+                summary += " " + string.Format(Localizer.S("disk_stress.write_limit_of_reached_stage_ended"), StressText.Gb(writeCap));
             if (st.Spikes > 0 && !ctx.UserStopped) return StressAdvice.DiskSlow(ctx, summary, st.Spikes);
             return StressAdvice.Passed(ctx, summary);
         }
 
-        private static StressStageResult WritePass(StageContext ctx, SafeFileHandle h, IntPtr buf, long span, ulong seed, Stats st, out long written)
+        private static StressStageResult WritePass(StageContext ctx, SafeFileHandle h, IntPtr buf, long span, ulong seed, Stats st, string root, long minFree, out long written)
         {
             written = 0;
             long dummy;
@@ -121,8 +168,9 @@ namespace WinCrashDoctor.Stress
                     double mbps = secBytes / sec.Elapsed.TotalSeconds / (1024.0 * 1024);
                     if (written > (2L << 30)) // ignore the first GB or two (cache warm-up)
                         st.MinWriteMbps = double.IsNaN(st.MinWriteMbps) ? mbps : Math.Min(st.MinWriteMbps, mbps);
-                    Publish(ctx, L("Écriture ", "Writing ", "Escritura ", "Schreiben ", "Scrittura ", "Gravação ") + StressText.Gb(written) + " / " + StressText.Gb(span), mbps, secMax, st);
+                    Publish(ctx, Localizer.S("disk_stress.writing") + StressText.Gb(written) + " / " + StressText.Gb(span), mbps, secMax, st);
                     sec.Restart(); secBytes = 0; secMax = 0;
+                    if (FreeBytes(root) < minFree) break; // something else is filling the drive: stop growing the file
                 }
             }
             return null;
@@ -135,7 +183,7 @@ namespace WinCrashDoctor.Stress
             var sec = Stopwatch.StartNew();
             long secBytes = 0, pos = 0;
             double secMax = 0;
-            while (pos < written && !(ctx.UserStopped || ctx.Abort))
+            while (pos < written && !VerifyMustStop(ctx))
             {
                 var io = Stopwatch.StartNew();
                 uint n;
@@ -151,7 +199,7 @@ namespace WinCrashDoctor.Stress
                 if (sec.ElapsedMilliseconds >= 1000)
                 {
                     double mbps = secBytes / sec.Elapsed.TotalSeconds / (1024.0 * 1024);
-                    Publish(ctx, L("Relecture et vérification ", "Reading back and verifying ", "Relectura y verificación ", "Rücklesen und Prüfen ", "Rilettura e verifica ", "Releitura e verificação ") + StressText.Gb(pos) + " / " + StressText.Gb(written), mbps, secMax, st);
+                    Publish(ctx, Localizer.S("disk_stress.reading_back_and_verifying") + StressText.Gb(pos) + " / " + StressText.Gb(written), mbps, secMax, st);
                     sec.Restart(); secBytes = 0; secMax = 0;
                 }
             }
@@ -183,7 +231,7 @@ namespace WinCrashDoctor.Stress
                 if (sec.ElapsedMilliseconds >= 1000)
                 {
                     double iops = ops / sec.Elapsed.TotalSeconds;
-                    Publish(ctx, string.Format(L("Lectures aléatoires 4K vérifiées · {0:N0} IOPS", "Verified random 4K reads · {0:N0} IOPS", "Lecturas aleatorias 4K verificadas · {0:N0} IOPS", "Geprüfte zufällige 4K-Lesezugriffe · {0:N0} IOPS", "Letture casuali 4K verificate · {0:N0} IOPS", "Leituras aleatórias 4K verificadas · {0:N0} IOPS"), iops),
+                    Publish(ctx, string.Format(Localizer.S("disk_stress.verified_random_4k_reads_0_n0"), iops),
                         iops * Page / (1024.0 * 1024), secMax, st);
                     sec.Restart(); ops = 0; secMax = 0;
                 }
@@ -204,12 +252,10 @@ namespace WinCrashDoctor.Stress
             {
                 StressTile.Make(StressText.Throughput, StressText.MbPerSec(mbps), StressPlanner.TestDrive),
                 StressTile.Make(StressText.Latency, latMs.ToString("N0") + " ms", StressText.Max + " " + st.MaxLatencyMs.ToString("N0") + " ms", st.Spikes > 0 ? 2 : 0),
-                StressTile.Make(L("Vérifié", "Verified", "Verificado", "Geprüft", "Verificato", "Verificado"), StressText.Gb(st.Verified), L("écrit : ", "written: ", "escrito: ", "geschrieben: ", "scritto: ", "gravado: ") + StressText.Gb(st.Written)),
+                StressTile.Make(Localizer.S("disk_stress.verified"), StressText.Gb(st.Verified), Localizer.S("disk_stress.written") + StressText.Gb(st.Written)),
                 ctx.ErrorTile(0)
             }, mbps, latMs,
-            L("Violet : débit (Mo/s)   •   Ambre : latence la plus longue de la seconde (ms)", "Violet: throughput (MB/s)   •   Amber: slowest I/O of the second (ms)",
-              "Violeta: velocidad (MB/s)   •   Ámbar: E/S más lenta del segundo (ms)", "Violett: Durchsatz (MB/s)   •   Gelb: langsamster Zugriff der Sekunde (ms)",
-              "Viola: velocità (MB/s)   •   Ambra: I/O più lento del secondo (ms)", "Violeta: taxa (MB/s)   •   Âmbar: E/S mais lenta do segundo (ms)"));
+            Localizer.S("disk_stress.violet_throughput_mb_s_amber_slowest"));
         }
 
         /// <summary>Each 4 KB page holds a pseudo-random stream seeded by its own index, so any page can be checked alone.</summary>

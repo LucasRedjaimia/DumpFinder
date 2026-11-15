@@ -40,7 +40,7 @@ namespace WinCrashDoctor.Detection
             var list = new List<string>();
             try
             {
-                using (var s = new ManagementObjectSearcher(@"\\.\root\Microsoft\Windows\Storage", "SELECT FriendlyName, BusType FROM MSFT_PhysicalDisk"))
+                using (var s = Wmi.Searcher(@"\\.\root\Microsoft\Windows\Storage", "SELECT FriendlyName, BusType FROM MSFT_PhysicalDisk"))
                 {
                     foreach (ManagementObject mo in s.Get())
                     {

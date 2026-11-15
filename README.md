@@ -12,7 +12,7 @@ Dump Finder helps you understand why a Windows PC crashes (blue screens, GPU tim
 - **Fixes**: well-known Windows settings that stabilise a PC (TDR, MPO, NVMe SSD HMB…), all reversible.
 - **Optimise**: official Windows settings, preinstalled apps, startup programs, temporary file cleanup.
 - **AI assistant** (optional, with your own API key) and an MCP server.
-- Interface in English, French, Spanish, German, Italian and Portuguese.
+- Interface in 14 languages: English, French, Spanish, German, Italian, Portuguese, Polish, Dutch, Turkish, Russian, Ukrainian, Simplified Chinese, Japanese and Korean.
 
 At launch, the app checks GitHub for a newer version and shows what's new with a download link. Nothing is downloaded or installed automatically, and the check can be turned off in **Settings › Updates**.
 
@@ -25,6 +25,22 @@ Requirements: [.NET 8 SDK](https://dotnet.microsoft.com/download) (the project t
 ```
 
 The executable is written to the repository root: `DumpFinder.exe`.
+
+## Translations
+
+All interface texts live in `src/Locales/`, one JSON file per language (embedded in the exe at build time):
+
+- `<code>.json`: interface texts, `"key": "text"`. `en.json` is the reference; a key missing in a language falls back to English.
+- `<code>.engine.json`: texts built by the diagnostic engine, keyed by their exact English sentence (`en.engine.json` lists them all).
+
+When translating:
+
+- Keep placeholders such as `{0}`, `{1:HH:mm}` (they may move inside the sentence), emoji, `\r\n` line breaks and technical names (BSOD, TDR, NVMe, XMP…).
+- Values written as `one: … | other: …` depend on a count. Use the plural forms of your language (`one`, `few`, `many`, `other` for Polish, Russian, Ukrainian; a single plain sentence for Chinese, Japanese, Korean).
+
+To add a language: add a value to `AppLang` (`src/Core/Models.cs`, append only), a row to the `Codes`, `Cultures` and `Natives` tables in `src/Infrastructure/Localizer.cs`, and the two JSON files.
+
+Several translations (Polish, Dutch, Turkish, Russian, Ukrainian, Chinese, Japanese, Korean) were machine-assisted: corrections from native speakers are welcome.
 
 ## Publish a new version
 

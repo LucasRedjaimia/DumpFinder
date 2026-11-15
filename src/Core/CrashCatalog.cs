@@ -37,7 +37,7 @@ namespace WinCrashDoctor
                 if (Event != null) return Localizer.T(Event.SummaryFr, Event.SummaryEn);
                 if (Dump == null) return "";
                 string who = !string.IsNullOrEmpty(Dump.ProcessName) ? Dump.ProcessName : Dump.FileName;
-                return Localizer.L("Fichier de crash : ", "Crash dump: ", "Volcado: ", "Absturzabbild: ", "Dump di crash: ", "Dump de falha: ") + who;
+                return Localizer.S("crash_catalog.crash_dump") + who;
             }
         }
 
@@ -129,16 +129,26 @@ namespace WinCrashDoctor
             return m.Success && uint.TryParse(m.Groups[1].Value, System.Globalization.NumberStyles.HexNumber, null, out code) ? code : 0;
         }
 
+        /// <summary>VIDEO_TDR_FAILURE, VIDEO_TDR_TIMEOUT_DETECTED, VIDEO_DXGKRNL_FATAL_ERROR, VIDEO_ENGINE_TIMEOUT_DETECTED.</summary>
+        private static readonly HashSet<uint> GpuStopCodes = new HashSet<uint> { 0x116, 0x117, 0x113, 0x119, 0x141 };
+        /// <summary>CRITICAL_PROCESS_DIED, KERNEL_DATA_INPAGE_ERROR, KERNEL_STACK_INPAGE_ERROR, CRITICAL_OBJECT_TERMINATION, UNEXPECTED_STORE_EXCEPTION.</summary>
+        private static readonly HashSet<uint> StorageStopCodes = new HashSet<uint> { 0xEF, 0x7A, 0x77, 0xF4, 0x154 };
+        /// <summary>MEMORY_MANAGEMENT, SYSTEM_SERVICE_EXCEPTION, PAGE_FAULT_IN_NONPAGED_AREA.</summary>
+        private static readonly HashSet<uint> MemoryStopCodes = new HashSet<uint> { 0x1A, 0x3B, 0x50 };
+
         public static List<string> RelatedFixIds(CrashEntry e)
         {
             var ids = new List<string>();
             var bc = BugCheckCatalog.Get(StopCode(e));
             if (bc != null) ids.AddRange(bc.FixIds);
-            string code = ((e.Event != null ? e.Event.CodeOrId : "") + " " + (e.Dump != null ? e.Dump.BugCheckOrException : "")).ToLowerInvariant();
+            // Compare the numeric stop code, not substrings of its text: "0x000000ef" never contained "0xef",
+            // and "50" / "1a" also matched unrelated codes such as 0x150 or 0x11A.
+            uint stop = StopCode(e);
             string module = (e.Dump != null ? e.Dump.PrimaryCulpritModule ?? "" : "").ToLowerInvariant();
-            bool gpuCode = code.Contains("116") || code.Contains("117") || code.Contains("119") || code.Contains("141")
+            bool gpuCode = GpuStopCodes.Contains(stop)
                            || module.Contains("nvlddmkm") || module.Contains("amdkmdag") || module.Contains("atikmdag") || module.Contains("igdkmd") || module.Contains("dxgkrnl");
-            bool storageCode = code.Contains("0xef") || code.Contains("129") || code.Contains("153") || module.Contains("stornvme") || module.Contains("storport");
+            bool storageCode = StorageStopCodes.Contains(stop) || module.Contains("stornvme") || module.Contains("storport");
+            bool memoryCode = MemoryStopCodes.Contains(stop);
 
             switch (e.Category)
             {
@@ -148,7 +158,7 @@ namespace WinCrashDoctor
                 case CrashCategory.BSOD:
                     if (gpuCode) ids.AddRange(new[] { "mpo", "tdr", "wu_driver_lock", "amd_ulps", "hags" });
                     else if (storageCode) ids.AddRange(new[] { "nvme_hmb", "pcie_aspm" });
-                    else if (code.Contains("1a") || code.Contains("3b") || code.Contains("50")) ids.AddRange(new[] { "pagefile_auto", "sfc_repair" });
+                    else if (memoryCode) ids.AddRange(new[] { "pagefile_auto", "sfc_repair" });
                     else ids.AddRange(new[] { "sfc_repair", "fast_startup" });
                     break;
                 case CrashCategory.UnexpectedReboot:
@@ -246,13 +256,7 @@ namespace WinCrashDoctor
         public static string AiFocusQuestion(CrashEntry e)
         {
             var sb = new StringBuilder();
-            sb.Append(Localizer.L(
-                "Concentre-toi sur ce crash précis et explique en français simple la cause la plus probable, puis donne 3 actions concrètes classées par priorité. ",
-                "Focus on this specific crash: explain the most likely root cause in plain language, then give 3 concrete actions ranked by priority. ",
-                "Céntrate en este fallo: explica la causa más probable en lenguaje sencillo y da 3 acciones concretas por prioridad. ",
-                "Konzentriere dich auf diesen Absturz: erkläre die wahrscheinlichste Ursache einfach und nenne 3 konkrete Maßnahmen nach Priorität. ",
-                "Concentrati su questo crash: spiega la causa più probabile in modo semplice e indica 3 azioni concrete per priorità. ",
-                "Foque neste travamento: explique a causa mais provável em linguagem simples e dê 3 ações concretas por prioridade. "));
+            sb.Append(Localizer.S("crash_catalog.focus_on_this_specific_crash_explain"));
             sb.Append("Crash: ").Append(e.Title).Append(" @ ").Append(e.Time.ToString("yyyy-MM-dd HH:mm")).Append(". ");
             if (e.Event != null) sb.Append("Event ").Append(e.Event.Source).Append(" / ").Append(e.Event.CodeOrId).Append(". ").Append(e.Event.DetailsEn).Append(" ");
             if (e.Dump != null)
@@ -269,7 +273,8 @@ namespace WinCrashDoctor
                     sb.Append(" WinDbg !analyze: bucket ").Append(deep.BucketId).Append(", symbol ").Append(deep.SymbolName)
                       .Append(", stack: ").Append(string.Join(" | ", deep.StackFrames ?? new List<string>())).Append(".");
             }
-            return sb.ToString();
+            // Sent to an online AI provider: no account name in paths, no full web addresses.
+            return Privacy.Redact(sb.ToString());
         }
 
         public static string FormatSize(long bytes)

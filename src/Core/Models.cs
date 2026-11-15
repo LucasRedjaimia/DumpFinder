@@ -10,7 +10,16 @@ namespace WinCrashDoctor
         ES = 2,
         DE = 3,
         IT = 4,
-        PT = 5
+        PT = 5,
+        // Saved in settings as numbers: only append new languages, never reorder.
+        PL = 6,
+        NL = 7,
+        TR = 8,
+        RU = 9,
+        UK = 10,
+        ZH = 11,
+        JA = 12,
+        KO = 13
     }
 
     public enum AppThemeMode
@@ -100,7 +109,7 @@ namespace WinCrashDoctor
         public string DetailsFr { get; set; }
         public string DetailsEn { get; set; }
 
-        public string DisplayTime { get { return Timestamp.ToString("dd/MM/yyyy HH:mm"); } }
+        public string DisplayTime { get { return Timestamp.ToString("g", Localizer.Culture); } } // follows the app language
     }
 
     public class RegistryFixItem

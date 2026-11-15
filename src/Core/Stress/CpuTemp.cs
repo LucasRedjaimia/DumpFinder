@@ -145,8 +145,11 @@ namespace WinCrashDoctor.Stress
             using (var r = TryOpen())
             {
                 double t, w;
-                if (r != null && r.Read(out t, out w)) sb.AppendLine("Lecture retenue : " + r.SensorName + " = " + t.ToString("0.0") + " °C, " + (double.IsNaN(w) ? "puissance n/d" : w.ToString("0") + " W"));
-                else sb.AppendLine("Lecture retenue : aucune");
+                string chosen = Localizer.S("cpu_temp.selected_reading");
+                if (r != null && r.Read(out t, out w))
+                    sb.AppendLine(chosen + r.SensorName + " = " + t.ToString("0.0") + " °C, "
+                                  + (double.IsNaN(w) ? Localizer.S("cpu_temp.power_n_a") : w.ToString("0") + " W"));
+                else sb.AppendLine(chosen + Localizer.S("cpu_temp.none"));
             }
             System.IO.File.WriteAllText(outPath, sb.ToString(), new UTF8Encoding(false));
             return 0;
