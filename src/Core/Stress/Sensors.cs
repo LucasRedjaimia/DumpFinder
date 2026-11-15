@@ -98,12 +98,36 @@ namespace WinCrashDoctor.Stress
             }
         }
 
+        /// <summary>
+        /// Full path of nvidia-smi.exe in its two install locations, or null. Never resolved through PATH or the
+        /// current directory (a planted nvidia-smi.exe there would otherwise run with our rights).
+        /// </summary>
+        public static string NvidiaSmiPath
+        {
+            get
+            {
+                try
+                {
+                    string sys = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "nvidia-smi.exe");
+                    if (File.Exists(sys)) return sys;
+                    string pf = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+                    if (!string.IsNullOrEmpty(pf))
+                    {
+                        string nvsmi = Path.Combine(pf, "NVIDIA Corporation", "NVSMI", "nvidia-smi.exe");
+                        if (File.Exists(nvsmi)) return nvsmi;
+                    }
+                }
+                catch (Exception ex) { Log.Warn(ex); }
+                return null;
+            }
+        }
+
         private bool StartNvidiaSmi()
         {
             try
             {
-                string exe = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "nvidia-smi.exe");
-                if (!File.Exists(exe)) exe = "nvidia-smi";
+                string exe = NvidiaSmiPath;
+                if (exe == null) return false;
                 var psi = new ProcessStartInfo
                 {
                     FileName = exe,
@@ -115,7 +139,8 @@ namespace WinCrashDoctor.Stress
                 };
                 var p = new Process { StartInfo = psi, EnableRaisingEvents = true };
                 p.OutputDataReceived += (s, e) => ParseSmi(e.Data);
-                if (!p.Start()) return false;
+                if (!p.Start()) { p.Dispose(); return false; }
+                Native.KillWithThisProcess(p); // -lms never ends by itself: make sure it dies with the app
                 p.BeginOutputReadLine();
                 _smi = p;
                 Source = "nvidia-smi";
@@ -177,9 +202,14 @@ namespace WinCrashDoctor.Stress
         public void Dispose()
         {
             try { if (_adlTimer != null) _adlTimer.Dispose(); } catch { }
-            try { if (_smi != null && !_smi.HasExited) _smi.Kill(); } catch { }
-            try { if (_smi != null) _smi.Dispose(); } catch { }
+            Process smi = _smi;
             _smi = null;
+            if (smi != null)
+            {
+                try { smi.CancelOutputRead(); } catch { }
+                try { if (!smi.HasExited) { smi.Kill(); smi.WaitForExit(2000); } } catch (Exception ex) { Log.Warn(ex); }
+                try { smi.Dispose(); } catch { }
+            }
         }
     }
 

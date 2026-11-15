@@ -71,7 +71,12 @@ namespace WinCrashDoctor
                     }
                 }
             }
-            catch (Exception ex) { Log.Warn(ex); }
+            catch (Exception ex)
+            {
+                // Unreadable settings: keep a copy (it holds the encrypted API key) before defaults overwrite it.
+                Log.Warn(ex);
+                AtomicFile.Quarantine(SettingsPath);
+            }
 
             CachedSettings = new AppSettings
             {
@@ -100,10 +105,18 @@ namespace WinCrashDoctor
             try
             {
                 CachedSettings = settings;
-                settings.AiApiKeyProtected = SecretStore.Protect(settings.AiApiKey);
+                if (string.IsNullOrEmpty(settings.AiApiKey))
+                    settings.AiApiKeyProtected = null;
+                else
+                {
+                    // If encryption fails, keep the previously saved ciphertext rather than silently dropping the key.
+                    string protectedKey = SecretStore.Protect(settings.AiApiKey);
+                    if (protectedKey != null) settings.AiApiKeyProtected = protectedKey;
+                    else Log.Warn("API key could not be encrypted; previous saved key kept");
+                }
                 var ser = new JavaScriptSerializer();
                 string json = ser.Serialize(settings);
-                File.WriteAllText(SettingsPath, json, Encoding.UTF8);
+                AtomicFile.WriteAllText(SettingsPath, json, Encoding.UTF8);
             }
             catch (Exception ex) { Log.Warn(ex); }
         }

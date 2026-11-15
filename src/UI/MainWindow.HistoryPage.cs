@@ -258,7 +258,7 @@ namespace WinCrashDoctor
             {
                 Button undo = CreateFlatButton(Localizer.L("↺ Annuler", "↺ Undo", "↺ Deshacer", "↺ Rückgängig", "↺ Annulla", "↺ Desfazer"), "BgCard", "TextPrimary", "BorderStrong", new Thickness(12, 5, 12, 5), 12);
                 undo.VerticalAlignment = VerticalAlignment.Center;
-                undo.Click += async (s, e) => await UndoJournalEntry(j);
+                undo.Click += async (s, e) => await UndoJournalEntry(j, s);
                 right = undo;
             }
             else if (j.Ok && !j.Reversible)
@@ -272,20 +272,24 @@ namespace WinCrashDoctor
             return ResBorder(new Border { BorderThickness = new Thickness(0, first ? 0 : 1, 0, 0), Padding = new Thickness(0, 10, 0, 10), Child = row }, "BorderCard");
         }
 
-        private async Task UndoJournalEntry(JournalEntry j)
+        private async Task UndoJournalEntry(JournalEntry j, object sender = null)
         {
             bool ok;
             string error = null;
-            using (BeginBusy(Localizer.L("Annulation en cours…", "Undoing…", "Deshaciendo…", "Wird rückgängig gemacht…", "Annullamento…", "Desfazendo…")))
+            using (IDisposable fixLock = TryBeginFix(sender))
             {
-                ok = await Task.Run(() => FixRunner.Revert(j.Changes, out error));
-                if (ok)
+                if (fixLock == null) return;
+                using (BeginBusy(Localizer.L("Annulation en cours…", "Undoing…", "Deshaciendo…", "Wird rückgängig gemacht…", "Annullamento…", "Desfazendo…")))
                 {
-                    History.MarkReverted(j.Id);
-                    if (_lastResult != null)
+                    ok = await Task.Run(() => FixRunner.Revert(j.Changes, out error));
+                    if (ok)
                     {
-                        _lastResult.Fixes = await Task.Run(() => DiagnosticsEngine.InspectAllFixes(false));
-                        RenderScanResult(_lastResult);
+                        History.MarkReverted(j.Id);
+                        if (_lastResult != null)
+                        {
+                            _lastResult.Fixes = await Task.Run(() => DiagnosticsEngine.InspectAllFixes(false));
+                            RenderScanResult(_lastResult);
+                        }
                     }
                 }
             }

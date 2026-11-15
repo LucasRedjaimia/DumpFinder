@@ -32,12 +32,31 @@ namespace WinCrashDoctor.Optimize
         {
             switch (id)
             {
-                case "usertemp": return Path.GetTempPath();
+                case "usertemp": return SafeUserTemp();
                 case "wintemp": return Path.Combine(WinDir, "Temp");
                 case "wucache": return Path.Combine(WinDir, @"SoftwareDistribution\Download");
                 case "docache": return Path.Combine(WinDir, @"ServiceProfiles\NetworkService\AppData\Local\Microsoft\Windows\DeliveryOptimization\Cache");
                 default: return null;
             }
+        }
+
+        /// <summary>
+        /// %TEMP%, only when it is the usual per-user temp folder (%LOCALAPPDATA%\Temp or one of its subfolders,
+        /// e.g. Temp\2 in remote sessions). A TEMP variable pointing at C:\, the profile or Documents returns null:
+        /// cleaning "every file older than 24 h" there would delete personal files.
+        /// </summary>
+        private static string SafeUserTemp()
+        {
+            try
+            {
+                string temp = Path.GetFullPath(Path.GetTempPath()).TrimEnd('\\');
+                string expected = Path.GetFullPath(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Temp")).TrimEnd('\\');
+                if (temp.Equals(expected, StringComparison.OrdinalIgnoreCase) || temp.StartsWith(expected + "\\", StringComparison.OrdinalIgnoreCase))
+                    return temp;
+                Log.Warn("Temp cleanup skipped: %TEMP% is not the usual user temp folder (" + temp + ")");
+            }
+            catch (Exception ex) { Log.Warn(ex); }
+            return null;
         }
 
         /// <summary>Temp folders keep anything touched in the last 24 h (files an app may still be using).</summary>
@@ -107,6 +126,12 @@ namespace WinCrashDoctor.Optimize
         {
             string id = IdOf(op);
             string dir = PathOf(id);
+            if (dir == null && id == "usertemp")
+            {
+                messageFr = "Nettoyage ignoré : la variable TEMP ne pointe pas vers le dossier temporaire habituel de ton compte.";
+                messageEn = "Cleanup skipped: the TEMP variable does not point to your account's usual temporary folder.";
+                return false;
+            }
             if (dir == null) { messageFr = "Élément inconnu."; messageEn = "Unknown item."; return false; }
 
             long freed = 0; int deleted = 0, skipped = 0;
@@ -118,6 +143,14 @@ namespace WinCrashDoctor.Optimize
             }
             else if (Directory.Exists(dir))
             {
+                // Where the folder really is on disk (C:\Windows\Temp may itself be redirected by Windows).
+                string rootFinal = SafeDelete.FinalPath(dir);
+                if (rootFinal == null)
+                {
+                    messageFr = "Dossier illisible, rien n'a été supprimé.";
+                    messageEn = "Folder not readable, nothing was deleted.";
+                    return false;
+                }
                 DateTime cutoff = DateTime.Now.AddHours(-24);
                 foreach (string f in SafeFiles(dir))
                 {
@@ -126,15 +159,16 @@ namespace WinCrashDoctor.Optimize
                         var fi = new FileInfo(f);
                         if (OnlyOld(id) && fi.LastWriteTime > cutoff) continue;
                         long len = fi.Length;
-                        fi.Attributes = FileAttributes.Normal;
-                        fi.Delete();
-                        freed += len; deleted++;
+                        // Deleted through a handle whose real location is checked first: a folder swapped for a
+                        // junction after the scan cannot redirect the (possibly elevated) delete into System32.
+                        if (SafeDelete.Delete(f, rootFinal)) { freed += len; deleted++; }
+                        else skipped++;
                     }
                     catch { skipped++; } // in use: left alone
                 }
                 foreach (string d in SafeDirs(dir).OrderByDescending(x => x.Length))
                 {
-                    try { if (!Directory.EnumerateFileSystemEntries(d).Any()) Directory.Delete(d); } catch { }
+                    try { if (!Directory.EnumerateFileSystemEntries(d).Any()) SafeDelete.Delete(d, rootFinal); } catch { }
                 }
             }
 
@@ -188,12 +222,7 @@ namespace WinCrashDoctor.Optimize
 
         private static void RunHidden(string exe, string args, int timeout)
         {
-            try
-            {
-                using (var p = Process.Start(new ProcessStartInfo { FileName = exe, Arguments = args, CreateNoWindow = true, UseShellExecute = false }))
-                    p.WaitForExit(timeout);
-            }
-            catch (Exception ex) { Log.Warn(ex); }
+            SysTools.Run(exe, args, timeout);
         }
     }
 }

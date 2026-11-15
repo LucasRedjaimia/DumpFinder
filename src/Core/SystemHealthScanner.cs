@@ -32,7 +32,7 @@ namespace WinCrashDoctor
             {
                 string biosVer = "-";
                 DateTime biosDate = DateTime.MinValue;
-                using (var s = new ManagementObjectSearcher("SELECT Manufacturer, SMBIOSBIOSVersion, ReleaseDate FROM Win32_BIOS"))
+                using (var s = Wmi.Searcher("SELECT Manufacturer, SMBIOSBIOSVersion, ReleaseDate FROM Win32_BIOS"))
                 {
                     foreach (ManagementObject mo in s.Get())
                     {
@@ -126,7 +126,7 @@ namespace WinCrashDoctor
                 string partNum = "";
                 string vendor = "";
 
-                using (var s = new ManagementObjectSearcher("SELECT Manufacturer, PartNumber, Capacity, Speed, ConfiguredClockSpeed FROM Win32_PhysicalMemory"))
+                using (var s = Wmi.Searcher("SELECT Manufacturer, PartNumber, Capacity, Speed, ConfiguredClockSpeed FROM Win32_PhysicalMemory"))
                 {
                     foreach (ManagementObject mo in s.Get())
                     {
@@ -350,7 +350,7 @@ namespace WinCrashDoctor
             // 4. NVMe / SSD Disk Health & SMART
             try
             {
-                using (var s = new ManagementObjectSearcher(@"\\.\root\Microsoft\Windows\Storage", "SELECT DeviceId, FriendlyName, BusType, HealthStatus, Size FROM MSFT_PhysicalDisk"))
+                using (var s = Wmi.Searcher(@"\\.\root\Microsoft\Windows\Storage", "SELECT DeviceId, FriendlyName, BusType, HealthStatus, Size FROM MSFT_PhysicalDisk"))
                 {
                     foreach (ManagementObject mo in s.Get())
                     {
@@ -440,7 +440,7 @@ namespace WinCrashDoctor
             List<DiskSmartInfo> list = new List<DiskSmartInfo>();
             try
             {
-                using (var s = new ManagementObjectSearcher(@"\\.\root\Microsoft\Windows\Storage",
+                using (var s = Wmi.Searcher(@"\\.\root\Microsoft\Windows\Storage",
                     "SELECT DeviceId, Temperature, Wear, ReadErrorsUncorrected, WriteErrorsUncorrected, PowerOnHours FROM MSFT_StorageReliabilityCounter"))
                 {
                     foreach (ManagementObject mo in s.Get())
@@ -477,18 +477,11 @@ namespace WinCrashDoctor
             // 1. Try nvidia-smi -q -d MEMORY
             try
             {
-                ProcessStartInfo psi = new ProcessStartInfo
+                // Full path only, and a real timeout: nvidia-smi hangs when the driver is wedged (common after TDRs).
+                string smi = SysTools.NvidiaSmiPath;
+                if (smi != null)
                 {
-                    FileName = "nvidia-smi",
-                    Arguments = "-q -d MEMORY",
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true
-                };
-                using (Process p = Process.Start(psi))
-                {
-                    string output = p.StandardOutput.ReadToEnd();
-                    p.WaitForExit(1500);
+                    string output = SysTools.Run(smi, "-q -d MEMORY", 5000).Output;
                     Match m = Regex.Match(output, @"BAR1 Memory Usage[\s\S]{1,120}?Total\s*:\s*(\d+)\s*MiB", RegexOptions.IgnoreCase);
                     if (m.Success)
                         return long.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture);
@@ -499,7 +492,7 @@ namespace WinCrashDoctor
             // 2. Fallback: Win32_DeviceMemoryAddress range > 512 MB
             try
             {
-                using (var s = new ManagementObjectSearcher("SELECT StartingAddress, EndingAddress FROM Win32_DeviceMemoryAddress"))
+                using (var s = Wmi.Searcher("SELECT StartingAddress, EndingAddress FROM Win32_DeviceMemoryAddress"))
                 {
                     foreach (ManagementObject mo in s.Get())
                     {
@@ -608,18 +601,11 @@ namespace WinCrashDoctor
             // 2. Fallback: nvidia-smi
             try
             {
-                ProcessStartInfo psi = new ProcessStartInfo
+                string smi = SysTools.NvidiaSmiPath;
+                if (smi != null)
                 {
-                    FileName = "nvidia-smi",
-                    Arguments = "--query-gpu=pcie.link.gen.current,pcie.link.gen.max,pcie.link.width.current,pcie.link.width.max --format=csv,noheader,nounits",
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true
-                };
-                using (Process p = Process.Start(psi))
-                {
-                    string line = (p.StandardOutput.ReadLine() ?? "").Trim();
-                    p.WaitForExit(1500);
+                    string output = SysTools.Run(smi, "--query-gpu=pcie.link.gen.current,pcie.link.gen.max,pcie.link.width.current,pcie.link.width.max --format=csv,noheader,nounits", 5000).Output;
+                    string line = output.Split('\n')[0].Trim();
                     string[] parts = line.Split(',');
                     if (parts.Length >= 4)
                     {

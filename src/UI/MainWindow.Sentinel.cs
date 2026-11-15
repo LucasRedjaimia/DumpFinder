@@ -16,9 +16,20 @@ namespace WinCrashDoctor
         public async void StartInTray()
         {
             await Task.Delay(TimeSpan.FromSeconds(40)); // let the desktop settle after logon
+            // The window was opened meanwhile and is scanning: it shows the results itself.
+            if (_scanInProgress) return;
+            _scanInProgress = true;
             try
             {
-                ScanResult res = await Task.Run(() => DiagnosticsEngine.RunScan(DateTime.Now.AddDays(-Stability.WindowDays)));
+                ScanResult res;
+                try
+                {
+                    res = await Task.Run(() => DiagnosticsEngine.RunScan(DateTime.Now.AddDays(-Stability.WindowDays)));
+                }
+                finally
+                {
+                    _scanInProgress = false;
+                }
                 _lastResult = res;
                 RenderScanResult(res);
 
@@ -50,6 +61,10 @@ namespace WinCrashDoctor
             catch (Exception ex)
             {
                 Log.Error(ex, "Tray startup check");
+            }
+            finally
+            {
+                OnScanFinished(); // a scan / relocalization requested while this one ran
             }
         }
 

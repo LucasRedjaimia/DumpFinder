@@ -37,13 +37,13 @@ namespace WinCrashDoctor.Stress
                     stages.Add(Stage(StressStageKind.GpuCompute, 20 * 60));
                     stages.Add(Stage(StressStageKind.Vram, 20 * 60));
                     stages.Add(Stage(StressStageKind.Transient, 10 * 60));
-                    stages.Add(Disk(30 * 60, 64 * GB));
+                    stages.Add(Disk(30 * 60, 64 * GB)); // total writes capped by DiskWriteCap (192 GB), not by the 30 min
                     break;
                 case StressPlanKind.CpuPerCore:
                     stages.Add(PerCore(cores, Clamp(minutes, 1, 30) * 60));
                     break;
                 case StressPlanKind.Disk:
-                    stages.Add(Disk(Clamp(minutes, 1, 120) * 60, 16 * GB));
+                    stages.Add(Disk(Clamp(minutes, 1, 120) * 60, 16 * GB)); // total writes capped by DiskWriteCap (64 GB)
                     break;
                 default:
                     stages.Add(Stage(StageOf(kind), Clamp(minutes, 1, 120) * 60));
@@ -79,19 +79,32 @@ namespace WinCrashDoctor.Stress
             return new StressStage { Kind = StressStageKind.Disk, DurationSec = sec, DiskSpanBytes = DiskSpanFor(span) };
         }
 
-        /// <summary>Never use more than 40 % of the free space, and keep 10 GB free.</summary>
+        /// <summary>
+        /// Never use more than 40 % of the free space, and always leave <see cref="DiskReserve"/> free.
+        /// Reads the free space now: the disk stage calls it again when it starts (the plan may be hours old).
+        /// </summary>
         public static long DiskSpanFor(long wanted)
         {
             try
             {
                 var drive = new DriveInfo(Path.GetPathRoot(Path.GetTempPath()));
                 long free = drive.AvailableFreeSpace;
-                long span = Math.Min(wanted, Math.Min((long)(free * 0.4), free - 10 * GB));
+                long span = Math.Min(wanted, Math.Min((long)(free * 0.4), free - DiskReserve(drive.TotalSize)));
                 span -= span % (4L * 1024 * 1024);
                 return Math.Max(0, span);
             }
             catch (Exception ex) { Log.Warn(ex); return 0; }
         }
+
+        /// <summary>Free space the disk test always leaves on the volume: 10 % of its size, at least 10 GB.</summary>
+        public static long DiskReserve(long volumeBytes) { return Math.Max(volumeBytes / 10, 10 * GB); }
+
+        /// <summary>
+        /// Upper bound on what one disk stage writes in total (all write passes): 3 spans, at least 64 GB. Once it
+        /// is reached the stage ends early as passed — looping full passes until the time runs out would write
+        /// terabytes on a fast NVMe (wear for no extra coverage). Thorough (64 GB span) ≤ 192 GB, Quick / Disk ≤ 64 GB.
+        /// </summary>
+        public static long DiskWriteCap(long span) { return Math.Max(span * 3, 64 * GB); }
 
         public static string TestDrive
         {

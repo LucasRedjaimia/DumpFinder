@@ -43,6 +43,7 @@ namespace WinCrashDoctor
         // Crashs page: .dmp tools (built in MainWindow.CrashesPage.cs)
         private Button _btnOpenDmpFile;
         private Button _btnAdminScanDumps;
+        private bool _adminDeepScanRunning;
 
         // Tray Sentinel State
         private TraySentinel _traySentinel;
@@ -67,11 +68,14 @@ namespace WinCrashDoctor
                 })),
                 onRescan: () => Dispatcher.BeginInvoke(new Action(() =>
                 {
+                    // First Show() of a tray-started window raises Loaded, which scans already:
+                    // only rescan explicitly when the window was loaded before.
+                    bool wasLoaded = _loadedOnce;
                     Show();
                     if (WindowState == WindowState.Minimized)
                         WindowState = WindowState.Normal;
                     Activate();
-                    RunScanAsync();
+                    if (wasLoaded) RunScanAsync();
                 })),
                 onExit: () => Dispatcher.BeginInvoke(new Action(() =>
                 {
@@ -415,7 +419,7 @@ namespace WinCrashDoctor
                         new Thickness(12, 6, 12, 6), 11.5);
                     btnFix.FontWeight = FontWeights.SemiBold;
                     btnFix.Margin = new Thickness(0, 0, 8, 4);
-                    btnFix.Click += (s, e) => ExecuteInAppHealthFix(item);
+                    btnFix.Click += (s, e) => ExecuteInAppHealthFix(item, s);
                     actionsRow.Children.Add(btnFix);
                 }
 
@@ -500,7 +504,7 @@ namespace WinCrashDoctor
             return card;
         }
 
-        private async void ExecuteInAppHealthFix(IHealthCardData item)
+        private async void ExecuteInAppHealthFix(IHealthCardData item, object sender = null)
         {
             if (item == null || string.IsNullOrEmpty(item.InAppFixOp)) return;
 
@@ -516,9 +520,13 @@ namespace WinCrashDoctor
             }
 
             FixOutcome outcome;
-            using (BeginBusy(PendingFixMessage))
+            using (IDisposable fixLock = TryBeginFix(sender))
             {
-                outcome = await RunFixAsync(item.InAppFixOp);
+                if (fixLock == null) return;
+                using (BeginBusy(PendingFixMessage))
+                {
+                    outcome = await RunFixAsync(item.InAppFixOp);
+                }
             }
 
             if (outcome.Ok)
@@ -638,19 +646,32 @@ namespace WinCrashDoctor
 
         private async void OnRunAdminDeepScanClick(object sender, RoutedEventArgs e)
         {
-            if (_lastResult == null) return;
+            if (_lastResult == null || _adminDeepScanRunning) return;
             string jsonPath = Path.Combine(Localizer.AppDataDir, "admin_deep_scan.json");
             try { if (File.Exists(jsonPath)) File.Delete(jsonPath); } catch (Exception ex) { Log.Warn(ex, jsonPath); }
 
+            _adminDeepScanRunning = true;
             _btnHwAdminScan.IsEnabled = false;
             _btnAdminScanDumps.IsEnabled = false;
 
-            bool ok = await Task.Run(() =>
-                Elevation.RunSelf("--scan-admin-json \"" + jsonPath + "\"", 60000) == ElevationOutcome.Success
-                && File.Exists(jsonPath));
-
-            _btnHwAdminScan.IsEnabled = true;
-            _btnAdminScanDumps.IsEnabled = true;
+            bool ok;
+            try
+            {
+                ok = await Task.Run(() =>
+                    Elevation.RunSelf("--scan-admin-json \"" + jsonPath + "\"", 60000) == ElevationOutcome.Success
+                    && File.Exists(jsonPath));
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Admin deep scan");
+                ok = false;
+            }
+            finally
+            {
+                _adminDeepScanRunning = false;
+                _btnHwAdminScan.IsEnabled = true;
+                _btnAdminScanDumps.IsEnabled = true;
+            }
 
             if (!ok)
             {
@@ -665,22 +686,29 @@ namespace WinCrashDoctor
                 if (payload != null)
                 {
                     _cachedAdminSmart = payload.SmartCounters;
-                    _lastResult.HardwareChecks = SystemHealthScanner.ScanHardwareHealth(_lastResult.Hardware, _cachedAdminSmart);
-                    _lastResult.MinidumpFolderNeedsAdmin = false;
+                    ScanResult res = _lastResult;
+                    if (res == null) return;
+                    // WMI + nvidia-smi: slow, keep it off the UI thread (we resume on it after the await).
+                    HardwareSummary hw = res.Hardware;
+                    List<DiskSmartInfo> smart = _cachedAdminSmart;
+                    var checks = await Task.Run(() => SystemHealthScanner.ScanHardwareHealth(hw, smart));
+                    res.HardwareChecks = checks;
+                    res.MinidumpFolderNeedsAdmin = false;
 
                     if (payload.KernelDumps != null)
                     {
-                        if (_lastResult.Minidumps == null) _lastResult.Minidumps = new List<MinidumpReportItem>();
+                        if (res.Minidumps == null) res.Minidumps = new List<MinidumpReportItem>();
                         foreach (var kd in payload.KernelDumps)
                         {
                             kd.CrashTime = History.Local(kd.CrashTime);
-                            if (!_lastResult.Minidumps.Any(x => string.Equals(x.FullPath, kd.FullPath, StringComparison.OrdinalIgnoreCase)))
-                                _lastResult.Minidumps.Add(kd);
+                            if (!res.Minidumps.Any(x => string.Equals(x.FullPath, kd.FullPath, StringComparison.OrdinalIgnoreCase)))
+                                res.Minidumps.Add(kd);
                         }
-                        _lastResult.Minidumps = _lastResult.Minidumps.OrderByDescending(d => d.CrashTime).ToList();
+                        res.Minidumps = res.Minidumps.OrderByDescending(d => d.CrashTime).ToList();
                     }
 
-                    RenderScanResult(_lastResult);
+                    // A rescan may have replaced the result during the hardware probe.
+                    if (ReferenceEquals(res, _lastResult)) RenderScanResult(res);
                     SetToast(Localizer.L("✓ Données SMART approfondies et C:\\Windows\\Minidump chargés !", "✓ Deep SMART telemetry and C:\\Windows\\Minidump loaded!", "✓ ¡Datos SMART y C:\\Windows\\Minidump cargados!", "✓ SMART-Daten und C:\\Windows\\Minidump geladen!", "✓ Dati SMART e C:\\Windows\\Minidump caricati!", "✓ Dados SMART e C:\\Windows\\Minidump carregados!"), "SuccessFg");
                 }
             }
@@ -712,14 +740,17 @@ namespace WinCrashDoctor
 
         private async void OnCreateRestorePointClick(object sender, RoutedEventArgs e)
         {
-            _btnCreateRestorePt.IsEnabled = false;
-            SetToast(Localizer.L("Création d'un point de restauration Windows en cours...", "Creating Windows System Restore Point...", "Creando punto de restauración de Windows...", "Windows-Wiederherstellungspunkt wird erstellt...", "Creazione punto di ripristino Windows...", "Criando ponto de restauração do Windows..."), "AccentText");
+            // The fix slot disables the button and re-enables it when disposed (even on exceptions).
+            using (IDisposable fixLock = TryBeginFix(_btnCreateRestorePt))
+            {
+                if (fixLock == null) return;
+                SetToast(Localizer.L("Création d'un point de restauration Windows en cours...", "Creating Windows System Restore Point...", "Creando punto de restauración de Windows...", "Windows-Wiederherstellungspunkt wird erstellt...", "Creazione punto di ripristino Windows...", "Criando ponto de restauração do Windows..."), "AccentText");
 
-            string mFr = "", mEn = "";
-            bool ok = await Task.Run(() => DiagnosticsEngine.ExecuteFixOperation("create_restore_point", out mFr, out mEn));
-            _btnCreateRestorePt.IsEnabled = true;
+                string mFr = "", mEn = "";
+                bool ok = await Task.Run(() => DiagnosticsEngine.ExecuteFixOperation("create_restore_point", out mFr, out mEn));
 
-            SetToast(Localizer.T(mFr, mEn), ok ? "SuccessFg" : "WarnFg");
+                SetToast(Localizer.T(mFr, mEn), ok ? "SuccessFg" : "WarnFg");
+            }
         }
 
         private async void OnRestoreSnapshotClick(object sender, RoutedEventArgs e)
@@ -738,15 +769,19 @@ namespace WinCrashDoctor
 
             if (ans != MessageBoxResult.Yes) return;
 
-            using (BeginBusy(PendingFixMessage))
+            using (IDisposable fixLock = TryBeginFix(sender))
             {
-                FixOutcome outcome = await RunFixAsync("restore_snapshot");
-                SetToast(outcome.Message, outcome.Ok ? "SuccessFg" : "DangerFg");
-
-                if (outcome.Ok && _lastResult != null)
+                if (fixLock == null) return;
+                using (BeginBusy(PendingFixMessage))
                 {
-                    _lastResult.Fixes = await Task.Run(() => DiagnosticsEngine.InspectAllFixes(false));
-                    RenderScanResult(_lastResult);
+                    FixOutcome outcome = await RunFixAsync("restore_snapshot");
+                    SetToast(outcome.Message, outcome.Ok ? "SuccessFg" : "DangerFg");
+
+                    if (outcome.Ok && _lastResult != null)
+                    {
+                        _lastResult.Fixes = await Task.Run(() => DiagnosticsEngine.InspectAllFixes(false));
+                        RenderScanResult(_lastResult);
+                    }
                 }
             }
         }

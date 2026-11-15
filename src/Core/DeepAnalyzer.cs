@@ -180,7 +180,7 @@ namespace WinCrashDoctor
         {
             try
             {
-                Process.Start(new ProcessStartInfo("cmd.exe",
+                Process.Start(new ProcessStartInfo(SysTools.Path("cmd.exe"),
                     "/k winget install --id " + WingetId + " -e --accept-source-agreements && echo. && echo WinDbg installe : revenez dans Dump Finder.")
                 { UseShellExecute = true });
                 return true;

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -11,6 +12,7 @@ namespace WinCrashDoctor.Stress
     internal sealed class OpenClDevice : IDisposable
     {
         [DllImport("OpenCL.dll")] private static extern int clGetPlatformIDs(uint n, IntPtr[] p, out uint np);
+        [DllImport("OpenCL.dll")] private static extern int clGetPlatformInfo(IntPtr p, uint param, UIntPtr size, byte[] val, out UIntPtr ret);
         [DllImport("OpenCL.dll")] private static extern int clGetDeviceIDs(IntPtr p, ulong type, uint n, IntPtr[] d, out uint nd);
         [DllImport("OpenCL.dll")] private static extern int clGetDeviceInfo(IntPtr d, uint param, UIntPtr size, byte[] val, out UIntPtr ret);
         [DllImport("OpenCL.dll")] private static extern IntPtr clCreateContext(IntPtr props, uint nd, IntPtr[] d, IntPtr cb, IntPtr ud, out int err);
@@ -76,6 +78,25 @@ __kernel void vcheck(__global const uint* p, uint seed, uint base, uint inv, uin
         public long MaxAlloc { get; private set; }
         public uint ComputeUnits { get; private set; }
         public string Error { get; private set; }
+        /// <summary>The GPU shares system RAM (integrated GPU): its "global memory" is the PC's own memory.</summary>
+        public bool UnifiedMemory { get; private set; }
+
+        private volatile bool _abandoned;
+
+        /// <summary>
+        /// A worker thread may still be inside an OpenCL call on this device: from now on Dispose leaks the objects
+        /// instead of releasing them under the driver's feet (a crash risk); the process exit reclaims them.
+        /// </summary>
+        public void Abandon() { _abandoned = true; }
+        public bool Abandoned { get { return _abandoned; } }
+
+        private sealed class Candidate
+        {
+            public IntPtr Dev;
+            public long Mem;
+            public bool Unified, MsLayer;
+            public int VendorRank;
+        }
 
         public static OpenClDevice TryOpen()
         {
@@ -97,20 +118,42 @@ __kernel void vcheck(__global const uint* p, uint seed, uint base, uint inv, uin
             if (clGetPlatformIDs(0, null, out np) != 0 || np == 0) return false;
             var plats = new IntPtr[np];
             clGetPlatformIDs(np, plats, out np);
-            long bestMem = -1;
+            // Picking simply the largest GLOBAL_MEM_SIZE goes wrong on hybrid laptops: an integrated GPU (or the
+            // Microsoft "OpenCLOn12" layer) reports shared system RAM, so it can "win" over the discrete card.
+            var cands = new List<Candidate>();
             foreach (IntPtr p in plats)
             {
+                if (p == IntPtr.Zero) continue;
                 uint nd;
                 if (clGetDeviceIDs(p, 4 /* GPU */, 0, null, out nd) != 0 || nd == 0) continue;
                 var devs = new IntPtr[nd];
-                clGetDeviceIDs(p, 4, nd, devs, out nd);
+                if (clGetDeviceIDs(p, 4, nd, devs, out nd) != 0) continue;
+                string plat = PlatformString(p, 0x0902 /* NAME */) + " " + PlatformString(p, 0x0903 /* VENDOR */);
+                bool msLayer = Has(plat, "OpenCLOn12") || Has(plat, "Microsoft");
                 foreach (IntPtr d in devs)
                 {
-                    long mem = (long)InfoU64(d, 0x101F); // GLOBAL_MEM_SIZE
-                    if (mem > bestMem) { bestMem = mem; _dev = d; }
+                    if (d == IntPtr.Zero) continue;
+                    uint vendorId = (uint)InfoU64(d, 0x1001 /* VENDOR_ID */, 4);
+                    string vendor = InfoString(d, 0x102C /* VENDOR */);
+                    int rank = 1;
+                    if (vendorId == 0x10DE || vendorId == 0x1002 || Has(vendor, "NVIDIA") || Has(vendor, "Advanced Micro Devices") || Has(vendor, "AMD")) rank = 2;
+                    else if (vendorId == 0x8086 || Has(vendor, "Intel")) rank = 0;
+                    cands.Add(new Candidate
+                    {
+                        Dev = d,
+                        Mem = (long)InfoU64(d, 0x101F /* GLOBAL_MEM_SIZE */),
+                        Unified = InfoU64(d, 0x1035 /* HOST_UNIFIED_MEMORY */, 4) != 0,
+                        MsLayer = msLayer,
+                        VendorRank = rank
+                    });
                 }
             }
-            if (_dev == IntPtr.Zero) return false;
+            if (cands.Count == 0) return false;
+            if (cands.Any(c => !c.MsLayer)) cands.RemoveAll(c => c.MsLayer);   // a native driver exists: skip the D3D12 translation layer
+            if (cands.Any(c => !c.Unified)) cands.RemoveAll(c => c.Unified);   // a discrete card exists: skip shared-memory GPUs
+            Candidate best = cands.OrderByDescending(c => c.VendorRank).ThenByDescending(c => c.Mem).First(); // NVIDIA/AMD before Intel
+            _dev = best.Dev;
+            UnifiedMemory = best.Unified;
 
             Name = InfoString(_dev, 0x102B);
             GlobalMem = (long)InfoU64(_dev, 0x101F);
@@ -138,6 +181,17 @@ __kernel void vcheck(__global const uint* p, uint seed, uint base, uint inv, uin
             if (clGetDeviceInfo(d, param, (UIntPtr)(uint)size, b, out r) != 0) return 0;
             return size == 4 ? BitConverter.ToUInt32(b, 0) : BitConverter.ToUInt64(b, 0);
         }
+
+        private static string PlatformString(IntPtr p, uint param)
+        {
+            var b = new byte[512];
+            UIntPtr r;
+            if (clGetPlatformInfo(p, param, (UIntPtr)512u, b, out r) != 0) return "";
+            int n = Math.Max(0, Math.Min(511, (int)r.ToUInt32() - 1));
+            return Encoding.ASCII.GetString(b, 0, n).Trim();
+        }
+
+        private static bool Has(string s, string part) { return s != null && s.IndexOf(part, StringComparison.OrdinalIgnoreCase) >= 0; }
 
         private static string InfoString(IntPtr d, uint param)
         {
@@ -177,6 +231,12 @@ __kernel void vcheck(__global const uint* p, uint seed, uint base, uint inv, uin
 
         public void Dispose()
         {
+            if (_abandoned)
+            {
+                Log.Warn("OpenCL device still in use by a worker thread: its objects are leaked, not released.");
+                Ready = false;
+                return;
+            }
             try
             {
                 if (KBurn != IntPtr.Zero) clReleaseKernel(KBurn);
@@ -279,7 +339,14 @@ __kernel void vcheck(__global const uint* p, uint seed, uint base, uint inv, uin
         {
             skip = null;
             OpenClDevice d = ctx.GpuDevice != null ? ctx.GpuDevice() : null;
-            if (d == null || !d.Ready)
+            if (d != null && d.Abandoned)
+                skip = StressAdvice.GpuUnavailable(ctx, L("la carte graphique a cessé de répondre à une étape précédente.",
+                                                          "the graphics card stopped responding in an earlier stage.",
+                                                          "la GPU dejó de responder en una etapa anterior.",
+                                                          "die Grafikkarte reagierte in einem früheren Schritt nicht mehr.",
+                                                          "la GPU ha smesso di rispondere in una fase precedente.",
+                                                          "a GPU parou de responder em uma etapa anterior."));
+            else if (d == null || !d.Ready)
                 skip = StressAdvice.GpuUnavailable(ctx, L("pas de carte graphique OpenCL utilisable (pilote absent ou trop ancien).",
                                                           "no usable OpenCL graphics card (driver missing or too old).",
                                                           "no hay GPU OpenCL utilizable (controlador ausente o antiguo).",
@@ -366,6 +433,22 @@ __kernel void vcheck(__global const uint* p, uint seed, uint base, uint inv, uin
             long chunkWords = d.MaxAlloc >= (256L << 20) ? (1L << 26) : (1L << 24);
             long chunkBytes = chunkWords * 4;
             long target = (long)(d.GlobalMem * 0.80);
+            if (d.UnifiedMemory)
+            {
+                // Integrated GPU: its "video memory" is system RAM. Never take more than half of what is free right now.
+                ulong avail = Native.AvailablePhys();
+                long cap = avail > 0 ? (long)(avail / 2) : (1L << 30);
+                if (cap < target)
+                {
+                    ctx.Log(string.Format(L("Carte graphique à mémoire partagée : test limité à {0} (moitié de la mémoire libre).",
+                                            "Shared-memory graphics: test limited to {0} (half of the free memory).",
+                                            "Gráfica con memoria compartida: prueba limitada a {0} (la mitad de la memoria libre).",
+                                            "Grafik mit gemeinsamem Speicher: Test auf {0} begrenzt (Hälfte des freien Speichers).",
+                                            "Grafica a memoria condivisa: test limitato a {0} (metà della memoria libera).",
+                                            "Gráfico com memória compartilhada: teste limitado a {0} (metade da memória livre)."), StressText.Gb(cap)));
+                    target = cap;
+                }
+            }
             var chunks = new List<IntPtr>();
             int err;
             int maxChunks = (int)Math.Max(1, target / chunkBytes);
@@ -381,7 +464,7 @@ __kernel void vcheck(__global const uint* p, uint seed, uint base, uint inv, uin
                 {
                     IntPtr b = d.NewBuffer(chunkBytes, out err);
                     if (b == IntPtr.Zero) break;
-                    if (Fill(d, b, (uint)(chunks.Count * chunkWords), 0x13579BDFu, 0, chunkWords) != 0) { OpenClDevice.Free(b); break; }
+                    if (Fill(d, b, 0u, ChunkSeed(0x13579BDFu, chunks.Count), 0, chunkWords) != 0) { OpenClDevice.Free(b); break; }
                     chunks.Add(b);
                     if (chunks.Count % 4 == 0)
                         ctx.Publish(L("Allocation de la mémoire vidéo… ", "Allocating video memory… ", "Reservando memoria de vídeo… ", "Grafikspeicher wird belegt… ", "Allocazione memoria video… ", "Alocando memória de vídeo… ") + StressText.Gb(chunks.Count * chunkBytes),
@@ -402,12 +485,15 @@ __kernel void vcheck(__global const uint* p, uint seed, uint base, uint inv, uin
                     // One pass = fill every chunk, then read each back twice in two scrambled orders; everything is
                     // queued without waiting and the error slots are read once at the end (the GPU never idles).
                     int rc = d.Write(errBuf, zero, 4L * chunks.Count);
+                    // Each chunk gets its own hashed seed (a 32-bit "c * chunkWords" base wrapped every 16 GB, so two
+                    // chunks could hold identical data and aliasing between them would go unnoticed).
                     for (int c = 0; c < chunks.Count && rc == 0; c++)
-                        rc = Fill(d, chunks[c], (uint)(c * chunkWords), seed, inv, chunkWords, false);
+                        rc = Fill(d, chunks[c], 0u, ChunkSeed(seed, c), inv, chunkWords, false);
                     for (int c = 0; c < chunks.Count && rc == 0; c++)
                     {
-                        rc = Check(d, chunks[c], (uint)(c * chunkWords), seed, inv, mask, 4099u, errBuf, (uint)c, chunkWords);
-                        if (rc == 0) rc = Check(d, chunks[c], (uint)(c * chunkWords), seed, inv, mask, 65537u, errBuf, (uint)c, chunkWords);
+                        uint cs = ChunkSeed(seed, c);
+                        rc = Check(d, chunks[c], 0u, cs, inv, mask, 4099u, errBuf, (uint)c, chunkWords);
+                        if (rc == 0) rc = Check(d, chunks[c], 0u, cs, inv, mask, 65537u, errBuf, (uint)c, chunkWords);
                     }
                     if (rc == 0) rc = d.Read(errBuf, errHost, 4L * chunks.Count);
                     if (StressFaults.Take(ref StressFaults.Vram)) { errHost[1] = 4242; errHost[2] = 0xF0F0F0F0u; errHost[3] = 0xF0F0F0F1u; errHost[0] = 1; }
@@ -448,6 +534,13 @@ __kernel void vcheck(__global const uint* p, uint seed, uint base, uint inv, uin
                 foreach (IntPtr b in chunks) OpenClDevice.Free(b);
                 OpenClDevice.Free(errBuf);
             }
+        }
+
+        /// <summary>Per-chunk pattern seed: the pass seed mixed with a hash of the chunk index.</summary>
+        private static uint ChunkSeed(uint seed, int chunk)
+        {
+            ulong h = CpuWork.Mix(((ulong)(uint)chunk << 32) ^ 0xD1B54A32D192ED03UL);
+            return seed ^ (uint)h ^ (uint)(h >> 32);
         }
 
         private static int Fill(OpenClDevice d, IntPtr buf, uint baseIdx, uint seed, uint inv, long words, bool wait = true)
@@ -493,27 +586,34 @@ __kernel void vcheck(__global const uint* p, uint seed, uint base, uint inv, uin
             ctx.Publish(StressText.Calibrating, TransientTiles(ctx, 0, 0), double.NaN, double.NaN, PowerLegend);
             var calib = CpuCalib.Make(40);
             if (!calib.Consistent) return StressAdvice.CpuFailed(ctx, -1, StressText.CpuInconsistent);
-            using (BurnJob job = BurnJob.Calibrate(d, 30))
+            BurnJob job = BurnJob.Calibrate(d, 30);
+            bool workerHung = false;
+            try
             {
-                if (job.Error == "inconsistent") return StressAdvice.GpuComputeFailed(ctx, L("dès le calibrage", "already during calibration", "ya en la calibración", "schon bei der Kalibrierung", "già in calibrazione", "già na calibração"));
+                if (job.Error == "inconsistent") return StressAdvice.GpuComputeFailed(ctx, L("dès le calibrage", "already during calibration", "ya en la calibración", "schon bei der Kalibrierung", "già in calibrazione", "já na calibração"));
                 if (job.Error != null) return StressAdvice.GpuDriverReset(ctx, job.Error);
 
                 int[] halfPeriods = { 2000, 1000, 500, 250, 100 };
                 bool on = false;
-                int gpuBad = 0, gpuRc = 0;
+                int gpuBad = 0, gpuRc = 0, quit = 0;
                 long swings = 0;
                 using (var pool = new CpuLoadPool(Environment.ProcessorCount, calib) { On = false })
                 {
                     var gpuThread = new Thread(() =>
                     {
-                        while (!ctx.ShouldStop && gpuBad == 0 && gpuRc == 0)
+                        try
                         {
-                            if (!on) { Thread.Sleep(2); continue; }
-                            int bad;
-                            int rc = job.Run(out bad);
-                            if (rc != 0) gpuRc = rc;
-                            if (bad > 0) gpuBad = bad;
+                            // "quit" also ends it when the stage stops for another reason (e.g. a CPU error).
+                            while (Volatile.Read(ref quit) == 0 && !ctx.ShouldStop && gpuBad == 0 && gpuRc == 0)
+                            {
+                                if (!on) { Thread.Sleep(2); continue; }
+                                int bad;
+                                int rc = job.Run(out bad);
+                                if (rc != 0) gpuRc = rc;
+                                if (bad > 0) gpuBad = bad;
+                            }
                         }
+                        catch (Exception ex) { Log.Warn(ex); gpuRc = -1; } // never let a worker exception kill the app
                     }) { IsBackground = true, Name = "df-gpu-transient" };
                     gpuThread.Start();
 
@@ -536,10 +636,20 @@ __kernel void vcheck(__global const uint* p, uint seed, uint base, uint inv, uin
                     }
                     on = false;
                     pool.On = false;
-                    gpuThread.Join(3000);
+                    Volatile.Write(ref quit, 1);
+                    // One launch is ~30 ms: a worker still busy after 5 s is stuck inside the driver. Its job buffer
+                    // and the device must then NOT be released while OpenCL may still use them: leak them instead.
+                    if (!gpuThread.Join(5000))
+                    {
+                        workerHung = true;
+                        d.Abandon();
+                        Log.Warn("GPU transient worker still inside OpenCL after 5 s: its OpenCL objects are leaked instead of released.");
+                    }
 
                     if (pool.Errors > 0) return StressAdvice.CpuFailed(ctx, pool.FirstErrorCpu, pool.FirstErrorWork);
                 }
+                if (workerHung)
+                    return StressAdvice.GpuDriverReset(ctx, L("le calcul GPU ne répond plus", "GPU computation stopped responding", "el cálculo de la GPU dejó de responder", "GPU-Berechnung reagiert nicht mehr", "il calcolo GPU non risponde più", "o cálculo da GPU parou de responder"));
                 if (gpuRc != 0) return StressAdvice.GpuDriverReset(ctx, "OpenCL " + gpuRc);
                 if (gpuBad > 0) return StressAdvice.GpuComputeFailed(ctx, string.Format(L("{0} valeur(s) fausse(s) pendant un pic", "{0} wrong value(s) during a spike", "{0} valor(es) erróneo(s) durante un pico", "{0} falsche(r) Wert(e) während einer Spitze", "{0} valore/i errato/i durante un picco", "{0} valor(es) errado(s) durante um pico"), gpuBad));
                 return StressAdvice.Passed(ctx, string.Format(L(
@@ -550,6 +660,10 @@ __kernel void vcheck(__global const uint* p, uint seed, uint base, uint inv, uin
                     "{0:N0} passaggi bruschi da 0 a 100 % (CPU + GPU), tutti i calcoli corretti. Potenza GPU max: {1}.",
                     "{0:N0} saltos bruscos de 0 a 100 % (CPU + GPU), todos os cálculos corretos. Potência GPU máx.: {1}."),
                     swings, Num(ctx.Gpu.PeakPowerW, "W")) + ctx.CpuTempSummary);
+            }
+            finally
+            {
+                if (!workerHung) job.Dispose();
             }
         }
 

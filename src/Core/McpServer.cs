@@ -94,7 +94,20 @@ namespace WinCrashDoctor
                 if (!string.IsNullOrWhiteSpace(existing))
                 {
                     try { root = ser.Deserialize<Dictionary<string, object>>(existing); }
-                    catch (Exception ex) { Log.Warn(ex); root = null; }
+                    catch (Exception ex)
+                    {
+                        // Comments, trailing commas…: rewriting it would wipe the user's other MCP servers. Stop instead.
+                        Log.Warn(ex, filePath);
+                        throw new InvalidDataException(Localizer.L(
+                            "Ce fichier de configuration n'est pas un JSON standard (commentaire ou virgule en trop ?). Il n'a pas été modifié : ajoute Dump Finder à la main ou corrige le fichier : " + filePath,
+                            "This configuration file is not standard JSON (a comment or a trailing comma?). It was not changed: add Dump Finder by hand or fix the file: " + filePath,
+                            "Este archivo de configuración no es JSON estándar (¿un comentario o una coma de más?). No se modificó: añade Dump Finder a mano o corrige el archivo: " + filePath,
+                            "Diese Konfigurationsdatei ist kein Standard-JSON (Kommentar oder überzähliges Komma?). Sie wurde nicht geändert: Füge Dump Finder von Hand hinzu oder korrigiere die Datei: " + filePath,
+                            "Questo file di configurazione non è JSON standard (un commento o una virgola in più?). Non è stato modificato: aggiungi Dump Finder a mano o correggi il file: " + filePath,
+                            "Este arquivo de configuração não é JSON padrão (um comentário ou uma vírgula a mais?). Ele não foi alterado: adicione o Dump Finder manualmente ou corrija o arquivo: " + filePath));
+                    }
+                    // Readable: keep a backup of the exact previous content next to it.
+                    File.Copy(filePath, filePath + ".bak", true);
                 }
             }
 
@@ -121,7 +134,7 @@ namespace WinCrashDoctor
 
             string compact = ser.Serialize(root);
             string pretty = PrettyPrintJson(compact);
-            File.WriteAllText(filePath, pretty + Environment.NewLine, new UTF8Encoding(false));
+            AtomicFile.WriteAllText(filePath, pretty + Environment.NewLine, new UTF8Encoding(false));
         }
 
         // ==================== STDIO JSON-RPC 2.0 LOOP ====================
@@ -563,6 +576,10 @@ namespace WinCrashDoctor
             string opCode = fix.Id + (restore ? "_restore" : "_apply");
             string action = (restore ? "Restore to Windows default: " : "Apply: ") + fix.Title;
 
+            // Ops that cannot be undone (cache deletion, consoles, restore points) stay in the app's own UI.
+            if (FixRunner.IsIrreversibleOp(opCode))
+                return MakeToolTextResult("[REFUSED] '" + fix.Id + "' cannot be undone, so it is not available through MCP. Ask the user to run it from Dump Finder (Fixes page).", true);
+
             if (!confirm)
             {
                 return MakeToolTextResult(
@@ -591,8 +608,10 @@ namespace WinCrashDoctor
                     Changes = result.Changes ?? new List<ChangeRecord>(), Reversible = result.Ok && FixRunner.IsReversible(opCode, result.Changes)
                 }
             });
+            bool undoable = result.Ok && FixRunner.IsReversible(opCode, result.Changes);
             return MakeToolTextResult((result.Ok ? "[SUCCESS] " : "[FAILED] ") + result.MessageEn +
-                (result.Ok ? "\nRecorded in the change journal (" + (result.Changes != null ? result.Changes.Count : 0) + " value(s)); undoable from Dump Finder." : ""), !result.Ok);
+                (undoable ? "\nRecorded in the change journal (" + result.Changes.Count + " value(s)); undoable from Dump Finder." :
+                 result.Ok ? "\nRecorded in the change journal; no previous value was captured, so it cannot be undone automatically." : ""), !result.Ok);
         }
 
         // ==================== Claude Desktop ====================
@@ -621,8 +640,7 @@ namespace WinCrashDoctor
             errorMessage = null;
             try
             {
-                if (File.Exists(configPath)) File.Copy(configPath, configPath + ".bak", true);
-                MergeServerIntoConfigFile(configPath, GetExePath());
+                MergeServerIntoConfigFile(configPath, GetExePath()); // backs the file up itself
                 return true;
             }
             catch (Exception ex)

@@ -231,7 +231,7 @@ namespace WinCrashDoctor
             {
                 { "time", c.Time.ToString("o") }, { "category", c.Category.ToString() }, { "title", c.Title }, { "code", c.TechLine }
             };
-            if (c.Event != null) o["event"] = new Dictionary<string, object> { { "source", c.Event.Source }, { "id", c.Event.CodeOrId }, { "details", c.Event.DetailsEn } };
+            if (c.Event != null) o["event"] = new Dictionary<string, object> { { "source", c.Event.Source }, { "id", c.Event.CodeOrId }, { "details", Privacy.Redact(c.Event.DetailsEn) } };
             if (c.Dump != null)
             {
                 var m = c.Dump;

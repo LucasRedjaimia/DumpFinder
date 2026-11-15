@@ -342,6 +342,9 @@ namespace WinCrashDoctor
 
         private void ShowCrashDrawer(CrashEntry c)
         {
+            // Another crash: stop its AI stream so the new "Ask the AI" button starts instead of cancelling.
+            bool keepAiStream = PrepareDrawerAiFor(c.Key);
+            TextBox previousAiOutput = _drawerAiOutput;
             _crashDrawerColumn.Width = new GridLength(400);
             _crashDrawer.Visibility = Visibility.Visible;
 
@@ -544,8 +547,10 @@ namespace WinCrashDoctor
             _btnDrawerAi = CreatePrimaryButton(Localizer.L("🧠 Demander à l'IA", "🧠 Ask the AI", "🧠 Preguntar a la IA", "🧠 KI fragen", "🧠 Chiedi all'IA", "🧠 Perguntar à IA"), "Accent", "OnAccent", new Thickness(12, 7, 12, 7), 13);
             _btnDrawerAi.HorizontalAlignment = HorizontalAlignment.Stretch;
             CrashEntry captured = c;
-            _btnDrawerAi.Click += (s, e) => RunDrawerAi(AiAssistant.BuildStructuredPrompt(_lastResult, CrashCatalog.AiFocusQuestion(captured)));
+            string capturedKey = c.Key;
+            _btnDrawerAi.Click += (s, e) => RunDrawerAi(AiAssistant.BuildStructuredPrompt(_lastResult, CrashCatalog.AiFocusQuestion(captured)), capturedKey);
             fg2.Children.Add(_btnDrawerAi);
+            if (keepAiStream) ReattachDrawerAi(previousAiOutput);
             Button forum = CreateFlatButton(Localizer.L("📋 Copier pour forum", "📋 Copy for forum", "📋 Copiar para foro", "📋 Für Forum kopieren", "📋 Copia per forum", "📋 Copiar para fórum"), "BgCard", "TextPrimary", "BorderStrong", new Thickness(12, 7, 12, 7), 13);
             forum.HorizontalAlignment = HorizontalAlignment.Stretch;
             forum.Click += (s, e) =>
@@ -744,7 +749,7 @@ namespace WinCrashDoctor
                     f.Status == FixStatus.Recommended ? "Accent" : "BorderCard",
                     new Thickness(11, 4, 11, 4), 12);
                 apply.VerticalAlignment = VerticalAlignment.Center;
-                apply.Click += (s, e) => ExecuteSingleFix(id + "_apply", id);
+                apply.Click += (s, e) => ExecuteSingleFix(id + "_apply", id, s);
                 right = apply;
             }
             Grid.SetColumn(right, 1);
@@ -773,8 +778,48 @@ namespace WinCrashDoctor
         }
 
         private System.Threading.CancellationTokenSource _aiCts;
+        /// <summary>Crash key (or <see cref="SystemReviewAiKey"/>) the running AI stream belongs to.</summary>
+        private string _drawerAiKey;
+        private const string SystemReviewAiKey = "\u0001system-review";
 
-        private async void RunDrawerAi(string prompt)
+        /// <summary>Stops the running drawer AI stream (if any) and frees the panel for a new request.</summary>
+        private void CancelDrawerAi()
+        {
+            var cts = _aiCts;
+            _aiCts = null;          // the old run sees it is no longer current and leaves the UI alone
+            _drawerAiBusy = false;
+            _drawerAiKey = null;
+            if (cts != null)
+            {
+                try { cts.Cancel(); }
+                catch (ObjectDisposedException) { }
+            }
+        }
+
+        /// <summary>
+        /// Called before the drawer is rebuilt for <paramref name="key"/>: a stream for another crash is
+        /// cancelled; a stream for the same crash keeps running and is re-attached to the new controls.
+        /// </summary>
+        private bool PrepareDrawerAiFor(string key)
+        {
+            if (!_drawerAiBusy) return false;
+            if (_drawerAiKey == key) return true;
+            CancelDrawerAi();
+            return false;
+        }
+
+        /// <summary>Re-attaches a still-running stream to a rebuilt drawer (same crash).</summary>
+        private void ReattachDrawerAi(TextBox previousOutput)
+        {
+            if (_btnDrawerAi != null) _btnDrawerAi.Content = Localizer.L("■ Arrêter", "■ Stop", "■ Detener", "■ Stoppen", "■ Ferma", "■ Parar");
+            if (_drawerAiOutput != null && previousOutput != null && !ReferenceEquals(previousOutput, _drawerAiOutput))
+            {
+                _drawerAiOutput.Text = previousOutput.Text;
+                _drawerAiOutput.SetResourceReference(Control.ForegroundProperty, "TextPrimary");
+            }
+        }
+
+        private async void RunDrawerAi(string prompt, string aiKey)
         {
             if (_drawerAiOutput == null) return;
             if (_drawerAiBusy)
@@ -797,47 +842,64 @@ namespace WinCrashDoctor
             }
 
             _drawerAiBusy = true;
-            _aiCts = new System.Threading.CancellationTokenSource();
-            TextBox target = _drawerAiOutput;
-            Button btn = _btnDrawerAi;
-            object btnContent = btn != null ? btn.Content : null;
-            if (btn != null) btn.Content = Localizer.L("■ Arrêter", "■ Stop", "■ Detener", "■ Stoppen", "■ Ferma", "■ Parar");
-            target.Text = Localizer.L("Analyse en cours…", "Thinking…", "Analizando…", "Analysiere…", "Analisi in corso…", "Analisando…");
-            target.SetResourceReference(Control.ForegroundProperty, "TextMuted");
+            _drawerAiKey = aiKey;
+            var cts = new System.Threading.CancellationTokenSource();
+            _aiCts = cts;
+            // The drawer can be rebuilt for the same crash while streaming: always write to the
+            // current controls, and only while this run is still the current one.
+            Func<bool> isCurrent = () => ReferenceEquals(_aiCts, cts);
+            object btnContent = _btnDrawerAi != null ? _btnDrawerAi.Content : null;
+            if (_btnDrawerAi != null) _btnDrawerAi.Content = Localizer.L("■ Arrêter", "■ Stop", "■ Detener", "■ Stoppen", "■ Ferma", "■ Parar");
+            _drawerAiOutput.Text = Localizer.L("Analyse en cours…", "Thinking…", "Analizando…", "Analysiere…", "Analisi in corso…", "Analisando…");
+            _drawerAiOutput.SetResourceReference(Control.ForegroundProperty, "TextMuted");
 
             bool first = true;
             Action<string> onDelta = chunk => Dispatcher.BeginInvoke(new Action(() =>
             {
+                TextBox target = _drawerAiOutput;
+                if (!isCurrent() || target == null) return;
                 if (first) { target.Text = ""; target.SetResourceReference(Control.ForegroundProperty, "TextPrimary"); first = false; }
                 target.AppendText(chunk);
             }));
 
             try
             {
-                AiReply reply = await AiAssistant.StreamAsync(provider, key, model, prompt, onDelta, _aiCts.Token);
+                AiReply reply = await AiAssistant.StreamAsync(provider, key, model, prompt, onDelta, cts.Token);
                 // Let queued chunks land, then show the authoritative final text.
                 await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background);
-                target.Text = reply.Text;
-                target.SetResourceReference(Control.ForegroundProperty, reply.Ok ? "TextPrimary" : "WarnFg");
+                if (isCurrent() && _drawerAiOutput != null)
+                {
+                    _drawerAiOutput.Text = reply.Text;
+                    _drawerAiOutput.SetResourceReference(Control.ForegroundProperty, reply.Ok ? "TextPrimary" : "WarnFg");
+                }
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "AI query");
-                target.Text = ex.Message;
-                target.SetResourceReference(Control.ForegroundProperty, "DangerFg");
+                if (isCurrent() && _drawerAiOutput != null)
+                {
+                    _drawerAiOutput.Text = ex.Message;
+                    _drawerAiOutput.SetResourceReference(Control.ForegroundProperty, "DangerFg");
+                }
             }
             finally
             {
-                _drawerAiBusy = false;
-                if (btn != null) btn.Content = btnContent;
-                _aiCts.Dispose();
-                _aiCts = null;
+                if (isCurrent())
+                {
+                    _drawerAiBusy = false;
+                    _drawerAiKey = null;
+                    _aiCts = null;
+                    if (_btnDrawerAi != null) _btnDrawerAi.Content = btnContent;
+                }
+                cts.Dispose();
             }
         }
         /// <summary>Whole-system AI review from the home page when there is no crash to focus on.</summary>
         private void OpenSystemAiReview()
         {
             SwitchTab(TabCrashes);
+            bool keepAiStream = PrepareDrawerAiFor(SystemReviewAiKey);
+            TextBox previousAiOutput = _drawerAiOutput;
             if (_crashGuideActive) SwitchCrashSubTab(false);
             _crashDrawerColumn.Width = new GridLength(400);
             _crashDrawer.Visibility = Visibility.Visible;
@@ -850,8 +912,9 @@ namespace WinCrashDoctor
             _btnDrawerAi = CreatePrimaryButton(Localizer.L("🧠 Lancer le bilan", "🧠 Run check-up", "🧠 Iniciar", "🧠 Starten", "🧠 Avvia", "🧠 Iniciar"), "Accent", "OnAccent", new Thickness(14, 7, 14, 7), 13);
             _btnDrawerAi.HorizontalAlignment = HorizontalAlignment.Left;
             _btnDrawerAi.Margin = new Thickness(0, 14, 0, 0);
-            _btnDrawerAi.Click += (s, e) => RunDrawerAi(AiAssistant.BuildStructuredPrompt(_lastResult, ""));
+            _btnDrawerAi.Click += (s, e) => RunDrawerAi(AiAssistant.BuildStructuredPrompt(_lastResult, ""), SystemReviewAiKey);
             p.Children.Add(_btnDrawerAi);
+            if (keepAiStream) ReattachDrawerAi(previousAiOutput);
             _crashDrawer.Child = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = p };
         }
 

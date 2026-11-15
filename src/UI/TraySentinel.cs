@@ -16,22 +16,29 @@ namespace WinCrashDoctor
         private readonly Action _onOpenRequested;
         private readonly Action _onRescanRequested;
         private readonly Action _onExitRequested;
+        private ContextMenuStrip _menu;
         private DateTime _lastAlertTime = DateTime.MinValue;
         /// <summary>What a click on the current notification does (falls back to opening the window).</summary>
         private Action _pendingClick;
+        private bool _minimizedHintShown;
+        private volatile bool _disposed;
+        /// <summary>UI thread dispatcher: NotifyIcon must only be touched from the thread that created it.</summary>
+        private readonly System.Windows.Threading.Dispatcher _dispatcher;
 
         public bool IsEnabled { get; private set; }
 
+        /// <summary>Create on the UI thread (the dispatcher is captured here).</summary>
         public TraySentinel(Action onOpen, Action onRescan, Action onExit)
         {
             _onOpenRequested = onOpen;
             _onRescanRequested = onRescan;
             _onExitRequested = onExit;
+            _dispatcher = System.Windows.Threading.Dispatcher.CurrentDispatcher;
         }
 
         public void SetEnabled(bool enabled)
         {
-            if (enabled == IsEnabled) return;
+            if (_disposed || enabled == IsEnabled) return;
             IsEnabled = enabled;
 
             if (enabled)
@@ -64,14 +71,15 @@ namespace WinCrashDoctor
         /// </summary>
         public void Notify(string title, string message, bool warning, Action onClick)
         {
-            if (_notifyIcon == null || !_notifyIcon.Visible) return;
+            if (_disposed || _notifyIcon == null || !_notifyIcon.Visible) return;
             _pendingClick = onClick;
             _notifyIcon.ShowBalloonTip(8000, title, message, warning ? ToolTipIcon.Warning : ToolTipIcon.Info);
         }
 
         public void ShowMinimizedHintOnce()
         {
-            if (_notifyIcon == null || !_notifyIcon.Visible) return;
+            if (_disposed || _minimizedHintShown || _notifyIcon == null || !_notifyIcon.Visible) return;
+            _minimizedHintShown = true;
             _notifyIcon.ShowBalloonTip(
                 2800,
                 "Dump Finder",
@@ -99,6 +107,7 @@ namespace WinCrashDoctor
             catch (Exception ex) { Log.Warn(ex); }
 
             ContextMenuStrip menu = new ContextMenuStrip();
+            _menu = menu;
             _miOpen = new ToolStripMenuItem();
             _miOpen.Font = new Font(_miOpen.Font, FontStyle.Bold);
             _miOpen.Click += (s, e) => { if (_onOpenRequested != null) _onOpenRequested(); };
@@ -162,10 +171,11 @@ namespace WinCrashDoctor
 
         private void OnSystemEventWritten(object sender, EventRecordWrittenEventArgs e)
         {
+            // Runs on an EventLogWatcher thread-pool thread: only read the record here, then
+            // marshal the NotifyIcon work to the UI dispatcher.
             try
             {
-                if (e.EventRecord == null || _notifyIcon == null || !_notifyIcon.Visible) return;
-                if ((DateTime.Now - _lastAlertTime).TotalSeconds < 6) return;
+                if (_disposed || e.EventRecord == null) return;
 
                 string prov = e.EventRecord.ProviderName ?? "";
                 int id = e.EventRecord.Id;
@@ -183,12 +193,12 @@ namespace WinCrashDoctor
                 }
                 else if (prov.IndexOf("WHEA", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
-                    title = "WHEA Hardware Error (ID " + id + ")";
+                    title = Localizer.L("Erreur matérielle WHEA (ID " + id + ")", "WHEA Hardware Error (ID " + id + ")", "Error de hardware WHEA (ID " + id + ")", "WHEA-Hardwarefehler (ID " + id + ")", "Errore hardware WHEA (ID " + id + ")", "Erro de hardware WHEA (ID " + id + ")");
                     msg = Localizer.L("Erreur matérielle CPU ou bus PCIe détectée en direct. Cliquez pour inspecter.", "Live CPU or PCIe hardware error detected. Click to inspect.", "Error de hardware CPU/PCIe detectado.", "CPU- oder PCIe-Hardwarefehler erkannt.", "Errore hardware CPU/PCIe rilevato.", "Erro de hardware CPU/PCIe detectado.");
                 }
                 else if (prov.IndexOf("stornvme", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
-                    title = "NVMe SSD Timeout (stornvme " + id + ")";
+                    title = Localizer.L("Délai dépassé sur le SSD NVMe (stornvme " + id + ")", "NVMe SSD Timeout (stornvme " + id + ")", "Tiempo de espera del SSD NVMe (stornvme " + id + ")", "NVMe-SSD-Timeout (stornvme " + id + ")", "Timeout dell'SSD NVMe (stornvme " + id + ")", "Tempo limite do SSD NVMe (stornvme " + id + ")");
                     msg = Localizer.L("Le contrôleur SSD NVMe vient de se réinitialiser. Cliquez pour appliquer le correctif HMB.", "Your NVMe SSD controller just reset. Click to apply the HMB fix.", "El controlador SSD NVMe se reinició.", "Der NVMe-SSD-Controller wurde zurückgesetzt.", "Il controller SSD NVMe si è resettato.", "O controlador SSD NVMe reiniciou.");
                 }
                 else if (id == 2004)
@@ -199,26 +209,49 @@ namespace WinCrashDoctor
 
                 if (!string.IsNullOrEmpty(title))
                 {
-                    _lastAlertTime = DateTime.Now;
-                    _pendingClick = null;
-                    _notifyIcon.ShowBalloonTip(6000, title, msg, ToolTipIcon.Warning);
+                    string t = title, m = msg;
+                    _dispatcher.BeginInvoke(new Action(() => ShowAlert(t, m)));
                 }
+            }
+            catch (Exception ex) { Log.Warn(ex); }
+        }
+
+        /// <summary>UI thread: throttled live alert balloon.</summary>
+        private void ShowAlert(string title, string msg)
+        {
+            try
+            {
+                if (_disposed || _notifyIcon == null || !_notifyIcon.Visible) return;
+                if ((DateTime.Now - _lastAlertTime).TotalSeconds < 6) return;
+                _lastAlertTime = DateTime.Now;
+                _pendingClick = null;
+                _notifyIcon.ShowBalloonTip(6000, title, msg, ToolTipIcon.Warning);
             }
             catch (Exception ex) { Log.Warn(ex); }
         }
 
         public void Dispose()
         {
+            if (_disposed) return;
+            _disposed = true;
             StopEventWatcher();
+            _pendingClick = null;
             if (_notifyIcon != null)
             {
                 try
                 {
                     _notifyIcon.Visible = false;
+                    _notifyIcon.ContextMenuStrip = null;
                     _notifyIcon.Dispose();
                 }
                 catch (Exception ex) { Log.Warn(ex); }
                 _notifyIcon = null;
+            }
+            if (_menu != null)
+            {
+                try { _menu.Dispose(); }
+                catch (Exception ex) { Log.Warn(ex); }
+                _menu = null;
             }
         }
     }

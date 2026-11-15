@@ -396,7 +396,7 @@ namespace WinCrashDoctor
                 row.Children.Add(t);
                 Button apply = CreateFlatButton(Localizer.L("Appliquer", "Apply", "Aplicar", "Anwenden", "Applica", "Aplicar"), "BgCard", "AccentText", "BorderCard", new Thickness(12, 5, 12, 5), 12);
                 apply.VerticalAlignment = VerticalAlignment.Center;
-                apply.Click += (s, e) => ExecuteSingleFix(fixId + "_apply", fixId);
+                apply.Click += (s, e) => ExecuteSingleFix(fixId + "_apply", fixId, s);
                 Grid.SetColumn(apply, 2);
                 row.Children.Add(apply);
 

@@ -283,34 +283,59 @@ namespace WinCrashDoctor.Stress
             if (events == null || events.Count == 0 || r.Outcome == StressOutcome.Failed) return r;
             string list = string.Join(", ", events.Select(e => e.ToString()).Distinct().Take(4));
             var gpu = events.Where(e => e.Kind == LiveEventKind.GpuDriver).ToList();
-            var whea = events.Where(e => e.Kind == LiveEventKind.Whea).ToList();
-            var disk = events.Where(e => e.Kind == LiveEventKind.Disk).ToList();
+            // Uncorrected WHEA errors fail the stage; corrected ones (WarningOnly) are an early warning only.
+            var whea = events.Where(e => e.Kind == LiveEventKind.Whea && !e.WarningOnly).ToList();
+            var wheaCorrected = events.Where(e => e.Kind == LiveEventKind.Whea && e.WarningOnly).ToList();
+            // Disk events about another disk (or an unidentified one for disk 7/11/153) are WarningOnly too.
+            var disk = events.Where(e => e.Kind == LiveEventKind.Disk && !e.WarningOnly).ToList();
             StressStageKind k = ctx.Stage.Kind;
             bool gpuStage = k == StressStageKind.GpuCompute || k == StressStageKind.Vram || k == StressStageKind.Transient;
+            bool pcieStage = gpuStage || k == StressStageKind.Disk;
 
             if (gpu.Count > 0 && gpuStage)
                 return GpuDriverReset(ctx, list);
             if (whea.Count > 0)
             {
-                string summary = string.Format(L("Windows a enregistré {0} erreur(s) matérielle(s) WHEA pendant cette étape ({1}).",
-                                                 "Windows logged {0} WHEA hardware error(s) during this stage ({1}).",
-                                                 "Windows registró {0} error(es) de hardware WHEA durante esta etapa ({1}).",
-                                                 "Windows protokollierte {0} WHEA-Hardwarefehler während dieses Schritts ({1}).",
-                                                 "Windows ha registrato {0} errore/i hardware WHEA durante questa fase ({1}).",
-                                                 "O Windows registrou {0} erro(s) de hardware WHEA durante esta etapa ({1})."), whea.Count, list);
-                bool pcieStage = gpuStage || k == StressStageKind.Disk;
+                string wheaList = string.Join(", ", whea.Select(e => e.ToString()).Distinct().Take(4));
+                string summary = string.Format(L("Windows a enregistré {0} erreur(s) matérielle(s) WHEA non corrigée(s) pendant cette étape ({1}).",
+                                                 "Windows logged {0} uncorrected WHEA hardware error(s) during this stage ({1}).",
+                                                 "Windows registró {0} error(es) de hardware WHEA no corregido(s) durante esta etapa ({1}).",
+                                                 "Windows protokollierte {0} nicht korrigierte(n) WHEA-Hardwarefehler während dieses Schritts ({1}).",
+                                                 "Windows ha registrato {0} errore/i hardware WHEA non corretto/i durante questa fase ({1}).",
+                                                 "O Windows registrou {0} erro(s) de hardware WHEA não corrigido(s) durante esta etapa ({1})."), whea.Count, wheaList);
                 return R(ctx, StressOutcome.Failed, summary, pcieStage ? PcieAdvice : AdviceFor(k), pcieStage ? new[] { "pcie_aspm" } : new string[0]);
             }
             if (disk.Count > 0 && k == StressStageKind.Disk)
                 return R(ctx, StressOutcome.Failed,
-                    L("Le contrôleur de stockage a signalé des erreurs ou des délais dépassés (", "The storage controller reported errors or timeouts (", "El controlador de almacenamiento informó errores o tiempos agotados (", "Der Speichercontroller meldete Fehler oder Zeitüberschreitungen (", "Il controller di archiviazione ha segnalato errori o timeout (", "O controlador de armazenamento relatou erros ou tempos esgotados (") + list + ").",
+                    L("Le contrôleur de stockage a signalé des erreurs ou des délais dépassés (", "The storage controller reported errors or timeouts (", "El controlador de almacenamiento informó errores o tiempos agotados (", "Der Speichercontroller meldete Fehler oder Zeitüberschreitungen (", "Il controller di archiviazione ha segnalato errori o timeout (", "O controlador de armazenamento relatou erros ou tempos esgotados (")
+                    + string.Join(", ", disk.Select(e => e.ToString()).Distinct().Take(4)) + ").",
                     DiskAdvice, "nvme_hmb", "pcie_aspm");
 
-            // An error unrelated to the stage (e.g. a GPU reset during the RAM test): worth flagging, not a failure of this stage.
-            var w = R(ctx, StressOutcome.Warning,
-                (r.Summary ?? "") + " " + L("Windows a toutefois signalé : ", "Windows did report: ", "Windows informó: ", "Windows meldete jedoch: ", "Windows ha comunque segnalato: ", "O Windows relatou: ") + list + ".",
-                gpu.Count > 0 ? DriverResetAdvice : DiskAdvice);
-            return w;
+            // Only warnings left: corrected WHEA errors, and/or an error unrelated to the stage (e.g. a GPU reset
+            // during the RAM test, a disk event about another drive). Worth flagging, not a failure of this stage.
+            var notes = new List<string>();
+            string advice = null;
+            var fixes = new List<string>();
+            if (wheaCorrected.Count > 0)
+            {
+                notes.Add(string.Format(L("Windows a enregistré {0} erreur(s) matérielle(s) WHEA corrigée(s) ({1}) : le matériel a rattrapé l'erreur, l'étape a continué, mais c'est un signe précoce d'instabilité.",
+                                          "Windows logged {0} corrected WHEA hardware error(s) ({1}): the hardware recovered and the stage went on, but this is an early sign of instability.",
+                                          "Windows registró {0} error(es) de hardware WHEA corregido(s) ({1}): el hardware lo recuperó y la etapa continuó, pero es una señal temprana de inestabilidad.",
+                                          "Windows protokollierte {0} korrigierte(n) WHEA-Hardwarefehler ({1}): Die Hardware hat ihn abgefangen und der Schritt lief weiter, aber das ist ein frühes Zeichen von Instabilität.",
+                                          "Windows ha registrato {0} errore/i hardware WHEA corretto/i ({1}): l'hardware lo ha recuperato e la fase è proseguita, ma è un segnale precoce di instabilità.",
+                                          "O Windows registrou {0} erro(s) de hardware WHEA corrigido(s) ({1}): o hardware se recuperou e a etapa continuou, mas é um sinal precoce de instabilidade."),
+                                        wheaCorrected.Count, string.Join(", ", wheaCorrected.Select(e => e.ToString()).Distinct().Take(4))));
+                advice = pcieStage ? PcieAdvice : AdviceFor(k);
+                if (pcieStage) fixes.Add("pcie_aspm");
+            }
+            var others = events.Where(e => !(e.Kind == LiveEventKind.Whea && e.WarningOnly)).ToList();
+            if (others.Count > 0)
+            {
+                notes.Add(L("Windows a toutefois signalé : ", "Windows did report: ", "Windows informó: ", "Windows meldete jedoch: ", "Windows ha comunque segnalato: ", "O Windows relatou: ")
+                          + string.Join(", ", others.Select(e => e.ToString()).Distinct().Take(4)) + ".");
+                if (advice == null) advice = gpu.Count > 0 ? DriverResetAdvice : DiskAdvice;
+            }
+            return R(ctx, StressOutcome.Warning, ((r.Summary ?? "") + " " + string.Join(" ", notes)).Trim(), advice, fixes.ToArray());
         }
 
         /// <summary>Verdict for a stage that was running when the PC went down (found at the next launch).</summary>

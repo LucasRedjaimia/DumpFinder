@@ -58,7 +58,7 @@ namespace WinCrashDoctor
             {
                 try
                 {
-                    using (var s = new ManagementObjectSearcher("SELECT Name FROM Win32_Processor"))
+                    using (var s = Wmi.Searcher("SELECT Name FROM Win32_Processor"))
                     {
                         foreach (ManagementObject mo in s.Get())
                         {
@@ -77,7 +77,7 @@ namespace WinCrashDoctor
 
                 try
                 {
-                    using (var s = new ManagementObjectSearcher("SELECT Name, DriverVersion FROM Win32_VideoController"))
+                    using (var s = Wmi.Searcher("SELECT Name, DriverVersion FROM Win32_VideoController"))
                     {
                         foreach (ManagementObject mo in s.Get())
                         {
@@ -116,7 +116,7 @@ namespace WinCrashDoctor
 
                 try
                 {
-                    using (var s = new ManagementObjectSearcher("SELECT Manufacturer, Product FROM Win32_BaseBoard"))
+                    using (var s = Wmi.Searcher("SELECT Manufacturer, Product FROM Win32_BaseBoard"))
                     {
                         foreach (ManagementObject mo in s.Get())
                         {
@@ -129,7 +129,7 @@ namespace WinCrashDoctor
 
                 try
                 {
-                    using (var s = new ManagementObjectSearcher("SELECT Caption, BuildNumber, LastBootUpTime FROM Win32_OperatingSystem"))
+                    using (var s = Wmi.Searcher("SELECT Caption, BuildNumber, LastBootUpTime FROM Win32_OperatingSystem"))
                     {
                         foreach (ManagementObject mo in s.Get())
                         {
@@ -148,7 +148,7 @@ namespace WinCrashDoctor
 
             try
             {
-                using (var s = new ManagementObjectSearcher("SELECT LastBootUpTime FROM Win32_OperatingSystem"))
+                using (var s = Wmi.Searcher("SELECT LastBootUpTime FROM Win32_OperatingSystem"))
                 {
                     foreach (ManagementObject mo in s.Get())
                     {
@@ -498,15 +498,17 @@ namespace WinCrashDoctor
                 timeClause = " and TimeCreated[@SystemTime >= '" + utcIso + "']";
             }
 
-            string xpath = "*[System[(EventID=1000 or EventID=1002)" + timeClause + "]]";
+            // Provider filtered in the query so the cap below only counts real application crashes / hangs.
+            string xpath = "*[System[Provider[@Name='Application Error' or @Name='Application Hang'] and (EventID=1000 or EventID=1002)" + timeClause + "]]";
             try
             {
-                EventLogQuery query = new EventLogQuery("Application", PathType.LogName, xpath);
+                // Newest first: the 80-event cap must drop the oldest crashes, not yesterday's.
+                EventLogQuery query = new EventLogQuery("Application", PathType.LogName, xpath) { ReverseDirection = true };
                 using (EventLogReader reader = new EventLogReader(query))
                 {
                     int count = 0;
                     EventRecord rec;
-                    while ((rec = reader.ReadEvent()) != null && count < 80)
+                    while (count < 80 && (rec = reader.ReadEvent()) != null)
                     {
                         using (rec)
                         {
@@ -631,7 +633,8 @@ namespace WinCrashDoctor
                 if (mDec.Success) decoder = mDec.Value;
 
                 Match mUrl = Regex.Match(ascii, @"https?://[a-zA-Z0-9\.\-_/\?=&%]+");
-                if (mUrl.Success) url = mUrl.Value;
+                // Only the site is kept: the page path and query string can hold personal data (searches, tokens).
+                if (mUrl.Success) url = Privacy.UrlOrigin(mUrl.Value);
 
                 Match mErr = Regex.Match(ascii, @"\[[0-9:/.]+:ERROR:[^\r\n\0]+");
                 if (mErr.Success) errorLine = mErr.Value;
@@ -1401,42 +1404,27 @@ namespace WinCrashDoctor
                 RegExportContent = "Windows Registry Editor Version 5.00\r\n\r\n[HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power]\r\n\"HiberbootEnabled\"=dword:00000000\r\n"
             });
 
-            string crashDumpDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CrashDumps");
-            int dumpFiles = 0;
-            double dumpMb = 0;
-            if (Directory.Exists(crashDumpDir))
-            {
-                try
-                {
-                    var files = Directory.GetFiles(crashDumpDir, "*.dmp");
-                    dumpFiles = files.Length;
-                    dumpMb = files.Sum(f => new FileInfo(f).Length) / (1024.0 * 1024.0);
-                }
-                catch (Exception ex) { Log.Warn(ex); }
-            }
             list.Add(new RegistryFixItem
             {
                 Id = "sfc_repair",
                 Group = FixGroup.SystemMaint,
                 VendorTag = "SFC / DISM",
                 Title = Localizer.L(
-                    "Vérifier l'intégrité système (SFC /scannow) & nettoyer CrashDumps",
-                    "Verify System Integrity (SFC /scannow) & Clean CrashDumps",
-                    "Verificar archivos del sistema (SFC /scannow) y limpiar CrashDumps",
-                    "Systemdateien prüfen (SFC /scannow) & CrashDumps bereinigen",
-                    "Verifica integrità di sistema (SFC /scannow) e pulisci CrashDumps",
-                    "Verificar integridade do sistema (SFC /scannow) e limpar CrashDumps"),
-                RegPathDisplay = string.Format("DISM + sfc /scannow  •  CrashDumps: {0} ({1:F1} MB)", dumpFiles, dumpMb),
-                CurrentValue = dumpFiles == 0
-                    ? Localizer.L("0 dump local — Outil prêt", "0 local dumps — Repair tool ready", "0 volcados — Herramienta lista", "0 lokale Dumps — Bereit", "0 dump locali — Pronto", "0 dumps locais — Pronto")
-                    : string.Format("{0} dump(s) ({1:F1} MB)", dumpFiles, dumpMb),
+                    "Vérifier l'intégrité système (SFC /scannow)",
+                    "Verify System Integrity (SFC /scannow)",
+                    "Verificar archivos del sistema (SFC /scannow)",
+                    "Systemdateien prüfen (SFC /scannow)",
+                    "Verifica integrità di sistema (SFC /scannow)",
+                    "Verificar integridade do sistema (SFC /scannow)"),
+                RegPathDisplay = "sfc /scannow",
+                CurrentValue = Localizer.L("Outil prêt", "Repair tool ready", "Herramienta lista", "Bereit", "Pronto", "Pronto"),
                 Explanation = Localizer.L(
-                    "Purge les anciens fichiers CrashDumps applicatifs et lance une console Administrateur exécutant SFC /scannow.",
-                    "Cleans leftover local CrashDumps and opens an Administrator console running SFC /scannow.",
-                    "Limpia los archivos CrashDumps locales y abre una consola de Administrador ejecutando SFC /scannow.",
-                    "Löscht lokale CrashDumps und startet eine Administrator-Konsole mit SFC /scannow.",
-                    "Pulisce i CrashDumps locali e avvia una console Amministratore con SFC /scannow.",
-                    "Limpa os CrashDumps locais e abre um console Administrador executando SFC /scannow."),
+                    "Ouvre une console Administrateur qui exécute SFC /scannow. Les fichiers de crash (dumps) sont conservés : ce sont eux qui permettent le diagnostic.",
+                    "Opens an Administrator console running SFC /scannow. Crash dump files are kept: they are what the diagnosis relies on.",
+                    "Abre una consola de Administrador que ejecuta SFC /scannow. Los volcados de fallos se conservan: son la base del diagnóstico.",
+                    "Öffnet eine Administrator-Konsole mit SFC /scannow. Absturz-Dumps bleiben erhalten: Sie sind die Grundlage der Diagnose.",
+                    "Apre una console Amministratore che esegue SFC /scannow. I dump dei crash vengono conservati: sono la base della diagnosi.",
+                    "Abre um console Administrador que executa SFC /scannow. Os dumps de falhas são mantidos: são a base do diagnóstico."),
                 ApplyBtn = Localizer.L("Lancer SFC", "Run SFC", "Ejecutar SFC", "SFC starten", "Avvia SFC", "Executar SFC"),
                 RestoreBtn = "",
                 Status = FixStatus.Info,
@@ -1795,22 +1783,16 @@ namespace WinCrashDoctor
                         return true;
 
                     case "sfc_repair_apply":
-                        string dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CrashDumps");
-                        if (Directory.Exists(dir))
+                        // Crash dumps (%LOCALAPPDATA%\CrashDumps) are left alone: they are the evidence Dump Finder
+                        // diagnoses from, and deleting them here used to wipe crashes not analysed yet.
+                        if (!Elevation.Launch("cmd.exe", "/k echo === SFC /scannow === & sfc /scannow"))
                         {
-                            foreach (string f in Directory.GetFiles(dir, "*.dmp"))
-                            {
-                                try { File.Delete(f); } catch { }
-                            }
-                        }
-                        if (!Elevation.Launch("cmd.exe", "/k echo === Verification et Reparation Integrite Windows (SFC /scannow) === & sfc /scannow"))
-                        {
-                            messageFr = "CrashDumps nettoyés, mais la console SFC a été refusée au contrôle UAC.";
-                            messageEn = "CrashDumps purged, but the SFC console was refused at the UAC prompt.";
+                            messageFr = "La console SFC a été refusée au contrôle UAC.";
+                            messageEn = "The SFC console was refused at the UAC prompt.";
                             return false;
                         }
-                        messageFr = "✓ CrashDumps nettoyés et console Administrateur SFC /scannow ouverte !";
-                        messageEn = "✓ CrashDumps purged and elevated SFC /scannow console launched!";
+                        messageFr = "✓ Console Administrateur SFC /scannow ouverte.";
+                        messageEn = "✓ Elevated SFC /scannow console opened.";
                         return true;
 
                     case "restore_snapshot":
@@ -2221,21 +2203,8 @@ namespace WinCrashDoctor
 
         private static string RunHiddenCommand(string exe, string args)
         {
-            ProcessStartInfo psi = new ProcessStartInfo
-            {
-                FileName = exe,
-                Arguments = args,
-                CreateNoWindow = true,
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
-            };
-            using (Process p = Process.Start(psi))
-            {
-                string s = p.StandardOutput.ReadToEnd();
-                p.WaitForExit(4000);
-                return s;
-            }
+            // Full System32 path, both pipes drained, killed after 15 s (powercfg / sc can hang on a broken service).
+            return SysTools.Run(exe, args, 15000).Output;
         }
 
         private static string SafeFormatDescription(EventRecord rec)

@@ -161,12 +161,16 @@ namespace WinCrashDoctor
         }
 
         /// <summary>Runs one Optimiser operation through the fix pipeline (UAC if needed, journal, undo).</summary>
-        private async void ExecuteOptimizeOp(string op, string id)
+        private async void ExecuteOptimizeOp(string op, string id, object sender = null)
         {
-            using (BeginBusy(PendingFixMessage))
+            using (IDisposable fixLock = TryBeginFix(sender))
             {
-                FixOutcome outcome = await RunFixAsync(op);
-                SetToast(outcome.Message, outcome.Ok ? "SuccessFg" : "DangerFg");
+                if (fixLock == null) return;
+                using (BeginBusy(PendingFixMessage))
+                {
+                    FixOutcome outcome = await RunFixAsync(op);
+                    SetToast(outcome.Message, outcome.Ok ? "SuccessFg" : "DangerFg");
+                }
             }
             if (OptStartup.IsOp(op)) _optStartup = null;
             RenderOptimizeSub();
@@ -188,10 +192,14 @@ namespace WinCrashDoctor
             applyRec.IsEnabled = rec > 0;
             applyRec.Click += async (s, e) =>
             {
-                var ops = OptTweaks.Items().Where(i => i.Status == FixStatus.Recommended).Select(i => i.Id + "_apply").ToList();
-                if (ops.Count == 0) return;
                 List<FixRunResult> results;
-                using (BeginBusy(PendingFixMessage)) results = await RunFixBatchAsync(ops);
+                using (IDisposable fixLock = TryBeginFix(s))
+                {
+                    if (fixLock == null) return;
+                    var ops = OptTweaks.Items().Where(i => i.Status == FixStatus.Recommended).Select(i => i.Id + "_apply").ToList();
+                    if (ops.Count == 0) return;
+                    using (BeginBusy(PendingFixMessage)) results = await RunFixBatchAsync(ops);
+                }
                 int ok = results.Count(r => r.Ok);
                 SetToast(string.Format(OL("{0} réglage(s) appliqué(s). Certains prennent effet après redémarrage de l'Explorateur ou de la session.",
                                           "{0} setting(s) applied. Some take effect after File Explorer or the session restarts.",
@@ -317,8 +325,12 @@ namespace WinCrashDoctor
             if (MessageBox.Show(this, msg, "Dump Finder", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
 
             List<string> removed = null, failed = null;
-            using (BeginBusy(OL("Retrait des applications…", "Removing apps…", "Quitando aplicaciones…", "Apps werden entfernt…", "Rimozione app…", "Removendo aplicativos…")))
-                await Task.Run(() => OptApps.Remove(sel, out removed, out failed));
+            using (IDisposable fixLock = TryBeginFix(_btnOptRemoveApps))
+            {
+                if (fixLock == null) return;
+                using (BeginBusy(OL("Retrait des applications…", "Removing apps…", "Quitando aplicaciones…", "Apps werden entfernt…", "Rimozione app…", "Removendo aplicativos…")))
+                    await Task.Run(() => OptApps.Remove(sel, out removed, out failed));
+            }
 
             // Journal: listed with the other changes, marked "reinstall from the Store" instead of undoable.
             History.AddJournal(removed.Select(t => new JournalEntry
@@ -405,7 +417,7 @@ namespace WinCrashDoctor
                                          "BgCard", "TextPrimary", "BorderStrong", new Thickness(13, 6, 13, 6), 12);
                 b.MinWidth = 110;
                 b.VerticalAlignment = VerticalAlignment.Center;
-                b.Click += (s, ev) => ExecuteOptimizeOp(entry.Op(entry.Enabled), null);
+                b.Click += (s, ev) => ExecuteOptimizeOp(entry.Op(entry.Enabled), null, s);
                 Grid.SetColumn(b, 1);
                 row.Children.Add(b);
                 p.Children.Add(OptCard(row));
@@ -445,10 +457,14 @@ namespace WinCrashDoctor
             _btnOptClean.FontWeight = FontWeights.SemiBold;
             _btnOptClean.Click += async (s, e) =>
             {
-                var ops = _optCleanChecks.Where(kv => kv.Key.IsChecked == true).Select(kv => kv.Value.Op).ToList();
-                if (ops.Count == 0) return;
                 List<FixRunResult> results;
-                using (BeginBusy(OL("Nettoyage…", "Cleaning…", "Limpiando…", "Bereinigung…", "Pulizia…", "Limpando…"))) results = await RunFixBatchAsync(ops);
+                using (IDisposable fixLock = TryBeginFix(s))
+                {
+                    if (fixLock == null) return;
+                    var ops = _optCleanChecks.Where(kv => kv.Key.IsChecked == true).Select(kv => kv.Value.Op).ToList();
+                    if (ops.Count == 0) return;
+                    using (BeginBusy(OL("Nettoyage…", "Cleaning…", "Limpiando…", "Bereinigung…", "Pulizia…", "Limpando…"))) results = await RunFixBatchAsync(ops);
+                }
                 SetToast(string.Join("  ", results.Select(r => r.Message)), results.All(r => r.Ok) ? "SuccessFg" : "WarnFg");
                 _optClean = null;
                 RenderOptClean();

@@ -96,10 +96,13 @@ namespace WinCrashDoctor
         public MainWindow(AppSettings initialSettings)
         {
             _appSettings = initialSettings ?? Localizer.LoadSettings();
-            Width = 1240;
-            Height = 820;
-            MinWidth = 1000;
-            MinHeight = 680;
+            // Small screens (e.g. 1366x768 at 125 % = ~1093x576 DIP usable): never start, or be
+            // forced, larger than the work area, or the status line and Settings become unreachable.
+            Rect workArea = SystemParameters.WorkArea;
+            MinWidth = Math.Min(1000, Math.Max(400, workArea.Width));
+            MinHeight = Math.Min(540, Math.Max(300, workArea.Height));
+            Width = Math.Max(MinWidth, Math.Min(1240, workArea.Width));
+            Height = Math.Max(MinHeight, Math.Min(820, workArea.Height));
             Title = "Dump Finder";
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
             FontFamily = Ds.UiFont;
@@ -126,23 +129,121 @@ namespace WinCrashDoctor
             InitTraySentinel(initialSettings != null && initialSettings.TraySentinelEnabled);
             BuildLayout();
 
-            Closing += (s, e) =>
+            Closing += OnWindowClosing;
+            Closed += (s, e) => RunExitCleanup();
+            if (Application.Current != null)
             {
-                if (_sentinelEnabled && !_forceExit)
-                {
-                    e.Cancel = true;
-                    Hide();
-                    if (_traySentinel != null) _traySentinel.ShowMinimizedHintOnce();
-                    return;
-                }
+                // Logoff / shutdown / Application.Shutdown: always a real exit, never "hide to tray".
+                Application.Current.SessionEnding += (s, e) => _forceExit = true;
+                Application.Current.Exit += (s, e) => RunExitCleanup();
+            }
+            StateChanged += (s, e) => { if (WindowState == WindowState.Normal) FitToWorkArea(); };
 
-                SystemEvents.UserPreferenceChanged -= OnWindowsPreferenceChanged;
-                // Closing the app mid-test is not a crash: drop the "test running" marker.
-                if (_stressRunner.IsRunning) { _stressRunner.RequestStop(); History.ClearStressMarker(); }
-                if (_traySentinel != null) _traySentinel.Dispose();
+            Loaded += (s, e) =>
+            {
+                if (_loadedOnce) return;
+                _loadedOnce = true;
+                FitToWorkArea();
+                RunScanAsync();
+                StartupUpdateCheck();
             };
 
-            Loaded += (s, e) => { RunScanAsync(); StartupUpdateCheck(); };
+            // Leftover test files from an interrupted disk stress test: clean them in the background
+            // (here rather than in Loaded so a tray-only start cleans them too).
+            Task.Run(() =>
+            {
+                try { WinCrashDoctor.Stress.DiskStress.SweepOrphans(); }
+                catch (Exception ex) { Log.Warn(ex, "DiskStress.SweepOrphans"); }
+            });
+        }
+
+        private bool _loadedOnce;
+        private bool _exitCleanupDone;
+
+        private void OnWindowClosing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (!_forceExit && _stressRunner.IsRunning)
+            {
+                var ans = MessageBox.Show(this,
+                    Localizer.L(
+                        "Un test de stabilité est en cours.\n\nOui : arrêter le test et fermer.\nNon : laisser le test tourner (la fenêtre reste ouverte).",
+                        "A stability test is running.\n\nYes: stop the test and close.\nNo: keep the test running (the window stays open).",
+                        "Hay una prueba de estabilidad en curso.\n\nSí: detener la prueba y cerrar.\nNo: dejar que la prueba continúe (la ventana sigue abierta).",
+                        "Ein Stabilitätstest läuft.\n\nJa: Test stoppen und schließen.\nNein: Test weiterlaufen lassen (das Fenster bleibt offen).",
+                        "È in corso un test di stabilità.\n\nSì: interrompi il test e chiudi.\nNo: lascia proseguire il test (la finestra resta aperta).",
+                        "Um teste de estabilidade está em andamento.\n\nSim: parar o teste e fechar.\nNão: deixar o teste continuar (a janela permanece aberta)."),
+                    "Dump Finder", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                if (ans != MessageBoxResult.Yes)
+                {
+                    e.Cancel = true;
+                    return;
+                }
+                // Same as the Stop button: the runner finishes its stage and clears the marker itself.
+                _stressRunner.RequestStop();
+                if (_btnStopStress != null) _btnStopStress.IsEnabled = false;
+                if (_lblStressStatus != null)
+                    _lblStressStatus.Text = Localizer.L("Arrêt en cours…", "Stopping…", "Deteniendo…", "Wird gestoppt…", "Arresto in corso…", "Parando…");
+            }
+
+            if (_sentinelEnabled && !_forceExit)
+            {
+                e.Cancel = true;
+                Hide();
+                if (_traySentinel != null) _traySentinel.ShowMinimizedHintOnce();
+                return;
+            }
+
+            RunExitCleanup();
+        }
+
+        /// <summary>Real exit (window close without Sentinel, tray Quit, Run as admin, logoff): runs once.</summary>
+        private void RunExitCleanup()
+        {
+            if (_exitCleanupDone) return;
+            _exitCleanupDone = true;
+
+            try { SystemEvents.UserPreferenceChanged -= OnWindowsPreferenceChanged; }
+            catch (Exception ex) { Log.Warn(ex, "Exit: SystemEvents"); }
+
+            try
+            {
+                // Closing the app mid-test is not a crash: drop the "test running" marker.
+                if (_stressRunner.IsRunning) { _stressRunner.RequestStop(); History.ClearStressMarker(); }
+            }
+            catch (Exception ex) { Log.Warn(ex, "Exit: stress"); }
+
+            try { CancelDrawerAi(); }
+            catch (Exception ex) { Log.Warn(ex, "Exit: AI"); }
+
+            try
+            {
+                if (_traySentinel != null)
+                {
+                    _traySentinel.Dispose();
+                    _traySentinel = null;
+                }
+            }
+            catch (Exception ex) { Log.Warn(ex, "Exit: tray"); }
+        }
+
+        /// <summary>Keeps the restored window inside the (primary) work area.</summary>
+        private void FitToWorkArea()
+        {
+            if (WindowState != WindowState.Normal) return;
+            Rect wa = SystemParameters.WorkArea;
+            if (wa.Width <= 0 || wa.Height <= 0) return;
+            if (double.IsNaN(Left) || double.IsNaN(Top)) return;
+            // SystemParameters.WorkArea is the primary monitor: leave windows on other monitors alone.
+            bool onPrimary = Left >= wa.Left - 16 && Left < wa.Right && Top >= wa.Top - 16 && Top < wa.Bottom;
+            if (!onPrimary) return;
+            if (ActualWidth > wa.Width || Width > wa.Width) Width = Math.Max(MinWidth, wa.Width);
+            if (ActualHeight > wa.Height || Height > wa.Height) Height = Math.Max(MinHeight, wa.Height);
+            double w = double.IsNaN(Width) ? ActualWidth : Width;
+            double h = double.IsNaN(Height) ? ActualHeight : Height;
+            if (Left + w > wa.Right) Left = Math.Max(wa.Left, wa.Right - w);
+            if (Top + h > wa.Bottom) Top = Math.Max(wa.Top, wa.Bottom - h);
+            if (Left < wa.Left && w <= wa.Width) Left = wa.Left;
+            if (Top < wa.Top) Top = wa.Top;
         }
 
         private void OnWindowsPreferenceChanged(object sender, UserPreferenceChangedEventArgs e)
@@ -299,8 +400,19 @@ namespace WinCrashDoctor
                 if (i == TabSettings) _navSettingsButton = navBtn;
                 else navStack.Children.Add(navBtn);
             }
-            Grid.SetRow(navStack, 0);
-            sideGrid.Children.Add(navStack);
+            // Scrollable on short windows so every section stays reachable. The negative margin /
+            // padding pair keeps the active indicator (drawn 8 px left of the button) unclipped.
+            navStack.Margin = new Thickness(8, 0, 0, 0);
+            ScrollViewer navScroll = new ScrollViewer
+            {
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                Margin = new Thickness(-8, 0, 0, 0),
+                Focusable = false,
+                Content = navStack
+            };
+            Grid.SetRow(navScroll, 0);
+            sideGrid.Children.Add(navScroll);
 
             // Bottom Preferences, Tray Sentinel & Compact Hardware Info
             StackPanel bottomStack = new StackPanel();
@@ -642,8 +754,16 @@ namespace WinCrashDoctor
             _btnCopyReport.Margin = new Thickness(0, 0, 8, 0);
             _btnCopyReport.Click += (s, e) =>
             {
-                Clipboard.SetText(_txtReportBox.Text ?? "");
-                SetToast(Localizer.L("Rapport copié dans le presse-papiers.", "Report copied to clipboard.", "Informe copiado al portapapeles.", "Bericht in die Zwischenablage kopiert.", "Rapporto copiato negli appunti.", "Relatório copiado para a área de transferência."), "SuccessFg");
+                try
+                {
+                    Clipboard.SetText(_txtReportBox.Text ?? "");
+                    SetToast(Localizer.L("Rapport copié dans le presse-papiers.", "Report copied to clipboard.", "Informe copiado al portapapeles.", "Bericht in die Zwischenablage kopiert.", "Rapporto copiato negli appunti.", "Relatório copiado para a área de transferência."), "SuccessFg");
+                }
+                catch (Exception ex)
+                {
+                    Log.Warn(ex, "Clipboard");
+                    SetToast(Localizer.L("Le presse-papiers est occupé, réessayez.", "Clipboard busy, try again.", "Portapapeles ocupado.", "Zwischenablage belegt.", "Appunti occupati.", "Área de transferência ocupada."), "WarnFg");
+                }
             };
 
             _btnSaveReport = CreateFlatButton("", "BgCard", "TextPrimary", "BorderStrong", new Thickness(14, 7, 14, 7), 12.2);
@@ -790,38 +910,69 @@ namespace WinCrashDoctor
                 StyleTogglePill(_fixGroupBtns[i], _fixGroupFilter == groups[i]);
         }
 
-        private async void SwitchLanguage(AppLang lang)
+        private void SwitchLanguage(AppLang lang)
         {
             Localizer.Current = lang;
             SaveCurrentPreferences();
             PopulateLocalizedDropdowns();
             RefreshStaticLabels();
             UpdateSentinelButtonVisual();
+            RelocalizeScanResult();
+        }
+
+        // Relocalization state (UI thread only): one pass at a time, never during a scan.
+        private bool _relocalizeRunning;
+        private bool _relocalizePending;
+
+        /// <summary>
+        /// Rebuilds the scan-derived texts in the current language. Deferred while a scan runs
+        /// (the scan completion triggers it) and serialized: a request during a pass is queued once.
+        /// </summary>
+        private async void RelocalizeScanResult()
+        {
+            if (_scanInProgress || _relocalizeRunning)
+            {
+                _relocalizePending = true;
+                return;
+            }
+            _relocalizePending = false;
 
             ScanResult res = _lastResult;
             if (res == null) return;
 
+            AppLang lang = Localizer.Current;
             var smart = _cachedAdminSmart;
-            using (BeginBusy(null))
+            _relocalizeRunning = true;
+            try
             {
-                try
+                using (BeginBusy(null))
                 {
-                    // Re-localizing re-probes registry/WMI: run it off the UI thread.
-                    await Task.Run(() =>
+                    try
                     {
-                        res.Fixes = DiagnosticsEngine.InspectAllFixes(false);
-                        DiagnosticsEngine.RefreshLocalizedHealthAndConflicts(res, smart);
-                        DiagnosticsEngine.BuildSmartDiagnosis(res);
-                    });
+                        // Re-localizing re-probes registry/WMI: run it off the UI thread.
+                        await Task.Run(() =>
+                        {
+                            res.Fixes = DiagnosticsEngine.InspectAllFixes(false);
+                            DiagnosticsEngine.RefreshLocalizedHealthAndConflicts(res, smart);
+                            DiagnosticsEngine.BuildSmartDiagnosis(res);
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "SwitchLanguage");
+                    }
                 }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "SwitchLanguage");
-                }
+                // A newer scan or language switch may have replaced the result meanwhile.
+                if (ReferenceEquals(res, _lastResult) && Localizer.Current == lang)
+                    RenderScanResult(res);
             }
-            // A newer scan or language switch may have replaced the result meanwhile.
-            if (ReferenceEquals(res, _lastResult) && Localizer.Current == lang)
-                RenderScanResult(res);
+            finally
+            {
+                _relocalizeRunning = false;
+            }
+
+            if (_relocalizePending && !_scanInProgress)
+                RelocalizeScanResult();
         }
 
         private void RefreshDynamicThemeAccents()
@@ -876,6 +1027,7 @@ namespace WinCrashDoctor
 
             _btnElevate.Content = Localizer.L("🛡️ Mode Administrateur", "🛡️ Run as Admin", "🛡️ Modo Administrador", "🛡️ Als Admin starten", "🛡️ Avvia come Admin", "🛡️ Iniciar como Admin");
 
+            RefreshShellLabels();
             RefreshHealthPageLabels();
             RefreshWinToolsPageLabels();
             RefreshOptimizeLabels();
@@ -931,9 +1083,48 @@ namespace WinCrashDoctor
             }
         }
 
+        // Scan state (UI thread only): one scan at a time; a request during a scan is queued once.
+        private bool _scanInProgress;
+        private bool _scanQueued;
+
         private async void RunScanAsync()
         {
-            _btnRescan.IsEnabled = false;
+            if (_scanInProgress)
+            {
+                _scanQueued = true;
+                return;
+            }
+            _scanInProgress = true;
+            _scanQueued = false;
+            if (_btnRescan != null) _btnRescan.IsEnabled = false;
+            try
+            {
+                await RunScanCoreAsync();
+            }
+            finally
+            {
+                _scanInProgress = false;
+                if (_btnRescan != null) _btnRescan.IsEnabled = true;
+                OnScanFinished();
+            }
+        }
+
+        /// <summary>Runs what was requested while a scan was busy: a queued rescan first, else a pending relocalization.</summary>
+        private void OnScanFinished()
+        {
+            if (_scanQueued)
+            {
+                _scanQueued = false;
+                RunScanAsync();
+            }
+            else if (_relocalizePending)
+            {
+                RelocalizeScanResult();
+            }
+        }
+
+        private async Task RunScanCoreAsync()
+        {
             SetToast(Localizer.L("Analyse en cours...", "Scanning system...", "Analizando el sistema...", "System wird geprüft...", "Analisi in corso...", "Analisando o sistema..."), "TextSecondary");
 
             ScanResult res;
@@ -951,10 +1142,6 @@ namespace WinCrashDoctor
                 Log.Error(ex, "RunScan");
                 SetToast(Localizer.L("L'analyse a échoué (détails dans le journal).", "Scan failed (see log for details).", "El análisis falló (ver registro).", "Prüfung fehlgeschlagen (siehe Protokoll).", "Analisi non riuscita (vedi log).", "A análise falhou (ver log)."), "DangerFg");
                 return;
-            }
-            finally
-            {
-                _btnRescan.IsEnabled = true;
             }
 
             _lastResult = res;
@@ -1093,7 +1280,7 @@ namespace WinCrashDoctor
         }
 
         /// <summary>One fix / setting card (title, status, explanation, primary button, technical drawer). Shared with Optimiser.</summary>
-        private Border BuildFixCard(RegistryFixItem fix, Action<string, string> run)
+        private Border BuildFixCard(RegistryFixItem fix, Action<string, string, object> run)
         {
                 string stBg = "BgSubtle", stFg = "TextSecondary", stBd = "BorderCard";
                 if (fix.Status == FixStatus.Applied) { stBg = "SuccessSoftBg"; stFg = "SuccessFg"; stBd = "SuccessBorder"; }
@@ -1173,7 +1360,7 @@ namespace WinCrashDoctor
                     new Thickness(13, 6, 13, 6), 12.2);
                 btnPrimary.MinWidth = 118;
                 btnPrimary.FontWeight = FontWeights.SemiBold;
-                btnPrimary.Click += (s, e) => run(fixId + "_apply", fixId);
+                btnPrimary.Click += (s, e) => run(fixId + "_apply", fixId, s);
                 right.Children.Add(btnPrimary);
 
                 Border drawer = ResBg(new Border
@@ -1226,7 +1413,7 @@ namespace WinCrashDoctor
                 {
                     Button btnRest = CreateFlatButton(fix.RestoreBtn, "BgCard", "TextSecondary", "BorderCard", new Thickness(10, 4, 10, 4), 11.5);
                     btnRest.Margin = new Thickness(8, 0, 0, 0);
-                    btnRest.Click += (s, e) => run(fixId + "_restore", fixId);
+                    btnRest.Click += (s, e) => run(fixId + "_restore", fixId, s);
                     drwBtns.Children.Add(btnRest);
                 }
                 if (!string.IsNullOrEmpty(fix.RegExportContent))
@@ -1499,20 +1686,67 @@ namespace WinCrashDoctor
             get { return Localizer.L("Application en cours…", "Applying…", "Aplicando…", "Wird angewendet…", "Applicazione in corso…", "Aplicando…"); }
         }
 
-        private async void ExecuteSingleFix(string opCode, string fixId)
+        // ==================== FIX RE-ENTRANCY GUARD ====================
+        /// <summary>True while a fix, a fix batch, a cleanup, an app removal or an undo runs (UI thread only).</summary>
+        private bool _fixInProgress;
+
+        /// <summary>
+        /// Enters the single "system change" slot and disables the clicked button. Returns null (and
+        /// tells the user) when another change is already running. Dispose the scope (using/finally).
+        /// </summary>
+        private IDisposable TryBeginFix(object sender)
         {
-            if (opCode.EndsWith("_apply", StringComparison.Ordinal) && !await ConfirmBrowserClose(fixId)) return;
-
-            using (BeginBusy(PendingFixMessage))
+            if (_fixInProgress)
             {
-                FixOutcome outcome = await RunFixAsync(opCode);
-                SetToast(outcome.Message, outcome.Ok ? "SuccessFg" : "DangerFg");
+                SetToast(Localizer.L(
+                    "Une autre opération est déjà en cours, attends qu'elle se termine.",
+                    "Another operation is already running, wait for it to finish.",
+                    "Ya hay otra operación en curso, espera a que termine.",
+                    "Ein anderer Vorgang läuft bereits. Bitte warten, bis er fertig ist.",
+                    "È già in corso un'altra operazione, attendi che finisca.",
+                    "Já há outra operação em andamento, aguarde até que termine."), "WarnFg");
+                return null;
+            }
+            _fixInProgress = true;
+            Button b = sender as Button;
+            bool wasEnabled = b != null && b.IsEnabled;
+            if (b != null) b.IsEnabled = false;
+            return new FixScope(this, b, wasEnabled);
+        }
 
-                if (_lastResult != null)
+        private sealed class FixScope : IDisposable
+        {
+            private MainWindow _owner;
+            private readonly Button _button;
+            private readonly bool _wasEnabled;
+            public FixScope(MainWindow owner, Button button, bool wasEnabled) { _owner = owner; _button = button; _wasEnabled = wasEnabled; }
+            public void Dispose()
+            {
+                if (_owner == null) return;
+                _owner._fixInProgress = false;
+                if (_button != null && _wasEnabled) _button.IsEnabled = true;
+                _owner = null;
+            }
+        }
+
+        private async void ExecuteSingleFix(string opCode, string fixId, object sender = null)
+        {
+            using (IDisposable fixLock = TryBeginFix(sender))
+            {
+                if (fixLock == null) return;
+                if (opCode.EndsWith("_apply", StringComparison.Ordinal) && !await ConfirmBrowserClose(fixId)) return;
+
+                using (BeginBusy(PendingFixMessage))
                 {
-                    bool deepShader = fixId == "shader_cache";
-                    _lastResult.Fixes = await Task.Run(() => DiagnosticsEngine.InspectAllFixes(deepShader));
-                    RenderScanResult(_lastResult);
+                    FixOutcome outcome = await RunFixAsync(opCode);
+                    SetToast(outcome.Message, outcome.Ok ? "SuccessFg" : "DangerFg");
+
+                    if (_lastResult != null)
+                    {
+                        bool deepShader = fixId == "shader_cache";
+                        _lastResult.Fixes = await Task.Run(() => DiagnosticsEngine.InspectAllFixes(deepShader));
+                        RenderScanResult(_lastResult);
+                    }
                 }
             }
         }
@@ -1520,58 +1754,84 @@ namespace WinCrashDoctor
         private async void OnApplyAllRecommendedClick(object sender, RoutedEventArgs e)
         {
             if (_lastResult == null) return;
-            var pending = _lastResult.Fixes
-                .Where(f => f.Status == FixStatus.Recommended && (!_onlyHardwareRelevantFixes || f.IsApplicableTo(_lastResult.Hardware)))
-                .ToList();
-            if (pending.Count == 0)
+            using (IDisposable fixLock = TryBeginFix(sender))
             {
-                SetToast(Localizer.L("Tous les correctifs recommandés sont déjà actifs.", "All recommended fixes are already active.", "Todas las correcciones recomendadas ya están activas.", "Alle empfohlenen Korrekturen sind bereits aktiv.", "Tutte le correzioni consigliate sono già attive.", "Todas as correções recomendadas já estão ativas."), "SuccessFg");
-                return;
-            }
+                if (fixLock == null) return;
+                var pending = _lastResult.Fixes
+                    .Where(f => f.Status == FixStatus.Recommended && (!_onlyHardwareRelevantFixes || f.IsApplicableTo(_lastResult.Hardware)))
+                    .ToList();
+                if (pending.Count == 0)
+                {
+                    SetToast(Localizer.L("Tous les correctifs recommandés sont déjà actifs.", "All recommended fixes are already active.", "Todas las correcciones recomendadas ya están activas.", "Alle empfohlenen Korrekturen sind bereits aktiv.", "Tutte le correzioni consigliate sono già attive.", "Todas as correções recomendadas já estão ativas."), "SuccessFg");
+                    return;
+                }
 
-            // Browser confirmations first, then everything in one batch (a single UAC prompt).
-            var ops = new List<string>();
-            foreach (var fix in pending)
-            {
-                if (!await ConfirmBrowserClose(fix.Id)) continue;
-                ops.Add(fix.Id + "_apply");
-            }
-            if (ops.Count == 0) return;
+                // Browser confirmations first, then everything in one batch (a single UAC prompt).
+                var ops = new List<string>();
+                foreach (var fix in pending)
+                {
+                    if (!await ConfirmBrowserClose(fix.Id)) continue;
+                    ops.Add(fix.Id + "_apply");
+                }
+                if (ops.Count == 0) return;
 
-            List<FixRunResult> results;
-            using (BeginBusy(PendingFixMessage))
-            {
-                results = await RunFixBatchAsync(ops);
-                _lastResult.Fixes = await Task.Run(() => DiagnosticsEngine.InspectAllFixes(false));
-                RenderScanResult(_lastResult);
-            }
+                List<FixRunResult> results;
+                using (BeginBusy(PendingFixMessage))
+                {
+                    results = await RunFixBatchAsync(ops);
+                    if (_lastResult != null)
+                    {
+                        _lastResult.Fixes = await Task.Run(() => DiagnosticsEngine.InspectAllFixes(false));
+                        RenderScanResult(_lastResult);
+                    }
+                }
 
-            int applied = results.Count(r => r.Ok), failed = results.Count - applied;
-            foreach (var r in results.Where(r => !r.Ok)) Log.Warn("Fix " + r.Op + " failed: " + r.MessageEn);
-            if (failed == 0)
-                SetToast(Localizer.L(
-                    applied + " correctif(s) appliqué(s). Chacun est annulable dans Outils › Historique.",
-                    applied + " fix(es) applied. Each one can be undone in Tools › History.",
-                    applied + " corrección(es) aplicada(s).",
-                    applied + " Korrektur(en) angewendet.",
-                    applied + " correzione/i applicata/e.",
-                    applied + " correção(ões) aplicada(s)."), "SuccessFg");
-            else
-                SetToast(Localizer.L(
-                    applied + " correctif(s) appliqué(s), " + failed + " en échec.",
-                    applied + " fix(es) applied, " + failed + " failed.",
-                    applied + " aplicada(s), " + failed + " fallida(s).",
-                    applied + " angewendet, " + failed + " fehlgeschlagen.",
-                    applied + " applicata/e, " + failed + " non riuscita/e.",
-                    applied + " aplicada(s), " + failed + " com falha."), "WarnFg");
+                int applied = results.Count(r => r.Ok), failed = results.Count - applied;
+                foreach (var r in results.Where(r => !r.Ok)) Log.Warn("Fix " + r.Op + " failed: " + r.MessageEn);
+                if (failed == 0)
+                    SetToast(Localizer.L(
+                        applied + " correctif(s) appliqué(s). Chacun est annulable dans Outils › Historique.",
+                        applied + " fix(es) applied. Each one can be undone in Tools › History.",
+                        applied + " corrección(es) aplicada(s).",
+                        applied + " Korrektur(en) angewendet.",
+                        applied + " correzione/i applicata/e.",
+                        applied + " correção(ões) aplicada(s)."), "SuccessFg");
+                else
+                    SetToast(Localizer.L(
+                        applied + " correctif(s) appliqué(s), " + failed + " en échec.",
+                        applied + " fix(es) applied, " + failed + " failed.",
+                        applied + " aplicada(s), " + failed + " fallida(s).",
+                        applied + " angewendet, " + failed + " fehlgeschlagen.",
+                        applied + " applicata/e, " + failed + " non riuscita/e.",
+                        applied + " aplicada(s), " + failed + " com falha."), "WarnFg");
+            }
         }
+
+        private static string SavedPrefix
+        {
+            get { return Localizer.L("Enregistré : ", "Saved: ", "Guardado: ", "Gespeichert: ", "Salvato: ", "Salvo: "); }
+        }
+
+        private static string SaveFailedPrefix
+        {
+            get { return Localizer.L("Impossible d'enregistrer le fichier : ", "Could not save the file: ", "No se pudo guardar el archivo: ", "Datei konnte nicht gespeichert werden: ", "Impossibile salvare il file: ", "Não foi possível salvar o arquivo: "); }
+        }
+
         private void SaveRegSnippet(string name, string content)
         {
             SaveFileDialog sfd = new SaveFileDialog { FileName = "fix_" + name + ".reg", Filter = "Registry File (*.reg)|*.reg" };
             if (sfd.ShowDialog(this) == true)
             {
-                File.WriteAllText(sfd.FileName, content, Encoding.ASCII);
-                SetToast("Saved: " + sfd.FileName, "SuccessFg");
+                try
+                {
+                    File.WriteAllText(sfd.FileName, content, Encoding.ASCII);
+                    SetToast(SavedPrefix + sfd.FileName, "SuccessFg");
+                }
+                catch (Exception ex)
+                {
+                    Log.Warn(ex, "Save .reg");
+                    SetToast(SaveFailedPrefix + ex.Message, "DangerFg");
+                }
             }
         }
 
@@ -1604,15 +1864,29 @@ namespace WinCrashDoctor
             };
             if (sfd.ShowDialog(this) == true)
             {
-                File.WriteAllText(sfd.FileName, _txtReportBox.Text ?? "", Encoding.UTF8);
-                SetToast("Saved: " + sfd.FileName, "SuccessFg");
+                try
+                {
+                    File.WriteAllText(sfd.FileName, _txtReportBox.Text ?? "", Encoding.UTF8);
+                    SetToast(SavedPrefix + sfd.FileName, "SuccessFg");
+                }
+                catch (Exception ex)
+                {
+                    Log.Warn(ex, "Save report");
+                    SetToast(SaveFailedPrefix + ex.Message, "DangerFg");
+                }
             }
         }
 
         private void OnElevateClick(object sender, RoutedEventArgs e)
         {
             if (Elevation.RestartAppElevated())
+            {
+                // Same as the tray "Quit": a real exit. The Closing handler must not hide to tray,
+                // and the cleanup (tray icon, stress marker, SystemEvents, AI stream) must run.
+                _forceExit = true;
+                RunExitCleanup();
                 Application.Current.Shutdown();
+            }
             else
                 SetToast(Localizer.L("Élévation annulée.", "Elevation cancelled.", "Elevación cancelada.", "Erhöhung abgebrochen.", "Elevazione annullata.", "Elevação cancelada."), "WarnFg");
         }

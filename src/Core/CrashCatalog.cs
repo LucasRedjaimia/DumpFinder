@@ -269,7 +269,8 @@ namespace WinCrashDoctor
                     sb.Append(" WinDbg !analyze: bucket ").Append(deep.BucketId).Append(", symbol ").Append(deep.SymbolName)
                       .Append(", stack: ").Append(string.Join(" | ", deep.StackFrames ?? new List<string>())).Append(".");
             }
-            return sb.ToString();
+            // Sent to an online AI provider: no account name in paths, no full web addresses.
+            return Privacy.Redact(sb.ToString());
         }
 
         public static string FormatSize(long bytes)

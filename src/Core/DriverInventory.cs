@@ -129,7 +129,7 @@ namespace WinCrashDoctor
 
         private static void Query(string wql, Action<ManagementObject> each)
         {
-            using (var searcher = new ManagementObjectSearcher(wql))
+            using (var searcher = Wmi.Searcher(wql))
             using (var col = searcher.Get())
             {
                 foreach (ManagementObject mo in col)

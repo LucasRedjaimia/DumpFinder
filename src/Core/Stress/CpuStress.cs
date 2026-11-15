@@ -138,6 +138,7 @@ namespace WinCrashDoctor.Stress
         public int Errors;
         public int FirstErrorCpu = -1;
         public string FirstErrorWork;
+        private int _firstErrorClaimed, _firstErrorWritten;
 
         public CpuLoadPool(int threads, CpuCalib calib)
         {
@@ -162,10 +163,19 @@ namespace WinCrashDoctor.Stress
                     ? CpuWork.Int(s, _calib.Rounds, _calib.Seed) == _calib.GoldInt
                     : CpuWork.Vec(_calib.Iters, _calib.Seed) == _calib.GoldVec;
                 if (StressFaults.Take(ref StressFaults.Cpu)) ok = false;
-                if (!ok && Interlocked.Increment(ref Errors) == 1)
+                if (!ok)
                 {
-                    FirstErrorCpu = Native.GetCurrentProcessorNumber();
-                    FirstErrorWork = integer ? Localizer.L("entière", "integer", "entera", "Ganzzahl", "interi", "inteira") : CpuWork.SimdLabel;
+                    // The first-error fields are written BEFORE Errors becomes non-zero (readers only look at them
+                    // once Errors > 0, so the report never shows -1 / null).
+                    if (Interlocked.CompareExchange(ref _firstErrorClaimed, 1, 0) == 0)
+                    {
+                        FirstErrorCpu = Native.GetCurrentProcessorNumber();
+                        FirstErrorWork = integer ? Localizer.L("entière", "integer", "entera", "Ganzzahl", "interi", "inteira") : CpuWork.SimdLabel;
+                        Volatile.Write(ref _firstErrorWritten, 1);
+                    }
+                    else
+                        SpinWait.SpinUntil(() => Volatile.Read(ref _firstErrorWritten) != 0, 1000);
+                    Interlocked.Increment(ref Errors); // full fence: the fields above are visible first
                 }
                 integer = !integer;
                 Interlocked.Increment(ref Units);
@@ -232,7 +242,7 @@ namespace WinCrashDoctor.Stress
             long units = 0;
             int perCore = Math.Max(5, ctx.Stage.PerCoreSec);
 
-            for (int c = 0; c < cores.Count && !ctx.UserStopped; c++)
+            for (int c = 0; c < cores.Count && !ctx.UserStopped && !ctx.Abort; c++)
             {
                 int logical = cores[c];
                 int coreNo = c;
@@ -247,7 +257,7 @@ namespace WinCrashDoctor.Stress
                     var s = new ulong[CpuWork.ScratchWords];
                     try
                     {
-                        while (!ctx.UserStopped && sw.Elapsed.TotalSeconds < perCore)
+                        while (!ctx.UserStopped && !ctx.Abort && sw.Elapsed.TotalSeconds < perCore)
                         {
                             bool light = sw.Elapsed.TotalSeconds < perCore * 0.6;
                             phase = light ? "light" : "simd";
