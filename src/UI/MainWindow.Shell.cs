@@ -142,12 +142,20 @@ namespace WinCrashDoctor
             SetCaptionName(_btnCaptionMax, Localizer.S("shell.maximize"));
             SetCaptionName(_btnCaptionClose, Localizer.S("shell.close"));
 
-            // Collapsed sidebar: the icon tooltips carry the section names.
-            if (_sidebarCollapsed)
+            // Sidebar entries: name + Ctrl+N shortcut for screen readers and in the tooltip.
+            for (int i = 0; i < _navLabels.Length; i++)
             {
-                for (int i = 0; i < _navLabels.Length; i++)
-                    if (_navLabels[i] != null && _navButtons[i] != null) _navButtons[i].ToolTip = _navLabels[i].Text;
+                if (_navLabels[i] == null || _navButtons[i] == null) continue;
+                _navButtons[i].ToolTip = NavTooltip(i);
+                System.Windows.Automation.AutomationProperties.SetName(_navButtons[i], _navLabels[i].Text);
+                System.Windows.Automation.AutomationProperties.SetAcceleratorKey(_navButtons[i], NavShortcut(i));
             }
+        }
+
+        /// <summary>Collapsed sidebar: the section name (the label is hidden); always the keyboard shortcut.</summary>
+        private string NavTooltip(int i)
+        {
+            return _sidebarCollapsed ? _navLabels[i].Text + "  ·  " + NavShortcut(i) : NavShortcut(i);
         }
 
         // ==================== SIDEBAR COLLAPSE ====================
@@ -170,7 +178,7 @@ namespace WinCrashDoctor
             {
                 if (_navLabels[i] == null) continue;
                 _navLabels[i].Visibility = collapsed ? Visibility.Collapsed : Visibility.Visible;
-                _navButtons[i].ToolTip = collapsed ? _navLabels[i].Text : null;
+                _navButtons[i].ToolTip = NavTooltip(i);
                 _navButtons[i].Padding = collapsed ? new Thickness(6, 9, 6, 9) : new Thickness(8, 9, 10, 9);
             }
             RefreshNavBadgesForCollapse();

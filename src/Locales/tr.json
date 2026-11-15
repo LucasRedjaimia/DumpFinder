@@ -1228,5 +1228,9 @@
   "stress_advice.gpu_cooling_advice": "Hatalı sonuç yok, ancak ekran kartı çok ısınıyor. Tozunu alın, fanlarının döndüğünü ve kasa hava akışını denetleyin; daha agresif bir fan eğrisi (MSI Afterburner) veya biraz daha düşük bir güç sınırı işe yarar. Bu yetmezse termal macunun ve pedlerin yenilenmesi gerekir.",
   "system_health_scanner.smart_summary": "  •  {0} °C  •  Aşınma: %{1}  •  Hatalar: {2}",
   "system_health_scanner.rebar_unknown": "Belirlenemedi",
-  "system_health_scanner.rebar_unknown_detail": "Üreticinin aracı olmadan Windows bu pencerenin boyutunu bildirmez. AMD Software (Smart Access Memory) veya Intel Arc Control (Resizable BAR) üzerinden kontrol edin; kapalıysa BIOS'ta 'Above 4G Decoding' ve 'Re-Size BAR' seçeneklerini etkinleştirin."
+  "system_health_scanner.rebar_unknown_detail": "Üreticinin aracı olmadan Windows bu pencerenin boyutunu bildirmez. AMD Software (Smart Access Memory) veya Intel Arc Control (Resizable BAR) üzerinden kontrol edin; kapalıysa BIOS'ta 'Above 4G Decoding' ve 'Re-Size BAR' seçeneklerini etkinleştirin.",
+  "main_window.details": "Ayrıntılar",
+  "crashes.filter_period": "Dönem",
+  "crashes.filter_category": "Kategori",
+  "ai.claude_model": "Claude modeli"
 }

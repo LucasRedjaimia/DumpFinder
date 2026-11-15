@@ -1228,5 +1228,9 @@
   "stress_advice.gpu_cooling_advice": "Kein falsches Ergebnis, aber die Grafikkarte wird zu heiß. Entstaube sie, prüfe, ob ihre Lüfter drehen, und den Luftstrom im Gehäuse; eine aggressivere Lüfterkurve (MSI Afterburner) oder ein etwas niedrigeres Leistungslimit hilft. Reicht das nicht, müssen Wärmeleitpaste und Wärmeleitpads erneuert werden.",
   "system_health_scanner.smart_summary": "  •  {0} °C  •  Verschleiß: {1} %  •  Fehler: {2}",
   "system_health_scanner.rebar_unknown": "Nicht ermittelt",
-  "system_health_scanner.rebar_unknown_detail": "Ohne das Tool des Herstellers meldet Windows die Größe dieses Fensters nicht. Prüfe es in AMD Software (Smart Access Memory) oder Intel Arc Control (Resizable BAR); ist es aus, aktiviere 'Above 4G Decoding' und 'Re-Size BAR' im BIOS."
+  "system_health_scanner.rebar_unknown_detail": "Ohne das Tool des Herstellers meldet Windows die Größe dieses Fensters nicht. Prüfe es in AMD Software (Smart Access Memory) oder Intel Arc Control (Resizable BAR); ist es aus, aktiviere 'Above 4G Decoding' und 'Re-Size BAR' im BIOS.",
+  "main_window.details": "Details",
+  "crashes.filter_period": "Zeitraum",
+  "crashes.filter_category": "Kategorie",
+  "ai.claude_model": "Claude-Modell"
 }

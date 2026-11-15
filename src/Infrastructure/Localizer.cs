@@ -210,6 +210,62 @@ namespace WinCrashDoctor
             }
         }
 
+        // ==================== Pseudo-locale (layout testing) ====================
+        /// <summary>
+        /// "qps" pseudo-language, only from "--screenshot --lang qps": English text with accented letters and
+        /// about 40% extra length, wrapped in [ ]. A missing "]" on a capture means the text is cut off; any
+        /// plain-ASCII sentence left means a text that bypasses the Locales files. Never offered in Settings.
+        /// </summary>
+        public static bool Pseudo;
+
+        private const string PseudoFrom = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        private const string PseudoTo   = "àƀçđéƒĝĥîĵķĺɱñöþǫŕšţûṽŵẋýžÀßÇĐÉƑĜĤÎĴĶĹṀÑÖÞǪŔŠŢÛṼŴẊÝŽ";
+
+        internal static string PseudoText(string s)
+        {
+            var sb = new StringBuilder(s.Length * 2);
+            foreach (string seg in s.Split('|'))
+            {
+                if (sb.Length > 0) sb.Append('|');
+                // Keep a plural category label ("one:", "few:"…) readable for P().
+                int start = 0;
+                int colon = seg.IndexOf(':');
+                if (colon > 0 && Array.IndexOf(new[] { "zero", "one", "two", "few", "many", "other" }, seg.Substring(0, colon).Trim()) >= 0)
+                {
+                    sb.Append(seg, 0, colon + 1);
+                    start = colon + 1;
+                    while (start < seg.Length && seg[start] == ' ') sb.Append(seg[start++]);
+                }
+                string body = seg.Substring(start);
+                string trail = body.Length - body.TrimEnd().Length > 0 ? body.Substring(body.TrimEnd().Length) : "";
+                body = body.TrimEnd();
+                // A leading "✓ " / "⚡ " stays first: DfButton turns it into an icon.
+                string glyph, rest;
+                if (Glyph.TrySplitLegacyPrefix(body, out glyph, out rest))
+                {
+                    sb.Append(body, 0, body.Length - rest.Length);
+                    body = rest;
+                }
+                int letters = 0;
+                sb.Append('[');
+                int depth = 0;
+                foreach (char c in body)
+                {
+                    if (c == '{') depth++;
+                    if (depth == 0)
+                    {
+                        int k = PseudoFrom.IndexOf(c);
+                        if (k >= 0) { sb.Append(PseudoTo[k]); letters++; continue; }
+                    }
+                    else if (c == '}') depth--;
+                    sb.Append(c);
+                }
+                if (letters > 0) sb.Append(' ').Append('·', Math.Max(1, (letters * 2 + 4) / 5));
+                sb.Append(']').Append(trail);
+            }
+            return sb.ToString();
+        }
+
         /// <summary>UI text by key, in the current language; falls back to English, then to the key itself.</summary>
         public static string S(string key)
         {
@@ -220,6 +276,7 @@ namespace WinCrashDoctor
         public static string Text(AppLang lang, string key)
         {
             string v;
+            if (Pseudo && lang == AppLang.EN && Table("en").TryGetValue(key, out v) && !string.IsNullOrEmpty(v)) return PseudoText(v);
             if (Table(Code(lang)).TryGetValue(key, out v) && !string.IsNullOrEmpty(v)) return v;
             if (lang != AppLang.EN && Table("en").TryGetValue(key, out v) && !string.IsNullOrEmpty(v)) return v;
             Log.Warn("Missing text: " + key);

@@ -29,6 +29,7 @@ namespace WinCrashDoctor
         private TextBlock _heroBody;
         private Button _btnHeroPrimary;
         private Button _btnHeroSecondary;
+        private StackPanel _heroButtons;
 
         private TextBlock _lblTimelineTitle;
         private StackPanel _timelineLegend;
@@ -160,15 +161,16 @@ namespace WinCrashDoctor
             _heroBody = ResFg(new TextBlock { FontSize = 13, TextWrapping = TextWrapping.Wrap, MaxHeight = 58, TextTrimming = TextTrimming.WordEllipsis, LineHeight = 19 }, "TextSecondary");
             verdict.Children.Add(_heroTitle);
             verdict.Children.Add(_heroBody);
-            StackPanel heroBtns = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 14, 0, 0) };
+            // Hidden until the first scan result: both buttons act on it, and their text depends on it.
+            _heroButtons = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 14, 0, 0), Visibility = Visibility.Collapsed };
             _btnHeroPrimary = CreatePrimaryButton("", "Accent", "OnAccent", new Thickness(16, 7, 16, 7), 13);
             _btnHeroPrimary.Margin = new Thickness(0, 0, 8, 0);
             _btnHeroPrimary.Click += OnHeroPrimaryClick;
             _btnHeroSecondary = CreateFlatButton("", "BgCard", "TextPrimary", "BorderStrong", new Thickness(14, 7, 14, 7), 13);
             _btnHeroSecondary.Click += OnHeroSecondaryClick;
-            heroBtns.Children.Add(_btnHeroPrimary);
-            heroBtns.Children.Add(_btnHeroSecondary);
-            verdict.Children.Add(heroBtns);
+            _heroButtons.Children.Add(_btnHeroPrimary);
+            _heroButtons.Children.Add(_btnHeroSecondary);
+            verdict.Children.Add(_heroButtons);
             Grid.SetColumn(verdict, 1);
             hero.Children.Add(verdict);
             _homeHero.Child = hero;
@@ -342,6 +344,7 @@ namespace WinCrashDoctor
 
             _homeFocusCrash = _crashEntries.FirstOrDefault(c => (now - c.Time).TotalDays <= Stability.WindowDays && Stability.IsSevere(c.Category))
                               ?? _crashEntries.FirstOrDefault(c => (now - c.Time).TotalDays <= Stability.WindowDays);
+            _heroButtons.Visibility = Visibility.Visible;
             _btnHeroSecondary.Content = _homeFocusCrash != null
                 ? Localizer.S("home.view_crash")
                 : Localizer.S("home.ai_check_up");
@@ -416,16 +419,16 @@ namespace WinCrashDoctor
                 Grid.SetColumn(when, 2);
                 row.Children.Add(when);
 
-                Border wrap = ResBorder(new Border
+                ClickableCard wrap = ResBorder(new ClickableCard
                 {
                     BorderThickness = new Thickness(0, i == 0 ? 0 : 1, 0, 0),
                     Padding = new Thickness(0, 10, 0, 10),
                     Background = Brushes.Transparent,
-                    Cursor = Cursors.Hand,
                     Child = row
                 }, "BorderCard");
                 string key = c.Key;
-                wrap.MouseLeftButtonUp += (s, e) => OpenCrash(key);
+                wrap.Activated += () => OpenCrash(key);
+                System.Windows.Automation.AutomationProperties.SetName(wrap, c.Title + " — " + RelativeTime(c.Time, now));
                 _homeRecentList.Children.Add(wrap);
             }
         }

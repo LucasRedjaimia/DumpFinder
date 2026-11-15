@@ -1228,5 +1228,9 @@
   "stress_advice.gpu_cooling_advice": "計算エラーはありませんが、グラフィックス カードが熱くなりすぎています。ほこりを取り除き、ファンが回っているか、ケース内のエアフローを確認してください。より積極的なファン カーブ（MSI Afterburner）や、少し低めの電力制限が効果的です。それでも足りない場合は、サーマルペーストとサーマルパッドの交換が必要です。",
   "system_health_scanner.smart_summary": "  •  {0} °C  •  摩耗: {1}%  •  エラー: {2}",
   "system_health_scanner.rebar_unknown": "判定できません",
-  "system_health_scanner.rebar_unknown_detail": "メーカーのツールがないと、Windows はこのウィンドウのサイズを報告しません。AMD Software（Smart Access Memory）または Intel Arc Control（Resizable BAR）で確認してください。無効な場合は、BIOS で 'Above 4G Decoding' と 'Re-Size BAR' を有効にしてください。"
+  "system_health_scanner.rebar_unknown_detail": "メーカーのツールがないと、Windows はこのウィンドウのサイズを報告しません。AMD Software（Smart Access Memory）または Intel Arc Control（Resizable BAR）で確認してください。無効な場合は、BIOS で 'Above 4G Decoding' と 'Re-Size BAR' を有効にしてください。",
+  "main_window.details": "詳細",
+  "crashes.filter_period": "期間",
+  "crashes.filter_category": "カテゴリ",
+  "ai.claude_model": "Claude モデル"
 }

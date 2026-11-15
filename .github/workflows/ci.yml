@@ -48,6 +48,8 @@ jobs:
             @{ Name = 'detect';   Args = @('--detect-selftest',   'reports/detect.txt') },
             @{ Name = 'update';   Args = @('--update-selftest',   'reports/update.txt') },
             @{ Name = 'optimize'; Args = @('--optimize-selftest', 'reports/optimize.txt') },
+            # Opens the real window: contrast, accessible names, keyboard shortcuts, UI Automation patterns.
+            @{ Name = 'ui';       Args = @('--ui-selftest',       'reports/ui.txt') },
             # No GPU / OpenCL on the runner: the GPU stages would be reported as skipped, not passed.
             @{ Name = 'stress';   Args = @('--stress-selftest',   'reports/stress.txt', 'cpu,ram,disk') }
           )

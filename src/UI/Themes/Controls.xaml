@@ -6,6 +6,17 @@
         Colours are DynamicResource tokens set by ThemeManager.ApplyTheme.
     -->
 
+    <!-- Keyboard focus ring of ClickableCard (crash rows, guide cards): same colour as the buttons' ring. -->
+    <Style x:Key="DfCardFocusVisual">
+        <Setter Property="Control.Template">
+            <Setter.Value>
+                <ControlTemplate>
+                    <Border Margin="-2" CornerRadius="12" BorderThickness="2" BorderBrush="{DynamicResource FocusRing}" SnapsToDevicePixels="True"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- ComboBoxItem -->
     <Style TargetType="{x:Type ComboBoxItem}">
         <Setter Property="Padding" Value="10,6"/>
@@ -43,10 +54,14 @@
         <Setter Property="FontSize" Value="12.5"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ComboBox}">
                     <Grid>
+                        <!-- Keyboard focus ring (the toggle part is not focusable: the ComboBox itself holds the focus) -->
+                        <Border x:Name="Focus" Margin="-3" CornerRadius="9" BorderThickness="2"
+                                BorderBrush="{DynamicResource FocusRing}" Visibility="Collapsed" IsHitTestVisible="False"/>
                         <ToggleButton x:Name="ToggleButton"
                                       Focusable="False"
                                       IsChecked="{Binding Path=IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
@@ -111,6 +126,14 @@
                             </Border>
                         </Popup>
                     </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Focus" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.45"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -119,10 +142,14 @@
     <!-- Slider -->
     <Style TargetType="{x:Type Slider}">
         <Setter Property="Height" Value="22"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type Slider}">
                     <Grid VerticalAlignment="Center">
+                        <!-- Keyboard focus ring around the whole track (arrow keys move the thumb) -->
+                        <Border x:Name="Focus" Margin="-6,-3" CornerRadius="11" BorderThickness="2"
+                                BorderBrush="{DynamicResource FocusRing}" Visibility="Collapsed" IsHitTestVisible="False"/>
                         <Border Height="4" CornerRadius="2" Background="{DynamicResource BgSubtle}" VerticalAlignment="Center"/>
                         <Track x:Name="PART_Track">
                             <Track.DecreaseRepeatButton>
@@ -152,6 +179,9 @@
                         </Track>
                     </Grid>
                     <ControlTemplate.Triggers>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Focus" Property="Visibility" Value="Visible"/>
+                        </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.4"/>
                         </Trigger>

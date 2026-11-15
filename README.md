@@ -15,6 +15,7 @@ Dump Finder helps you understand why a Windows PC crashes (blue screens, GPU tim
 - **Optimise**: official Windows settings, preinstalled apps, startup programs, temporary file cleanup.
 - **AI assistant** (optional, with your own API key) and an MCP server.
 - Interface in 14 languages: English, French, Spanish, German, Italian, Portuguese, Polish, Dutch, Turkish, Russian, Ukrainian, Simplified Chinese, Japanese and Korean.
+- Keyboard and screen readers: every control has a name for Narrator / NVDA, **Ctrl+1…7** open the sections, **F5** runs a new scan, **Esc** closes the crash details; Windows contrast themes are followed.
 
 At launch, the app checks GitHub for a newer version and shows what's new with a download link. Nothing is downloaded or installed automatically, and the check can be turned off in **Settings › Updates**.
 
@@ -39,6 +40,7 @@ The app has built-in self-tests. Each one writes a report and returns the number
 | `DumpFinder.exe --update-selftest out.txt` | version parsing, release link safety, one request to GitHub |
 | `DumpFinder.exe --optimize-selftest out.txt` | Optimise page; applies then undoes one harmless setting (Game Mode) |
 | `DumpFinder.exe --stress-selftest out.txt [cpu,ram,disk,gpu]` | each stress engine, clean (must pass) and with an injected fault (must fail) |
+| `DumpFinder.exe --ui-selftest out.txt` | opens the window: text contrast of both themes (WCAG AA), a screen-reader name on every control, keyboard shortcuts |
 
 `dotnet run --project tools/I18nTool -- --check src src/Locales` checks the translations (missing keys, placeholders, plural forms).
 
@@ -57,6 +59,8 @@ When translating:
 - Values written as `one: … | other: …` depend on a count. Use the plural forms of your language (`one`, `few`, `many`, `other` for Polish, Russian, Ukrainian; a single plain sentence for Chinese, Japanese, Korean).
 
 To add a language: add a value to `AppLang` (`src/Core/Models.cs`, append only), a row to the `Codes`, `Cultures` and `Natives` tables in `src/Infrastructure/Localizer.cs`, and the two JSON files.
+
+To check that longer texts fit, `DumpFinder.exe --screenshot <folder> --lang qps` captures every page in a pseudo-language (English with accents, about 40% longer, each text in `[ ]`): a missing `]` shows a cut text.
 
 `tools/I18nTool` helps with this work: `--check` validates every language, `--split` / `--merge` cut a language file into chunks for translators and put them back together, `--add` merges new keys. Its usage is described at the top of `tools/I18nTool/Program.cs`.
 

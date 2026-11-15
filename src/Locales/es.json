@@ -1228,5 +1228,9 @@
   "stress_advice.gpu_cooling_advice": "Ningún resultado erróneo, pero la tarjeta gráfica se calienta demasiado. Quítale el polvo, comprueba que sus ventiladores giren y el flujo de aire de la caja; una curva de ventilación más agresiva (MSI Afterburner) o un límite de potencia algo más bajo ayuda. Si no basta, hay que cambiar la pasta y los pads térmicos.",
   "system_health_scanner.smart_summary": "  •  {0} °C  •  Desgaste: {1} %  •  Errores: {2}",
   "system_health_scanner.rebar_unknown": "No determinado",
-  "system_health_scanner.rebar_unknown_detail": "Windows no indica el tamaño de esta ventana sin la herramienta del fabricante. Compruébalo en AMD Software (Smart Access Memory) o Intel Arc Control (Resizable BAR); si está desactivado, activa 'Above 4G Decoding' y 'Re-Size BAR' en la BIOS."
+  "system_health_scanner.rebar_unknown_detail": "Windows no indica el tamaño de esta ventana sin la herramienta del fabricante. Compruébalo en AMD Software (Smart Access Memory) o Intel Arc Control (Resizable BAR); si está desactivado, activa 'Above 4G Decoding' y 'Re-Size BAR' en la BIOS.",
+  "main_window.details": "Detalles",
+  "crashes.filter_period": "Periodo",
+  "crashes.filter_category": "Categoría",
+  "ai.claude_model": "Modelo de Claude"
 }

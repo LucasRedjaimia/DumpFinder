@@ -1228,5 +1228,9 @@
   "stress_advice.gpu_cooling_advice": "Помилок в обчисленнях немає, але відеокарта надто сильно гріється. Очистьте її від пилу, перевірте, чи обертаються її вентилятори, і продув корпусу; допомагає агресивніша крива вентиляторів (MSI Afterburner) або трохи нижчий ліміт потужності. Якщо цього замало, треба замінити термопасту й термопрокладки.",
   "system_health_scanner.smart_summary": "  •  {0} °C  •  Знос: {1}%  •  Помилки: {2}",
   "system_health_scanner.rebar_unknown": "Не визначено",
-  "system_health_scanner.rebar_unknown_detail": "Без утиліти виробника Windows не повідомляє розмір цього вікна. Перевірте в AMD Software (Smart Access Memory) або Intel Arc Control (Resizable BAR); якщо функцію вимкнено, увімкніть 'Above 4G Decoding' і 'Re-Size BAR' у BIOS."
+  "system_health_scanner.rebar_unknown_detail": "Без утиліти виробника Windows не повідомляє розмір цього вікна. Перевірте в AMD Software (Smart Access Memory) або Intel Arc Control (Resizable BAR); якщо функцію вимкнено, увімкніть 'Above 4G Decoding' і 'Re-Size BAR' у BIOS.",
+  "main_window.details": "Подробиці",
+  "crashes.filter_period": "Період",
+  "crashes.filter_category": "Категорія",
+  "ai.claude_model": "Модель Claude"
 }

@@ -112,6 +112,8 @@ namespace WinCrashDoctor
             row.Children.Add(t);
 
             control.VerticalAlignment = VerticalAlignment.Center;
+            // Drop-down lists read their row title to screen readers (a button has its own label).
+            if (control is System.Windows.Controls.Primitives.Selector) A11y.LabelFor(control, title);
             Grid.SetColumn(control, 2);
             row.Children.Add(control);
 
