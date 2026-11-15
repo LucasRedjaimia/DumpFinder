@@ -1,5 +1,7 @@
 # Dump Finder
 
+[![CI](https://github.com/LucasRedjaimia/DumpFinder/actions/workflows/ci.yml/badge.svg)](https://github.com/LucasRedjaimia/DumpFinder/actions/workflows/ci.yml)
+
 Dump Finder helps you understand why a Windows PC crashes (blue screens, GPU timeouts, sudden reboots) and suggests fixes.
 
 **[Download the latest version](https://github.com/LucasRedjaimia/DumpFinder/releases/latest)**: a single `DumpFinder.exe`, no installation needed (Windows 10 / 11, 64-bit).
@@ -26,6 +28,22 @@ Requirements: [.NET 8 SDK](https://dotnet.microsoft.com/download) (the project t
 
 The executable is written to the repository root: `DumpFinder.exe`.
 
+## Tests
+
+The app has built-in self-tests. Each one writes a report and returns the number of failed checks as its exit code:
+
+| Command | Checks |
+|---|---|
+| `DumpFinder.exe --parse-selftest out.txt` | crash dump parsers on truncated / corrupted files (no exception, no hang) |
+| `DumpFinder.exe --detect-selftest out.txt` | detection rules (drivers, Windows versions, BIOS, NVMe), read-only |
+| `DumpFinder.exe --update-selftest out.txt` | version parsing, release link safety, one request to GitHub |
+| `DumpFinder.exe --optimize-selftest out.txt` | Optimise page; applies then undoes one harmless setting (Game Mode) |
+| `DumpFinder.exe --stress-selftest out.txt [cpu,ram,disk,gpu]` | each stress engine, clean (must pass) and with an injected fault (must fail) |
+
+`dotnet run --project tools/I18nTool -- --check src src/Locales` checks the translations (missing keys, placeholders, plural forms).
+
+GitHub Actions runs the build, the translation check and the self-tests (without the GPU stress test) on every pull request and on `main`.
+
 ## Translations
 
 All interface texts live in `src/Locales/`, one JSON file per language (embedded in the exe at build time):
@@ -40,6 +58,8 @@ When translating:
 
 To add a language: add a value to `AppLang` (`src/Core/Models.cs`, append only), a row to the `Codes`, `Cultures` and `Natives` tables in `src/Infrastructure/Localizer.cs`, and the two JSON files.
 
+`tools/I18nTool` helps with this work: `--check` validates every language, `--split` / `--merge` cut a language file into chunks for translators and put them back together, `--add` merges new keys. Its usage is described at the top of `tools/I18nTool/Program.cs`.
+
 Several translations (Polish, Dutch, Turkish, Russian, Ukrainian, Chinese, Japanese, Korean) were machine-assisted: corrections from native speakers are welcome.
 
 ## Publish a new version
@@ -51,6 +71,10 @@ Requirements: [GitHub CLI](https://cli.github.com/), signed in (`gh auth login`)
 3. Run `.\release.ps1 -Version 6.1.0` again. The script bumps the version number, builds, commits, tags, pushes and publishes the release with `DumpFinder.exe`.
 
 Users see the new version the next time they open the app.
+
+## License
+
+[MIT](LICENSE).
 
 ## Third-party components
 

@@ -173,17 +173,27 @@ namespace WinCrashDoctor
                     }
                 }
 
-                string sig8 = Encoding.ASCII.GetString(buf, 0, 8);
-                if (sig8 == "PAGEDU64" || sig8 == "PAGEDUMP")
-                    return ParseKernelPageDump(fi, buf, sig8 == "PAGEDU64");
-
-                uint sig4 = BitConverter.ToUInt32(buf, 0);
-                if (sig4 == 0x504D444D) // 'MDMP'
-                    return ParseUserMdmp(fi, buf);
-
-                return null;
+                return AnalyzeBuffer(fi, buf);
             }
             catch (Exception ex) { Log.Warn(ex); return null; }
+        }
+
+        /// <summary>
+        /// Parses dump bytes already read from <paramref name="fi"/>. No catch-all here on purpose: the parse
+        /// self-test (--parse-selftest) calls it directly so that any exception on malformed input is caught as a bug.
+        /// </summary>
+        internal static MinidumpReportItem AnalyzeBuffer(FileInfo fi, byte[] buf)
+        {
+            if (buf == null || buf.Length < 64) return null;
+            string sig8 = Encoding.ASCII.GetString(buf, 0, 8);
+            if (sig8 == "PAGEDU64" || sig8 == "PAGEDUMP")
+                return ParseKernelPageDump(fi, buf, sig8 == "PAGEDU64");
+
+            uint sig4 = BitConverter.ToUInt32(buf, 0);
+            if (sig4 == 0x504D444D) // 'MDMP'
+                return ParseUserMdmp(fi, buf);
+
+            return null;
         }
 
         private static MinidumpReportItem ParseKernelPageDump(FileInfo fi, byte[] buf, bool is64)
@@ -248,7 +258,9 @@ namespace WinCrashDoctor
 
         private static MinidumpReportItem ParseKernelPageDumpLegacy(FileInfo fi, byte[] buf, bool is64)
         {
-            uint bugCheck = BitConverter.ToUInt32(buf, is64 ? 0x38 : 0x34);
+            // BugCheckCode: DUMP_HEADER64 at 0x38, DUMP_HEADER32 at 0x28 (0x34 was NumberProcessors' neighbour,
+            // i.e. a wrong field on 32-bit dumps).
+            uint bugCheck = BitConverter.ToUInt32(buf, is64 ? 0x38 : 0x28);
             string bugHex = string.Format("0x{0:X8}", bugCheck);
 
             // Extract PDB RSDS symbols & .sys / .exe names referenced inside the dump
@@ -296,7 +308,7 @@ namespace WinCrashDoctor
             string faultingMod = "";
             List<string> loadedMods = new List<string>();
 
-            if (dirRva > 0 && dirRva + streamCount * 12 <= buf.Length && streamCount < 128)
+            if (dirRva > 0 && streamCount < 128 && (long)dirRva + (long)streamCount * 12 <= buf.Length) // long: no uint wrap-around
             {
                 // First pass: find ExceptionStream (type 6)
                 for (int i = 0; i < streamCount; i++)
@@ -306,7 +318,7 @@ namespace WinCrashDoctor
                     uint sSize = BitConverter.ToUInt32(buf, entryOff + 4);
                     uint sRva  = BitConverter.ToUInt32(buf, entryOff + 8);
 
-                    if (sType == 6 && sRva + 32 <= buf.Length)
+                    if (sType == 6 && (long)sRva + 32 <= buf.Length)
                     {
                         exCode = BitConverter.ToUInt32(buf, (int)sRva + 8);
                         exAddr = BitConverter.ToUInt64(buf, (int)sRva + 24);
@@ -320,7 +332,7 @@ namespace WinCrashDoctor
                     uint sType = BitConverter.ToUInt32(buf, entryOff);
                     uint sRva  = BitConverter.ToUInt32(buf, entryOff + 8);
 
-                    if (sType == 4 && sRva + 4 <= buf.Length)
+                    if (sType == 4 && (long)sRva + 4 <= buf.Length)
                     {
                         uint modCount = BitConverter.ToUInt32(buf, (int)sRva);
                         int pos = (int)sRva + 4;
@@ -389,9 +401,9 @@ namespace WinCrashDoctor
 
         private static string ReadMdmpString(byte[] buf, uint rva)
         {
-            if (rva == 0 || rva + 4 >= buf.Length) return "";
+            if (rva == 0 || (long)rva + 4 >= buf.Length) return "";
             uint byteLen = BitConverter.ToUInt32(buf, (int)rva);
-            if (byteLen == 0 || byteLen > 1024 || rva + 4 + byteLen > buf.Length) return "";
+            if (byteLen == 0 || byteLen > 1024 || (long)rva + 4 + byteLen > buf.Length) return "";
             return Encoding.Unicode.GetString(buf, (int)rva + 4, (int)byteLen);
         }
 
