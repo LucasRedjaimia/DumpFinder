@@ -77,9 +77,9 @@ namespace WinCrashDoctor
                     var r = DeepAnalyzer.Analyze(args[1]);
                     return r.Ok ? 0 : 1;
                 }
-                if (args[0] == "--scan-admin-json")
+                if (args[0] == "--scan-admin-pipe")
                 {
-                    bool ok = DiagnosticsEngine.RunAdminDeepScanToFile(args[1]);
+                    bool ok = DiagnosticsEngine.RunAdminDeepScanToPipe(args[1]);
                     return ok ? 0 : 1;
                 }
                 if (args[0] == "--screenshot")

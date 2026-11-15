@@ -1225,5 +1225,8 @@
   "stress_advice.stopped_cpu_overheat": "Gestopt wegens oververhitting: de processor bleef {1} s lang op {0} °C of hoger.",
   "stress_advice.stopped_gpu_overheat": "Gestopt wegens oververhitting: de videokaart bleef {1} s lang op {0} °C of hoger.",
   "stress_advice.cpu_cooling_advice": "Geen fout resultaat, maar de koeling kan het niet bijhouden. Controleer of de koeler of AIO goed vastzit en de pomp draait, de koelpasta (vervang die als ze een paar jaar oud is), stof en de luchtstroom in de kast. Verwijder in het BIOS een overklok of een slecht afgestelde PBO / undervolt, of verlaag de vermogenslimieten.",
-  "stress_advice.gpu_cooling_advice": "Geen fout resultaat, maar de videokaart wordt te heet. Maak hem stofvrij, controleer of de ventilatoren draaien en de luchtstroom in de kast; een agressievere ventilatorcurve (MSI Afterburner) of een iets lagere vermogenslimiet helpt. Is dat niet genoeg, dan moeten de koelpasta en thermal pads worden vervangen."
+  "stress_advice.gpu_cooling_advice": "Geen fout resultaat, maar de videokaart wordt te heet. Maak hem stofvrij, controleer of de ventilatoren draaien en de luchtstroom in de kast; een agressievere ventilatorcurve (MSI Afterburner) of een iets lagere vermogenslimiet helpt. Is dat niet genoeg, dan moeten de koelpasta en thermal pads worden vervangen.",
+  "system_health_scanner.smart_summary": "  •  {0} °C  •  Slijtage: {1}%  •  Fouten: {2}",
+  "system_health_scanner.rebar_unknown": "Niet bepaald",
+  "system_health_scanner.rebar_unknown_detail": "Zonder de tool van de fabrikant meldt Windows de grootte van dit venster niet. Controleer het in AMD Software (Smart Access Memory) of Intel Arc Control (Resizable BAR); staat het uit, schakel dan 'Above 4G Decoding' en 'Re-Size BAR' in het BIOS in."
 }

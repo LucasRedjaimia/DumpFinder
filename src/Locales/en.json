@@ -1225,5 +1225,8 @@
   "stress_advice.stopped_cpu_overheat": "Stopped for overheating: the CPU stayed at {0} °C or more for {1} s.",
   "stress_advice.stopped_gpu_overheat": "Stopped for overheating: the graphics card stayed at {0} °C or more for {1} s.",
   "stress_advice.cpu_cooling_advice": "No wrong result, but the cooling cannot keep up. Check that the cooler or AIO is properly mounted and its pump runs, the thermal paste (redo it if it is several years old), dust and case airflow. In the BIOS, remove an overclock or a badly tuned PBO / undervolt, or lower the power limits.",
-  "stress_advice.gpu_cooling_advice": "No wrong result, but the graphics card runs too hot. Dust it, check that its fans spin and the case airflow; a more aggressive fan curve (MSI Afterburner) or a slightly lower power limit helps. If that is not enough, the thermal paste and pads need redoing."
+  "stress_advice.gpu_cooling_advice": "No wrong result, but the graphics card runs too hot. Dust it, check that its fans spin and the case airflow; a more aggressive fan curve (MSI Afterburner) or a slightly lower power limit helps. If that is not enough, the thermal paste and pads need redoing.",
+  "system_health_scanner.smart_summary": "  •  {0} °C  •  Wear: {1}%  •  Errors: {2}",
+  "system_health_scanner.rebar_unknown": "Not determined",
+  "system_health_scanner.rebar_unknown_detail": "Windows does not report the size of this window without the vendor's tool. Check in AMD Software (Smart Access Memory) or Intel Arc Control (Resizable BAR); if it is off, enable 'Above 4G Decoding' and 'Re-Size BAR' in the BIOS."
 }

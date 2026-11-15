@@ -101,14 +101,40 @@ namespace WinCrashDoctor
             if (dumps == null) return;
             try
             {
-                Directory.CreateDirectory(LocalCopyDir);
+                // This runs elevated but the destination is in the user's profile, which any program of the user can
+                // modify: never let a junction or a symbolic link redirect the copy elsewhere.
+                string dir = LocalCopyDir;
+                Directory.CreateDirectory(dir);
+                string expected = Path.GetFullPath(dir).TrimEnd('\\');
+                string finalDir = SafeDelete.FinalPath(dir);
+                string finalPlain = finalDir == null ? null
+                    : finalDir.StartsWith(@"\\?\UNC\", StringComparison.Ordinal) ? @"\\" + finalDir.Substring(8)
+                    : finalDir.StartsWith(@"\\?\", StringComparison.Ordinal) ? finalDir.Substring(4) : finalDir;
+                if (finalPlain == null || !string.Equals(finalPlain, expected, StringComparison.OrdinalIgnoreCase))
+                {
+                    Log.Warn("Dump copy skipped: " + dir + " resolves to " + (finalDir ?? "?"));
+                    return;
+                }
+
                 foreach (var d in dumps)
                 {
                     try
                     {
-                        string dest = Path.Combine(LocalCopyDir, d.FileName);
-                        if (!File.Exists(dest) || new FileInfo(dest).Length != d.FileSizeBytes)
-                            File.Copy(d.FullPath, dest, true);
+                        string name = d.FileName ?? "";
+                        if (name.Length == 0 || Path.GetFileName(name) != name || !name.EndsWith(".dmp", StringComparison.OrdinalIgnoreCase)) continue;
+                        string dest = Path.Combine(dir, name);
+                        if (File.Exists(dest) || Directory.Exists(dest))
+                        {
+                            var attrs = File.GetAttributes(dest);
+                            bool reuse = (attrs & (FileAttributes.ReparsePoint | FileAttributes.Directory)) == 0 && new FileInfo(dest).Length == d.FileSizeBytes;
+                            if (reuse) { d.LocalCopyPath = dest; continue; }
+                            // Stale copy or planted link: remove it through a checked handle (never follows the link).
+                            if (!SafeDelete.Delete(dest, finalDir)) { Log.Warn("Dump copy skipped, cannot replace " + dest); continue; }
+                        }
+                        // CreateNew: fails if anything (even a link) appeared at this name in the meantime.
+                        using (var src = new FileStream(d.FullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                        using (var dst = new FileStream(dest, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                            src.CopyTo(dst);
                         d.LocalCopyPath = dest;
                     }
                     catch (Exception ex) { Log.Warn(ex, d.FileName); }

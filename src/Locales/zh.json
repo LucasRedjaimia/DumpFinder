@@ -1225,5 +1225,8 @@
   "stress_advice.stopped_cpu_overheat": "因过热而停止：处理器温度在 {0} °C 或以上持续了 {1} 秒。",
   "stress_advice.stopped_gpu_overheat": "因过热而停止：显卡温度在 {0} °C 或以上持续了 {1} 秒。",
   "stress_advice.cpu_cooling_advice": "没有计算错误，但散热跟不上。请检查散热器或 AIO 是否安装牢固、水泵是否运转，以及导热硅脂（如果已用了好几年，请重新涂抹）、灰尘和机箱风道。在 BIOS 中撤销超频或调得不好的 PBO / 降压设置，或者降低功耗限制。",
-  "stress_advice.gpu_cooling_advice": "没有计算错误，但显卡温度过高。请给它除尘，检查风扇是否转动以及机箱风道；更激进的风扇曲线（MSI Afterburner）或稍低的功耗限制会有帮助。如果还不够，就需要重新涂抹导热硅脂并更换导热垫。"
+  "stress_advice.gpu_cooling_advice": "没有计算错误，但显卡温度过高。请给它除尘，检查风扇是否转动以及机箱风道；更激进的风扇曲线（MSI Afterburner）或稍低的功耗限制会有帮助。如果还不够，就需要重新涂抹导热硅脂并更换导热垫。",
+  "system_health_scanner.smart_summary": "  •  {0} °C  •  磨损：{1}%  •  错误：{2}",
+  "system_health_scanner.rebar_unknown": "无法确定",
+  "system_health_scanner.rebar_unknown_detail": "没有厂商工具时，Windows 不会报告此窗口的大小。请在 AMD Software（Smart Access Memory）或 Intel Arc Control（Resizable BAR）中查看；如果未开启，请在 BIOS 中启用 'Above 4G Decoding' 和 'Re-Size BAR'。"
 }

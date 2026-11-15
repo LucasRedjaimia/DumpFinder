@@ -1225,5 +1225,8 @@
   "stress_advice.stopped_cpu_overheat": "Detenido por sobrecalentamiento: el procesador se mantuvo a {0} °C o más durante {1} s.",
   "stress_advice.stopped_gpu_overheat": "Detenido por sobrecalentamiento: la tarjeta gráfica se mantuvo a {0} °C o más durante {1} s.",
   "stress_advice.cpu_cooling_advice": "Ningún resultado erróneo, pero la refrigeración no da abasto. Comprueba que el disipador o la AIO estén bien sujetos y que su bomba funcione, la pasta térmica (cámbiala si tiene varios años), el polvo y el flujo de aire de la caja. En la BIOS, quita un overclock o un ajuste de PBO / undervolt mal hecho, o baja los límites de potencia.",
-  "stress_advice.gpu_cooling_advice": "Ningún resultado erróneo, pero la tarjeta gráfica se calienta demasiado. Quítale el polvo, comprueba que sus ventiladores giren y el flujo de aire de la caja; una curva de ventilación más agresiva (MSI Afterburner) o un límite de potencia algo más bajo ayuda. Si no basta, hay que cambiar la pasta y los pads térmicos."
+  "stress_advice.gpu_cooling_advice": "Ningún resultado erróneo, pero la tarjeta gráfica se calienta demasiado. Quítale el polvo, comprueba que sus ventiladores giren y el flujo de aire de la caja; una curva de ventilación más agresiva (MSI Afterburner) o un límite de potencia algo más bajo ayuda. Si no basta, hay que cambiar la pasta y los pads térmicos.",
+  "system_health_scanner.smart_summary": "  •  {0} °C  •  Desgaste: {1} %  •  Errores: {2}",
+  "system_health_scanner.rebar_unknown": "No determinado",
+  "system_health_scanner.rebar_unknown_detail": "Windows no indica el tamaño de esta ventana sin la herramienta del fabricante. Compruébalo en AMD Software (Smart Access Memory) o Intel Arc Control (Resizable BAR); si está desactivado, activa 'Above 4G Decoding' y 'Re-Size BAR' en la BIOS."
 }

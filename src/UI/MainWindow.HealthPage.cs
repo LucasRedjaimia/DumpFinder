@@ -633,19 +633,18 @@ namespace WinCrashDoctor
         private async void OnRunAdminDeepScanClick(object sender, RoutedEventArgs e)
         {
             if (_lastResult == null || _adminDeepScanRunning) return;
-            string jsonPath = Path.Combine(Localizer.AppDataDir, "admin_deep_scan.json");
-            try { if (File.Exists(jsonPath)) File.Delete(jsonPath); } catch (Exception ex) { Log.Warn(ex, jsonPath); }
 
             _adminDeepScanRunning = true;
             _btnHwAdminScan.IsEnabled = false;
             _btnAdminScanDumps.IsEnabled = false;
 
+            // Result comes back through a verified pipe from the elevated child (no file in a user-writable folder).
+            AdminDeepScanPayload payload = null;
             bool ok;
             try
             {
-                ok = await Task.Run(() =>
-                    Elevation.RunSelf("--scan-admin-json \"" + jsonPath + "\"", 60000) == ElevationOutcome.Success
-                    && File.Exists(jsonPath));
+                payload = await Task.Run(() => DiagnosticsEngine.RunAdminDeepScanElevated());
+                ok = payload != null;
             }
             catch (Exception ex)
             {
@@ -667,8 +666,6 @@ namespace WinCrashDoctor
 
             try
             {
-                var ser = new JavaScriptSerializer { MaxJsonLength = int.MaxValue };
-                var payload = ser.Deserialize<AdminDeepScanPayload>(File.ReadAllText(jsonPath, Encoding.UTF8));
                 if (payload != null)
                 {
                     _cachedAdminSmart = payload.SmartCounters;

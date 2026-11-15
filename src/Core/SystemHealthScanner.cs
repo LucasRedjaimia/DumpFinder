@@ -146,13 +146,16 @@ namespace WinCrashDoctor
             // 3. Resizable BAR & GPU Memory Window
             try
             {
-                long bar1Mib = DetectGpuBar1Mib();
+                long bar1Mib = DetectGpuBar1Mib(hw.GpuName);
+                bool rebarUnknown = bar1Mib < 0;
                 bool rebarActive = (bar1Mib >= 512);
                 string activeTag = Localizer.S("system_health_scanner.active");
                 string rebarLabel = hw.HasAmdGpu ? "AMD SAM " : (hw.HasNvidiaGpu ? "NVIDIA ReBAR " : "Resizable BAR ");
-                string barSummary = bar1Mib >= 1024
-                    ? string.Format("{0}{1} ({2:F0} GB BAR1)", rebarLabel, activeTag, bar1Mib / 1024.0)
-                    : (rebarActive ? (rebarLabel + activeTag) : "Standard (256 MB BAR)");
+                string barSummary = rebarUnknown
+                    ? Localizer.S("system_health_scanner.rebar_unknown")
+                    : bar1Mib >= 1024
+                        ? string.Format("{0}{1} ({2:F0} GB BAR1)", rebarLabel, activeTag, bar1Mib / 1024.0)
+                        : (rebarActive ? (rebarLabel + activeTag) : "Standard (256 MB BAR)");
 
                 string rebarCat = hw.HasAmdGpu ? "PCIe • AMD SAM" : (hw.HasNvidiaGpu ? "PCIe • NVIDIA ReBAR" : "PCIe • ReBAR");
                 string rebarTitle = hw.HasAmdGpu
@@ -170,12 +173,15 @@ namespace WinCrashDoctor
                     CategoryTag = rebarCat,
                     Title = rebarTitle,
                     ValueSummary = barSummary,
-                    Detail = rebarActive
-                        ? Localizer.S("system_health_scanner.your_cpu_can_directly_address_the")
-                        : (hw.HasIntelArcGpu
-                            ? Localizer.S("system_health_scanner.critical_on_intel_arc_resizable_bar")
-                            : Localizer.S("system_health_scanner.resizable_bar_appears_capped_at_256")),
-                    Level = rebarActive ? HealthLevel.Good : (hw.HasIntelArcGpu ? HealthLevel.Critical : HealthLevel.Info),
+                    Detail = rebarUnknown
+                        ? Localizer.S("system_health_scanner.rebar_unknown_detail")
+                        : rebarActive
+                            ? Localizer.S("system_health_scanner.your_cpu_can_directly_address_the")
+                            : (hw.HasIntelArcGpu
+                                ? Localizer.S("system_health_scanner.critical_on_intel_arc_resizable_bar")
+                                : Localizer.S("system_health_scanner.resizable_bar_appears_capped_at_256")),
+                    // Never "critical" on a guess: without a reliable reading the check stays informative.
+                    Level = rebarUnknown ? HealthLevel.Info : rebarActive ? HealthLevel.Good : (hw.HasIntelArcGpu ? HealthLevel.Critical : HealthLevel.Info),
                     GuideTitle = rebarGuideTitle,
                     GuideSteps = rebarGuideSteps,
                     QuickActionLabel = Localizer.S("system_health_scanner.device_manager"),
@@ -217,6 +223,7 @@ namespace WinCrashDoctor
             catch (Exception ex) { Log.Warn(ex); }
 
             // 4. NVMe / SSD Disk Health & SMART
+            List<DiskSmartInfo> fallbackSmart = null;
             try
             {
                 using (var s = Wmi.Searcher(@"\\.\root\Microsoft\Windows\Storage", "SELECT DeviceId, FriendlyName, BusType, HealthStatus, Size FROM MSFT_PhysicalDisk"))
@@ -234,10 +241,19 @@ namespace WinCrashDoctor
                         bool isDramLessHmb = isNvme && Detection.NvmeDrives.WindowsHasHmbIssue && Detection.NvmeDrives.IsDramLess(model);
 
                         DiskSmartInfo smart = (adminSmart != null) ? adminSmart.FirstOrDefault(x => x.DeviceId == devId) : null;
-                        if (smart == null) smart = TryReadSingleSmartCounter(devId);
+                        if (smart == null)
+                        {
+                            // One query for all disks (it used to run again for each disk, failing each time without admin rights).
+                            if (fallbackSmart == null)
+                            {
+                                try { fallbackSmart = ReadAllSmartCountersAdmin() ?? new List<DiskSmartInfo>(); }
+                                catch (Exception ex) { Log.Warn(ex); fallbackSmart = new List<DiskSmartInfo>(); }
+                            }
+                            smart = fallbackSmart.FirstOrDefault(x => x.DeviceId == devId);
+                        }
 
                         string smartStr = (smart != null && (smart.TemperatureC > 0 || smart.PowerOnHours > 0))
-                            ? string.Format("  •  {0} °C  •  Usure/Wear: {1}%  •  Erreurs: {2}", smart.TemperatureC, smart.WearPct, smart.UncorrectedErrors)
+                            ? Localizer.F("system_health_scanner.smart_summary", smart.TemperatureC, smart.WearPct, smart.UncorrectedErrors)
                             : "";
 
                         string hStatus = (health == 0)
@@ -307,17 +323,8 @@ namespace WinCrashDoctor
             return list;
         }
 
-        private static DiskSmartInfo TryReadSingleSmartCounter(string devId)
-        {
-            try
-            {
-                var all = ReadAllSmartCountersAdmin();
-                return all.FirstOrDefault(x => x.DeviceId == devId);
-            }
-            catch (Exception ex) { Log.Warn(ex); return null; }
-        }
 
-        private static long DetectGpuBar1Mib()
+        internal static long DetectGpuBar1Mib(string gpuName)
         {
             // 1. Try nvidia-smi -q -d MEMORY
             try
@@ -334,22 +341,43 @@ namespace WinCrashDoctor
             }
             catch (Exception ex) { Log.Warn(ex); }
 
-            // 2. Fallback: Win32_DeviceMemoryAddress range > 512 MB
+            // 2. Fallback: the largest memory range assigned to the main graphics card itself. (Any range over
+            //    512 MB on the machine used to count, so another device's window gave a false "ReBAR active".)
+            //    Win32_DeviceMemoryAddress only lists ranges below 4 GB, where a large ReBAR window never sits: a
+            //    big range proves ReBAR is on, a small one proves nothing → -1 (unknown), never "off".
             try
             {
-                using (var s = Wmi.Searcher("SELECT StartingAddress, EndingAddress FROM Win32_DeviceMemoryAddress"))
+                string pnpId = null;
+                using (var s = Wmi.Searcher("SELECT Name, PNPDeviceID FROM Win32_VideoController"))
                 {
                     foreach (ManagementObject mo in s.Get())
                     {
-                        ulong start = Convert.ToUInt64(mo["StartingAddress"] ?? 0);
-                        ulong end = Convert.ToUInt64(mo["EndingAddress"] ?? 0);
-                        if (end > start && (end - start) > 536870912UL)
-                            return (long)((end - start + 1UL) / (1024UL * 1024UL));
+                        string name = Convert.ToString(mo["Name"]);
+                        string id = Convert.ToString(mo["PNPDeviceID"]);
+                        if (string.IsNullOrEmpty(id) || !id.StartsWith("PCI\\", StringComparison.OrdinalIgnoreCase)) continue;
+                        if (pnpId == null || string.Equals(name, gpuName, StringComparison.OrdinalIgnoreCase)) pnpId = id;
                     }
+                }
+                if (pnpId != null)
+                {
+                    string q = "ASSOCIATORS OF {Win32_PnPEntity.DeviceID=\"" + pnpId.Replace("\\", "\\\\").Replace("\"", "\\\"") +
+                               "\"} WHERE ResultClass = Win32_DeviceMemoryAddress";
+                    ulong largest = 0;
+                    using (var s = Wmi.Searcher(q))
+                    {
+                        foreach (ManagementObject mo in s.Get())
+                        {
+                            ulong start = Convert.ToUInt64(mo["StartingAddress"] ?? 0);
+                            ulong end = Convert.ToUInt64(mo["EndingAddress"] ?? 0);
+                            if (end > start && end - start > largest) largest = end - start;
+                        }
+                    }
+                    long mib = (long)((largest + 1UL) / (1024UL * 1024UL));
+                    if (mib >= 512) return mib;
                 }
             }
             catch (Exception ex) { Log.Warn(ex); }
-            return 256;
+            return -1; // unknown
         }
 
         [StructLayout(LayoutKind.Sequential)]

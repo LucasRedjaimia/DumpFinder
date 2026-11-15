@@ -263,8 +263,13 @@ namespace WinCrashDoctor
             res.ConflictChecks = SystemHealthScanner.ScanSoftwareConflicts(res.Hardware);
         }
 
-        public static bool RunAdminDeepScanToFile(string jsonPath)
+        /// <summary>
+        /// Elevated child (--scan-admin-pipe &lt;pipe&gt;): reads the protected kernel dumps and SMART counters and sends
+        /// them back through the app's verified pipe (no result file in a user-writable folder).
+        /// </summary>
+        public static bool RunAdminDeepScanToPipe(string pipeName)
         {
+            if (!ElevatedPipe.IsValidName(pipeName)) return false;
             try
             {
                 var payload = new AdminDeepScanPayload
@@ -275,10 +280,22 @@ namespace WinCrashDoctor
                 // Keep readable copies so later (non-elevated) scans and WinDbg can use them.
                 MinidumpAnalyzer.CopyKernelDumpsLocally(payload.KernelDumps);
                 var ser = new JavaScriptSerializer { MaxJsonLength = int.MaxValue };
-                File.WriteAllText(jsonPath, ser.Serialize(payload), Encoding.UTF8);
-                return true;
+                return ElevatedPipe.Send(pipeName, new[] { ser.Serialize(payload) });
             }
             catch (Exception ex) { Log.Warn(ex); return false; }
+        }
+
+        /// <summary>App side: runs the administrator scan in an elevated child (one UAC prompt). Null if refused or failed. Blocking.</summary>
+        public static AdminDeepScanPayload RunAdminDeepScanElevated()
+        {
+            List<string> lines;
+            ElevationOutcome outcome = ElevatedPipe.Run("--scan-admin-pipe", 120000, out lines);
+            if (outcome != ElevationOutcome.Success || lines.Count == 0) return null;
+            try
+            {
+                return new JavaScriptSerializer { MaxJsonLength = int.MaxValue }.Deserialize<AdminDeepScanPayload>(lines[0]);
+            }
+            catch (Exception ex) { Log.Warn(ex, "admin scan payload"); return null; }
         }
 
         private static void ScanSystemEvents(DateTime? startTime, List<CrashEventItem> list, List<DateTime> bugCheckTimes)

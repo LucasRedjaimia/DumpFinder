@@ -249,7 +249,7 @@ namespace WinCrashDoctor
         }
 
         /// <summary>Minimal JSON pretty-printer (JavaScriptSerializer writes one line).</summary>
-        private static string PrettyJson(string json)
+        internal static string PrettyJson(string json)
         {
             var sb = new StringBuilder();
             int indent = 0;
@@ -257,8 +257,16 @@ namespace WinCrashDoctor
             for (int i = 0; i < json.Length; i++)
             {
                 char ch = json[i];
-                if (ch == '"' && (i == 0 || json[i - 1] != '\\')) inString = !inString;
-                if (inString) { sb.Append(ch); continue; }
+                if (inString)
+                {
+                    // Inside a string an escape always consumes the next character, so "C:\\" (an escaped backslash
+                    // before the closing quote) no longer looks like an escaped quote and flips the state.
+                    sb.Append(ch);
+                    if (ch == '\\' && i + 1 < json.Length) sb.Append(json[++i]);
+                    else if (ch == '"') inString = false;
+                    continue;
+                }
+                if (ch == '"') { inString = true; sb.Append(ch); continue; }
                 switch (ch)
                 {
                     case '{': case '[':

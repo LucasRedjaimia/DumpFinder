@@ -1225,5 +1225,8 @@
   "stress_advice.stopped_cpu_overheat": "Interrompido por superaquecimento: o processador ficou a {0} °C ou mais por {1} s.",
   "stress_advice.stopped_gpu_overheat": "Interrompido por superaquecimento: a placa de vídeo ficou a {0} °C ou mais por {1} s.",
   "stress_advice.cpu_cooling_advice": "Nenhum resultado errado, mas a refrigeração não está dando conta. Verifique se o cooler ou o AIO está bem fixado e se a bomba funciona, a pasta térmica (troque se tiver vários anos), a poeira e o fluxo de ar do gabinete. Na BIOS, remova um overclock ou um ajuste de PBO / undervolt mal calibrado, ou reduza os limites de potência.",
-  "stress_advice.gpu_cooling_advice": "Nenhum resultado errado, mas a placa de vídeo está esquentando demais. Tire a poeira dela, verifique se as ventoinhas giram e o fluxo de ar do gabinete; uma curva de ventilação mais agressiva (MSI Afterburner) ou um limite de potência um pouco menor ajuda. Se não bastar, é preciso trocar a pasta e os pads térmicos."
+  "stress_advice.gpu_cooling_advice": "Nenhum resultado errado, mas a placa de vídeo está esquentando demais. Tire a poeira dela, verifique se as ventoinhas giram e o fluxo de ar do gabinete; uma curva de ventilação mais agressiva (MSI Afterburner) ou um limite de potência um pouco menor ajuda. Se não bastar, é preciso trocar a pasta e os pads térmicos.",
+  "system_health_scanner.smart_summary": "  •  {0} °C  •  Desgaste: {1}%  •  Erros: {2}",
+  "system_health_scanner.rebar_unknown": "Não determinado",
+  "system_health_scanner.rebar_unknown_detail": "Sem a ferramenta do fabricante, o Windows não informa o tamanho dessa janela. Verifique no AMD Software (Smart Access Memory) ou no Intel Arc Control (Resizable BAR); se estiver desativado, ative 'Above 4G Decoding' e 'Re-Size BAR' na BIOS."
 }

@@ -1225,5 +1225,8 @@
   "stress_advice.stopped_cpu_overheat": "過熱のため停止しました。CPU の温度が {0} °C 以上の状態が {1} 秒間続きました。",
   "stress_advice.stopped_gpu_overheat": "過熱のため停止しました。グラフィックス カードの温度が {0} °C 以上の状態が {1} 秒間続きました。",
   "stress_advice.cpu_cooling_advice": "計算エラーはありませんが、冷却が追いついていません。CPU クーラーまたは AIO がしっかり取り付けられていてポンプが動いているか、サーマルペースト（数年経っている場合は塗り直してください）、ほこり、ケース内のエアフローを確認してください。BIOS では、オーバークロックや調整の不十分な PBO / 低電圧化を解除するか、電力制限を下げてください。",
-  "stress_advice.gpu_cooling_advice": "計算エラーはありませんが、グラフィックス カードが熱くなりすぎています。ほこりを取り除き、ファンが回っているか、ケース内のエアフローを確認してください。より積極的なファン カーブ（MSI Afterburner）や、少し低めの電力制限が効果的です。それでも足りない場合は、サーマルペーストとサーマルパッドの交換が必要です。"
+  "stress_advice.gpu_cooling_advice": "計算エラーはありませんが、グラフィックス カードが熱くなりすぎています。ほこりを取り除き、ファンが回っているか、ケース内のエアフローを確認してください。より積極的なファン カーブ（MSI Afterburner）や、少し低めの電力制限が効果的です。それでも足りない場合は、サーマルペーストとサーマルパッドの交換が必要です。",
+  "system_health_scanner.smart_summary": "  •  {0} °C  •  摩耗: {1}%  •  エラー: {2}",
+  "system_health_scanner.rebar_unknown": "判定できません",
+  "system_health_scanner.rebar_unknown_detail": "メーカーのツールがないと、Windows はこのウィンドウのサイズを報告しません。AMD Software（Smart Access Memory）または Intel Arc Control（Resizable BAR）で確認してください。無効な場合は、BIOS で 'Above 4G Decoding' と 'Re-Size BAR' を有効にしてください。"
 }

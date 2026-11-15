@@ -59,7 +59,9 @@ namespace WinCrashDoctor
         {
             get
             {
-                if (Event != null) return "ev|" + Event.Timestamp.Ticks + "|" + Event.CodeOrId;
+                // UTC: a time zone or daylight-saving change must not turn every known crash into a "new" one.
+                // History migrates the former local-time keys ("ev|…") when it reads the seen list.
+                if (Event != null) return "evu|" + Event.Timestamp.ToUniversalTime().Ticks + "|" + Event.CodeOrId;
                 return "dmp|" + (Dump != null ? Dump.FullPath : "");
             }
         }
