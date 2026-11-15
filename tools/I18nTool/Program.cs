@@ -134,13 +134,25 @@ static class P
     {
         int problems = 0;
         void Report(string s) { problems++; if (problems <= 200) Console.WriteLine(s); }
-        var used = new HashSet<string>();
+        var used = new HashSet<string>();      // keys passed directly to Localizer.S / F / P / Ref: must exist
+        var mentioned = new HashSet<string>(); // any key-shaped string literal (ternaries, constants): counts as used
         foreach (var f in Directory.GetFiles(src, "*.cs", SearchOption.AllDirectories).Where(f => !f.Contains("\\obj\\")))
-            foreach (Match m in Regex.Matches(File.ReadAllText(f), @"Localizer\.(?:S|F|P)\(\s*""([^""]+)"""))
+        {
+            string code = File.ReadAllText(f);
+            foreach (Match m in Regex.Matches(code, @"Localizer\.(?:S|F|P|Ref)\(\s*""([^""]+)"""))
                 used.Add(m.Groups[1].Value);
+            foreach (Match m in Regex.Matches(code, @"""([a-z][a-z0-9_]*(?:\.[a-z0-9_]+)+)"""))
+                mentioned.Add(m.Groups[1].Value);
+        }
+        // Detection tables (data/*.json next to src) name their explanation texts by key too.
+        string dataDir = Path.Combine(src, "..", "data");
+        if (Directory.Exists(dataDir))
+            foreach (var f in Directory.GetFiles(dataDir, "*.json"))
+                foreach (Match m in Regex.Matches(File.ReadAllText(f), @"""([a-z][a-z0-9_]*(?:\.[a-z0-9_]+)+)"""))
+                    mentioned.Add(m.Groups[1].Value);
         var en = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(Path.Combine(localesDir, "en.json")))!;
         foreach (var k in used.Where(k => !en.ContainsKey(k))) Report("MISSING in en.json: " + k);
-        foreach (var k in en.Keys.Where(k => !used.Contains(k))) Console.WriteLine("unused key: " + k);
+        foreach (var k in en.Keys.Where(k => !used.Contains(k) && !mentioned.Contains(k))) Console.WriteLine("unused key: " + k);
         var ph = new Regex(@"(?<!\{)\{(\d+)(?::[^}]*)?\}(?!\})");
         foreach (var file in Directory.GetFiles(localesDir, "*.json").Where(f => !f.EndsWith(".engine.json")))
         {
