@@ -1215,5 +1215,15 @@
   "engine.opt_cleanup.freed_gb": "✓ {0:0.00} GB 확보됨",
   "engine.opt_cleanup.files_in_use_left": " (사용 중이라 남겨 둔 파일: {0})",
   "engine.ai_assistant.could_not_reach_ollama": "http://127.0.0.1:11434의 Ollama에 연결할 수 없어요. \"ollama serve\"를 시작하고 모델을 받으세요(\"ollama pull {0}\").",
-  "engine.minidump_analyzer.stop_name": "중지 코드 {0}."
+  "engine.minidump_analyzer.stop_name": "중지 코드 {0}.",
+  "engine.diagnostics_engine.bsod_without_dump": "덤프 파일 없는 블루스크린: {0} ({1})",
+  "engine.diagnostics_engine.bsod_without_dump_details": "블루스크린 후 Windows가 다시 시작됐지만 .dmp 파일이나 보고서를 하나도 기록하지 못했어요. 흔한 원인: 페이징 파일이 너무 작거나 꺼져 있음, 덤프 기록이 꺼져 있음, 또는 시스템 드라이브 고장. 다음 블루스크린을 분석할 수 있도록 하드웨어에서 '블루스크린 기록'을 확인하세요.\n\nWindows 메시지:\n{0}",
+  "engine.diagnostics_engine.forced_power_off": "강제 전원 종료(전원 버튼 길게 누름)",
+  "engine.diagnostics_engine.forced_power_off_details": "전원 버튼을 길게 눌러 PC를 껐어요. 보통 PC가 멈췄기 때문이에요(검은 화면, 멈춘 화면, 응답 없음). 진짜 문제는 멈춤이에요. 바로 직전의 크래시(그래픽 드라이버, SSD)를 확인하고 안정성 테스트를 실행하세요.\n\nWindows 메시지:\n{0}",
+  "engine.diagnostics_engine.power_lost_during_sleep": "절전 진입 또는 해제 중 전원 끊김",
+  "engine.diagnostics_engine.power_lost_during_sleep_details": "절전 전환 중 PC가 멈췄어요. 흔한 원인: 절전을 제대로 처리하지 못하는 드라이버(주로 그래픽 또는 네트워크), Windows 빠른 시작, 또는 지나치게 공격적인 PCIe(ASPM) / USB 절전.\n\nWindows 메시지:\n{0}",
+  "stress_advice.stopped_cpu_overheat": "과열로 중지됨: CPU가 {1}초 동안 {0} °C 이상을 유지했어요.",
+  "stress_advice.stopped_gpu_overheat": "과열로 중지됨: 그래픽 카드가 {1}초 동안 {0} °C 이상을 유지했어요.",
+  "stress_advice.cpu_cooling_advice": "계산 오류는 없지만 냉각이 따라가지 못해요. CPU 쿨러나 AIO가 제대로 장착되어 있고 펌프가 돌아가는지, 서멀 페이스트(몇 년 됐다면 다시 바르세요), 먼지, 케이스 공기 흐름을 확인하세요. BIOS에서 오버클럭이나 잘못 조정된 PBO / 언더볼트를 해제하거나 전력 제한을 낮추세요.",
+  "stress_advice.gpu_cooling_advice": "계산 오류는 없지만 그래픽 카드가 너무 뜨거워요. 먼지를 청소하고 팬이 돌아가는지, 케이스 공기 흐름을 확인하세요. 더 공격적인 팬 커브(MSI Afterburner)나 조금 낮춘 전력 제한이 도움이 돼요. 그래도 부족하면 서멀 페이스트와 서멀 패드를 다시 작업해야 해요."
 }

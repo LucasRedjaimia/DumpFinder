@@ -1215,5 +1215,15 @@
   "engine.opt_cleanup.freed_gb": "✓ Zwolniono {0:0.00} GB",
   "engine.opt_cleanup.files_in_use_left": " (pominięte pliki w użyciu: {0})",
   "engine.ai_assistant.could_not_reach_ollama": "Nie można połączyć się z Ollamą pod adresem http://127.0.0.1:11434. Uruchom \"ollama serve\" i pobierz model (\"ollama pull {0}\").",
-  "engine.minidump_analyzer.stop_name": "Kod zatrzymania {0}."
+  "engine.minidump_analyzer.stop_name": "Kod zatrzymania {0}.",
+  "engine.diagnostics_engine.bsod_without_dump": "Niebieski ekran bez pliku zrzutu: {0} ({1})",
+  "engine.diagnostics_engine.bsod_without_dump_details": "Windows uruchomił się ponownie po niebieskim ekranie, ale nie udało się zapisać żadnego pliku .dmp ani raportu. Częste przyczyny: za mały lub wyłączony plik stronicowania, wyłączone zapisywanie zrzutów albo uszkodzony dysk systemowy. Sprawdź \"Zapisywanie niebieskich ekranów\" w zakładce Sprzęt, aby następny dało się przeanalizować.\n\nKomunikat systemu Windows:\n{0}",
+  "engine.diagnostics_engine.forced_power_off": "Wymuszone wyłączenie (przytrzymany przycisk zasilania)",
+  "engine.diagnostics_engine.forced_power_off_details": "Komputer został wyłączony przytrzymaniem przycisku zasilania, zwykle dlatego, że się zawiesił (czarny ekran, zamrożony obraz, brak reakcji). Prawdziwą usterką jest zawieszenie: sprawdź awarie tuż przed nim (sterownik grafiki, SSD) i uruchom test stabilności.\n\nKomunikat systemu Windows:\n{0}",
+  "engine.diagnostics_engine.power_lost_during_sleep": "Utrata zasilania podczas przechodzenia w uśpienie lub wybudzania",
+  "engine.diagnostics_engine.power_lost_during_sleep_details": "Komputer wyłączył się podczas przechodzenia w uśpienie lub wybudzania. Częste przyczyny: sterownik, który źle obsługuje uśpienie (często grafiki lub sieci), Szybkie uruchamianie Windows albo zbyt agresywne oszczędzanie energii PCIe (ASPM) / USB.\n\nKomunikat systemu Windows:\n{0}",
+  "stress_advice.stopped_cpu_overheat": "Zatrzymano z powodu przegrzania: temperatura procesora utrzymywała się na poziomie {0} °C lub wyższym przez {1} s.",
+  "stress_advice.stopped_gpu_overheat": "Zatrzymano z powodu przegrzania: temperatura karty graficznej utrzymywała się na poziomie {0} °C lub wyższym przez {1} s.",
+  "stress_advice.cpu_cooling_advice": "Żadnych błędnych wyników, ale chłodzenie nie nadąża. Sprawdź, czy chłodzenie CPU lub AIO jest dobrze zamocowane, a jego pompa pracuje, a także pastę termoprzewodzącą (wymień ją, jeśli ma kilka lat), kurz i przepływ powietrza w obudowie. W BIOS usuń podkręcenie lub źle dobrane ustawienie PBO / undervoltingu albo obniż limity mocy.",
+  "stress_advice.gpu_cooling_advice": "Żadnych błędnych wyników, ale karta graficzna za bardzo się grzeje. Odkurz ją, sprawdź, czy jej wentylatory się kręcą, oraz przepływ powietrza w obudowie; pomaga bardziej agresywna krzywa wentylatorów (MSI Afterburner) lub nieco niższy limit mocy. Jeśli to nie wystarczy, trzeba wymienić pastę i termopady."
 }

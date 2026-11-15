@@ -30,6 +30,14 @@ namespace WinCrashDoctor.Stress
         Disk = 6
     }
 
+    /// <summary>Which part the thermal watchdog stopped a stage for.</summary>
+    public enum OverheatPart
+    {
+        None = 0,
+        Cpu = 1,
+        Gpu = 2
+    }
+
     public enum StressOutcome
     {
         Passed = 0,

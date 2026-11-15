@@ -1215,5 +1215,15 @@
   "engine.opt_cleanup.freed_gb": "✓ {0:0.00} GB freed",
   "engine.opt_cleanup.files_in_use_left": " (files in use left alone: {0})",
   "engine.ai_assistant.could_not_reach_ollama": "Could not reach Ollama at http://127.0.0.1:11434. Start \"ollama serve\" and pull the model (\"ollama pull {0}\").",
-  "engine.minidump_analyzer.stop_name": "Stop {0}."
+  "engine.minidump_analyzer.stop_name": "Stop {0}.",
+  "engine.diagnostics_engine.bsod_without_dump": "Blue screen without a dump file: {0} ({1})",
+  "engine.diagnostics_engine.bsod_without_dump_details": "Windows restarted after a blue screen, but no .dmp file or report could be written. Common causes: page file too small or disabled, dump recording turned off, or a failing system drive. Check \"Blue screen recording\" in Hardware so the next one can be analysed.\n\nWindows Message:\n{0}",
+  "engine.diagnostics_engine.forced_power_off": "Forced power off (power button held)",
+  "engine.diagnostics_engine.forced_power_off_details": "The PC was turned off by holding the power button, usually because it had frozen (black screen, frozen picture, no response). The freeze is the real fault: look at the crashes just before it (graphics driver, SSD) and run a stability test.\n\nWindows Message:\n{0}",
+  "engine.diagnostics_engine.power_lost_during_sleep": "Power lost while entering or leaving sleep",
+  "engine.diagnostics_engine.power_lost_during_sleep_details": "The PC stopped during a sleep transition. Common causes: a driver that handles sleep badly (often graphics or network), Windows Fast Startup, or overly aggressive PCIe (ASPM) / USB power saving.\n\nWindows Message:\n{0}",
+  "stress_advice.stopped_cpu_overheat": "Stopped for overheating: the CPU stayed at {0} °C or more for {1} s.",
+  "stress_advice.stopped_gpu_overheat": "Stopped for overheating: the graphics card stayed at {0} °C or more for {1} s.",
+  "stress_advice.cpu_cooling_advice": "No wrong result, but the cooling cannot keep up. Check that the cooler or AIO is properly mounted and its pump runs, the thermal paste (redo it if it is several years old), dust and case airflow. In the BIOS, remove an overclock or a badly tuned PBO / undervolt, or lower the power limits.",
+  "stress_advice.gpu_cooling_advice": "No wrong result, but the graphics card runs too hot. Dust it, check that its fans spin and the case airflow; a more aggressive fan curve (MSI Afterburner) or a slightly lower power limit helps. If that is not enough, the thermal paste and pads need redoing."
 }

@@ -1215,5 +1215,15 @@
   "engine.opt_cleanup.freed_gb": "✓ 已释放 {0:0.00} GB",
   "engine.opt_cleanup.files_in_use_left": " （已跳过正在使用的文件：{0}）",
   "engine.ai_assistant.could_not_reach_ollama": "无法连接到 http://127.0.0.1:11434 上的 Ollama。请启动“ollama serve”并拉取模型（“ollama pull {0}”）。",
-  "engine.minidump_analyzer.stop_name": "终止代码 {0}。"
+  "engine.minidump_analyzer.stop_name": "终止代码 {0}。",
+  "engine.diagnostics_engine.bsod_without_dump": "无转储文件的蓝屏：{0}（{1}）",
+  "engine.diagnostics_engine.bsod_without_dump_details": "Windows 在蓝屏后重新启动，但未能写入任何 .dmp 文件或报告。常见原因：页面文件太小或被禁用、转储记录被关闭，或系统盘出现故障。请在“硬件”中检查“蓝屏记录”，以便下次蓝屏能够被分析。\n\nWindows 消息：\n{0}",
+  "engine.diagnostics_engine.forced_power_off": "强制关机（长按电源按钮）",
+  "engine.diagnostics_engine.forced_power_off_details": "电脑是通过长按电源按钮关闭的，通常是因为它已经卡死（黑屏、画面冻结、无响应）。卡死才是真正的故障：请查看它之前的崩溃（显卡驱动、SSD），并运行稳定性测试。\n\nWindows 消息：\n{0}",
+  "engine.diagnostics_engine.power_lost_during_sleep": "进入或退出睡眠时断电",
+  "engine.diagnostics_engine.power_lost_during_sleep_details": "电脑在进入或退出睡眠的过程中停止运行。常见原因：某个驱动对睡眠处理不当（通常是显卡或网络驱动）、Windows 快速启动，或过于激进的 PCIe（ASPM）/USB 节能设置。\n\nWindows 消息：\n{0}",
+  "stress_advice.stopped_cpu_overheat": "因过热而停止：处理器温度在 {0} °C 或以上持续了 {1} 秒。",
+  "stress_advice.stopped_gpu_overheat": "因过热而停止：显卡温度在 {0} °C 或以上持续了 {1} 秒。",
+  "stress_advice.cpu_cooling_advice": "没有计算错误，但散热跟不上。请检查散热器或 AIO 是否安装牢固、水泵是否运转，以及导热硅脂（如果已用了好几年，请重新涂抹）、灰尘和机箱风道。在 BIOS 中撤销超频或调得不好的 PBO / 降压设置，或者降低功耗限制。",
+  "stress_advice.gpu_cooling_advice": "没有计算错误，但显卡温度过高。请给它除尘，检查风扇是否转动以及机箱风道；更激进的风扇曲线（MSI Afterburner）或稍低的功耗限制会有帮助。如果还不够，就需要重新涂抹导热硅脂并更换导热垫。"
 }

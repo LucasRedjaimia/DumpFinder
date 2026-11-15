@@ -20,6 +20,14 @@ namespace WinCrashDoctor
     {
         private const string GpuClassKeyPath = @"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}";
         private static HardwareSummary _cachedHw;
+
+        /// <summary>System log: events kept per family (newest first). Blue screens (WER 1001) are never capped.</summary>
+        private const int MaxEventsPerFamily = 500;
+        /// <summary>Corrected WHEA errors (17 / 19 / 47) can be logged by the thousand: listing the newest is enough.</summary>
+        private const int MaxCorrectedWheaEvents = 200;
+        /// <summary>Chrome / Edge Crashpad dumps examined per scan (newest first), and bytes read from each.</summary>
+        private const int MaxBrowserDumps = 200;
+        private const int BrowserDumpReadBytes = 8 * 1024 * 1024;
         private static double _cachedShaderMb = -1;
 
         public static bool IsAdministrator()
@@ -286,9 +294,22 @@ namespace WinCrashDoctor
             string xpath = "*[System[(EventID=1001 or EventID=41 or EventID=153 or EventID=14 or EventID=13 or EventID=4101 or EventID=17 or EventID=18 or EventID=19 or EventID=46 or EventID=47 or EventID=129 or EventID=11 or EventID=7 or EventID=51 or EventID=55 or EventID=2004 or EventID=10400 or EventID=1796)" + timeClause + "]]";
 
             List<EventRecordData> rawRecords = new List<EventRecordData>();
+            // Newest first, with a cap per family: a PC logging thousands of corrected WHEA errors used to make the scan
+            // format every one of them (FormatDescription is the slow part). Beyond the cap events are only counted.
+            var perFamily = new Dictionary<string, int>(StringComparer.Ordinal);
+            int capped = 0;
+            Func<string, bool> keep = family =>
+            {
+                int n;
+                perFamily.TryGetValue(family, out n);
+                int cap = family == "whea-corrected" ? MaxCorrectedWheaEvents : MaxEventsPerFamily;
+                if (n >= cap) { capped++; return false; }
+                perFamily[family] = n + 1;
+                return true;
+            };
             try
             {
-                EventLogQuery query = new EventLogQuery("System", PathType.LogName, xpath);
+                EventLogQuery query = new EventLogQuery("System", PathType.LogName, xpath) { ReverseDirection = true };
                 using (EventLogReader reader = new EventLogReader(query))
                 {
                     EventRecord rec;
@@ -302,12 +323,14 @@ namespace WinCrashDoctor
 
                             if (provider.IndexOf("WER-SystemErrorReporting", StringComparison.OrdinalIgnoreCase) >= 0 && id == 1001)
                             {
+                                // Blue screens are always kept (they also pair with Kernel-Power 41 below).
                                 rawRecords.Add(new EventRecordData { Time = ts, Id = id, Provider = provider, Msg = SafeFormatDescription(rec), Props = ExtractProps(rec) });
                                 bugCheckTimes.Add(ts);
                             }
                             else if (provider.IndexOf("Kernel-Power", StringComparison.OrdinalIgnoreCase) >= 0 && id == 41)
                             {
-                                rawRecords.Add(new EventRecordData { Time = ts, Id = id, Provider = provider, Msg = SafeFormatDescription(rec), Props = ExtractProps(rec) });
+                                if (keep("power41"))
+                                    rawRecords.Add(new EventRecordData { Time = ts, Id = id, Provider = provider, Msg = SafeFormatDescription(rec), Props = ExtractProps(rec), Named = NamedEventData(rec) });
                             }
                             else if (provider.IndexOf("nvlddmkm", StringComparison.OrdinalIgnoreCase) >= 0 ||
                                      provider.IndexOf("amdwddmg", StringComparison.OrdinalIgnoreCase) >= 0 ||
@@ -317,39 +340,47 @@ namespace WinCrashDoctor
                                      provider.IndexOf("igdkmd", StringComparison.OrdinalIgnoreCase) >= 0 ||
                                      (provider.Equals("Display", StringComparison.OrdinalIgnoreCase) && id == 4101))
                             {
-                                if (rec.Level == 1 || rec.Level == 2 || rec.Level == 3 || id == 153 || id == 14 || id == 4101)
+                                if ((rec.Level == 1 || rec.Level == 2 || rec.Level == 3 || id == 153 || id == 14 || id == 4101) && keep("gpu"))
                                 {
                                     rawRecords.Add(new EventRecordData { Time = ts, Id = id, Provider = provider, Msg = SafeFormatDescription(rec), Props = ExtractProps(rec) });
                                 }
                             }
                             else if (provider.IndexOf("WHEA-Logger", StringComparison.OrdinalIgnoreCase) >= 0)
                             {
-                                rawRecords.Add(new EventRecordData { Time = ts, Id = id, Provider = provider, Msg = SafeFormatDescription(rec), Props = ExtractProps(rec) });
+                                // 17 / 19 / 47 are corrected errors (often thousands): own, lower cap.
+                                bool corrected = id == 17 || id == 19 || id == 47;
+                                if (keep(corrected ? "whea-corrected" : "whea"))
+                                    rawRecords.Add(new EventRecordData { Time = ts, Id = id, Provider = provider, Msg = SafeFormatDescription(rec), Props = ExtractProps(rec) });
                             }
                             else if (provider.IndexOf("stornvme", StringComparison.OrdinalIgnoreCase) >= 0 ||
                                      provider.IndexOf("storahci", StringComparison.OrdinalIgnoreCase) >= 0 ||
                                      (provider.Equals("disk", StringComparison.OrdinalIgnoreCase) && (id == 7 || id == 51 || id == 153)) ||
                                      (provider.IndexOf("Ntfs", StringComparison.OrdinalIgnoreCase) >= 0 && id == 55))
                             {
-                                rawRecords.Add(new EventRecordData { Time = ts, Id = id, Provider = provider, Msg = SafeFormatDescription(rec), Props = ExtractProps(rec) });
+                                if (keep("storage"))
+                                    rawRecords.Add(new EventRecordData { Time = ts, Id = id, Provider = provider, Msg = SafeFormatDescription(rec), Props = ExtractProps(rec) });
                             }
                             else if (provider.IndexOf("Resource-Exhaustion-Detector", StringComparison.OrdinalIgnoreCase) >= 0 && id == 2004)
                             {
-                                rawRecords.Add(new EventRecordData { Time = ts, Id = id, Provider = provider, Msg = SafeFormatDescription(rec), Props = ExtractProps(rec) });
+                                if (keep("memory"))
+                                    rawRecords.Add(new EventRecordData { Time = ts, Id = id, Provider = provider, Msg = SafeFormatDescription(rec), Props = ExtractProps(rec) });
                             }
                             else if (provider.Equals("NDIS", StringComparison.OrdinalIgnoreCase) && id == 10400)
                             {
-                                rawRecords.Add(new EventRecordData { Time = ts, Id = id, Provider = provider, Msg = SafeFormatDescription(rec), Props = ExtractProps(rec) });
+                                if (keep("ndis"))
+                                    rawRecords.Add(new EventRecordData { Time = ts, Id = id, Provider = provider, Msg = SafeFormatDescription(rec), Props = ExtractProps(rec) });
                             }
                             else if ((provider.IndexOf("TPM", StringComparison.OrdinalIgnoreCase) >= 0) && (id == 14 || id == 1796))
                             {
-                                rawRecords.Add(new EventRecordData { Time = ts, Id = id, Provider = provider, Msg = SafeFormatDescription(rec), Props = ExtractProps(rec) });
+                                if (keep("tpm"))
+                                    rawRecords.Add(new EventRecordData { Time = ts, Id = id, Provider = provider, Msg = SafeFormatDescription(rec), Props = ExtractProps(rec) });
                             }
                         }
                     }
                 }
             }
             catch (Exception ex) { Log.Warn(ex); }
+            if (capped > 0) Log.Info("System log: " + capped + " older event(s) beyond the per-family caps were counted but not listed");
 
             foreach (var r in rawRecords)
             {
@@ -374,7 +405,58 @@ namespace WinCrashDoctor
                 else if (r.Provider.IndexOf("Kernel-Power", StringComparison.OrdinalIgnoreCase) >= 0 && r.Id == 41)
                 {
                     bool hasPairedBsod = bugCheckTimes.Any(bt => Math.Abs((bt - r.Time).TotalMinutes) <= 3.0);
-                    if (!hasPairedBsod)
+                    // Kernel-Power 41 says *how* the previous session ended (named event data):
+                    //  BugcheckCode ≠ 0          → a blue screen happened but no dump/WER report was written;
+                    //  PowerButtonTimestamp ≠ 0  → the power button was held (forced off, usually after a freeze);
+                    //  SleepInProgress ≠ 0       → power was lost while entering / leaving sleep;
+                    //  all 0                     → power loss or a hardware reset (PSU, cable, overclock).
+                    uint kpBugcheck = (uint)NamedNumber(r.Named, "BugcheckCode");
+                    bool kpButton = NamedNumber(r.Named, "PowerButtonTimestamp") != 0;
+                    bool kpSleep = NamedNumber(r.Named, "SleepInProgress") != 0;
+                    if (!hasPairedBsod && kpBugcheck != 0)
+                    {
+                        string hex = string.Format("0x{0:X8}", kpBugcheck);
+                        list.Add(new CrashEventItem
+                        {
+                            Timestamp = r.Time,
+                            Category = CrashCategory.BSOD,
+                            Source = "Kernel-Power",
+                            CodeOrId = hex,
+                            SummaryFr = Localizer.Ref("engine.diagnostics_engine.bsod_without_dump", BugCheckCatalog.NameOf(kpBugcheck), hex),
+                            SummaryEn = Localizer.Ref("engine.diagnostics_engine.bsod_without_dump", BugCheckCatalog.NameOf(kpBugcheck), hex),
+                            DetailsFr = Localizer.Ref("engine.diagnostics_engine.bsod_without_dump_details", r.Msg),
+                            DetailsEn = Localizer.Ref("engine.diagnostics_engine.bsod_without_dump_details", r.Msg)
+                        });
+                    }
+                    else if (!hasPairedBsod && kpButton)
+                    {
+                        list.Add(new CrashEventItem
+                        {
+                            Timestamp = r.Time,
+                            Category = CrashCategory.UnexpectedReboot,
+                            Source = "Kernel-Power",
+                            CodeOrId = "Event 41",
+                            SummaryFr = Localizer.Ref("engine.diagnostics_engine.forced_power_off"),
+                            SummaryEn = Localizer.Ref("engine.diagnostics_engine.forced_power_off"),
+                            DetailsFr = Localizer.Ref("engine.diagnostics_engine.forced_power_off_details", r.Msg),
+                            DetailsEn = Localizer.Ref("engine.diagnostics_engine.forced_power_off_details", r.Msg)
+                        });
+                    }
+                    else if (!hasPairedBsod && kpSleep)
+                    {
+                        list.Add(new CrashEventItem
+                        {
+                            Timestamp = r.Time,
+                            Category = CrashCategory.UnexpectedReboot,
+                            Source = "Kernel-Power",
+                            CodeOrId = "Event 41",
+                            SummaryFr = Localizer.Ref("engine.diagnostics_engine.power_lost_during_sleep"),
+                            SummaryEn = Localizer.Ref("engine.diagnostics_engine.power_lost_during_sleep"),
+                            DetailsFr = Localizer.Ref("engine.diagnostics_engine.power_lost_during_sleep_details", r.Msg),
+                            DetailsEn = Localizer.Ref("engine.diagnostics_engine.power_lost_during_sleep_details", r.Msg)
+                        });
+                    }
+                    else if (!hasPairedBsod)
                     {
                         list.Add(new CrashEventItem
                         {
@@ -590,6 +672,9 @@ namespace WinCrashDoctor
                 new { Name = "Microsoft Edge", Path = Path.Combine(localAppData, @"Microsoft\Edge\User Data\Crashpad\reports") }
             };
 
+            // Newest first and capped: a browser can keep hundreds of reports. Each dump is parsed once, then its
+            // result comes from a small cache keyed by name + size + date (same key idea as the WinDbg cache).
+            var files = new List<KeyValuePair<string, FileInfo>>();
             foreach (var b in browserDirs)
             {
                 if (!Directory.Exists(b.Path)) continue;
@@ -598,33 +683,82 @@ namespace WinCrashDoctor
                     foreach (string file in Directory.GetFiles(b.Path, "*.dmp"))
                     {
                         FileInfo fi = new FileInfo(file);
-                        if (startTime.HasValue && fi.LastWriteTime < startTime.Value)
-                            continue;
-
-                        string engine, decoder, url, errorDetail;
-                        ParseChromiumDumpMetadata(file, out engine, out decoder, out url, out errorDetail);
-
-                        string extra = "";
-                        if (!string.IsNullOrEmpty(engine)) extra += engine;
-                        if (!string.IsNullOrEmpty(decoder)) extra += (extra.Length > 0 ? " | " : "") + decoder;
-                        if (!string.IsNullOrEmpty(url)) extra += (extra.Length > 0 ? " | " : "") + url;
-                        if (string.IsNullOrEmpty(extra)) extra = fi.Name;
-
-                        list.Add(new CrashEventItem
-                        {
-                            Timestamp = fi.LastWriteTime,
-                            Category = CrashCategory.BrowserGpu,
-                            Source = b.Name,
-                            CodeOrId = string.IsNullOrEmpty(engine) ? "Crashpad .dmp" : engine,
-                            SummaryFr = Localizer.Ref("engine.diagnostics_engine.internal_crash_dump", b.Name, extra),
-                            SummaryEn = Localizer.Ref("engine.diagnostics_engine.internal_crash_dump", b.Name, extra),
-                            DetailsFr = BrowserDumpDetails(file, engine, decoder, url, errorDetail),
-                            DetailsEn = BrowserDumpDetails(file, engine, decoder, url, errorDetail)
-                        });
+                        if (startTime.HasValue && fi.LastWriteTime < startTime.Value) continue;
+                        files.Add(new KeyValuePair<string, FileInfo>(b.Name, fi));
                     }
                 }
                 catch (Exception ex) { Log.Warn(ex); }
             }
+
+            Dictionary<string, string[]> cache = LoadCrashpadCache();
+            var seen = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase);
+            foreach (var bf in files.OrderByDescending(x => x.Value.LastWriteTimeUtc).Take(MaxBrowserDumps))
+            {
+                string browser = bf.Key;
+                FileInfo fi = bf.Value;
+                string file = fi.FullName;
+                try
+                {
+                    string engine, decoder, url, errorDetail;
+                    string cacheKey = fi.Name + "|" + fi.Length + "|" + fi.LastWriteTimeUtc.Ticks;
+                    string[] hit;
+                    if (cache.TryGetValue(cacheKey, out hit) && hit != null && hit.Length == 4)
+                    {
+                        engine = hit[0]; decoder = hit[1]; url = hit[2]; errorDetail = hit[3];
+                    }
+                    else
+                    {
+                        ParseChromiumDumpMetadata(file, out engine, out decoder, out url, out errorDetail);
+                    }
+                    seen[cacheKey] = new[] { engine, decoder, url, errorDetail };
+
+                    string extra = "";
+                    if (!string.IsNullOrEmpty(engine)) extra += engine;
+                    if (!string.IsNullOrEmpty(decoder)) extra += (extra.Length > 0 ? " | " : "") + decoder;
+                    if (!string.IsNullOrEmpty(url)) extra += (extra.Length > 0 ? " | " : "") + url;
+                    if (string.IsNullOrEmpty(extra)) extra = fi.Name;
+
+                    list.Add(new CrashEventItem
+                    {
+                        Timestamp = fi.LastWriteTime,
+                        Category = CrashCategory.BrowserGpu,
+                        Source = browser,
+                        CodeOrId = string.IsNullOrEmpty(engine) ? "Crashpad .dmp" : engine,
+                        SummaryFr = Localizer.Ref("engine.diagnostics_engine.internal_crash_dump", browser, extra),
+                        SummaryEn = Localizer.Ref("engine.diagnostics_engine.internal_crash_dump", browser, extra),
+                        DetailsFr = BrowserDumpDetails(file, engine, decoder, url, errorDetail),
+                        DetailsEn = BrowserDumpDetails(file, engine, decoder, url, errorDetail)
+                    });
+                }
+                catch (Exception ex) { Log.Warn(ex); }
+            }
+            SaveCrashpadCache(seen); // only the dumps still present: the cache never grows forever
+        }
+
+        private static string CrashpadCachePath
+        {
+            get { return Path.Combine(Localizer.AppDataDir, "analysis", "crashpad.json"); }
+        }
+
+        private static Dictionary<string, string[]> LoadCrashpadCache()
+        {
+            try
+            {
+                if (File.Exists(CrashpadCachePath))
+                {
+                    var d = new JavaScriptSerializer { MaxJsonLength = int.MaxValue }.Deserialize<Dictionary<string, string[]>>(File.ReadAllText(CrashpadCachePath, Encoding.UTF8));
+                    if (d != null) return new Dictionary<string, string[]>(d, StringComparer.OrdinalIgnoreCase);
+                }
+            }
+            catch (Exception ex) { Log.Warn(ex); }
+            return new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase);
+        }
+
+        private static void SaveCrashpadCache(Dictionary<string, string[]> entries)
+        {
+            if (Localizer.ReadOnlySettings) return; // capture harness: read-only
+            try { AtomicFile.WriteAllText(CrashpadCachePath, new JavaScriptSerializer { MaxJsonLength = int.MaxValue }.Serialize(entries), Encoding.UTF8); }
+            catch (Exception ex) { Log.Warn(ex); }
         }
 
         /// <summary>Browser dump details as deferred lines (only the lines that have a value).</summary>
@@ -642,7 +776,15 @@ namespace WinCrashDoctor
             engine = ""; decoder = ""; url = ""; errorLine = "";
             try
             {
-                byte[] bytes = File.ReadAllBytes(filePath);
+                // The annotations sit near the start of a Crashpad dump: the first megabytes are enough.
+                byte[] bytes;
+                using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+                {
+                    int len = (int)Math.Min(fs.Length, BrowserDumpReadBytes);
+                    bytes = new byte[len];
+                    int read = 0, n;
+                    while (read < len && (n = fs.Read(bytes, read, len - read)) > 0) read += n;
+                }
                 string ascii = Encoding.ASCII.GetString(bytes);
 
                 if (ascii.IndexOf("GraphiteDawnD3D11", StringComparison.OrdinalIgnoreCase) >= 0)
@@ -2060,6 +2202,37 @@ namespace WinCrashDoctor
             public string Provider;
             public string Msg;
             public List<string> Props;
+            /// <summary>Named &lt;Data Name="…"&gt; values (only read where the meaning depends on them, e.g. Kernel-Power 41).</summary>
+            public Dictionary<string, string> Named;
+        }
+
+        /// <summary>Event data by name, from the event XML (the property list alone has no names).</summary>
+        private static Dictionary<string, string> NamedEventData(EventRecord rec)
+        {
+            var d = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            try
+            {
+                var doc = System.Xml.Linq.XDocument.Parse(rec.ToXml());
+                foreach (var el in doc.Descendants().Where(e => e.Name.LocalName == "Data"))
+                {
+                    var name = el.Attribute("Name");
+                    if (name != null && !string.IsNullOrEmpty(name.Value)) d[name.Value] = el.Value;
+                }
+            }
+            catch (Exception ex) { Log.Warn(ex); }
+            return d;
+        }
+
+        /// <summary>Decimal or 0x-hex number from named event data; 0 when absent or unreadable.</summary>
+        internal static long NamedNumber(Dictionary<string, string> named, string key)
+        {
+            string v;
+            if (named == null || !named.TryGetValue(key, out v) || string.IsNullOrWhiteSpace(v)) return 0;
+            v = v.Trim();
+            long n;
+            if (v.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+                return long.TryParse(v.Substring(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out n) ? n : 0;
+            return long.TryParse(v, NumberStyles.Integer, CultureInfo.InvariantCulture, out n) ? n : 0;
         }
     }
 }
