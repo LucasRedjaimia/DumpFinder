@@ -16,6 +16,8 @@ namespace WinCrashDoctor
         private readonly Action _onOpenRequested;
         private readonly Action _onRescanRequested;
         private readonly Action _onExitRequested;
+        /// <summary>Runs an in-app "nav:" command (brings the window back first); null = just open the window.</summary>
+        private readonly Action<string> _onNavigate;
         private ContextMenuStrip _menu;
         private DateTime _lastAlertTime = DateTime.MinValue;
         /// <summary>What a click on the current notification does (falls back to opening the window).</summary>
@@ -28,11 +30,12 @@ namespace WinCrashDoctor
         public bool IsEnabled { get; private set; }
 
         /// <summary>Create on the UI thread (the dispatcher is captured here).</summary>
-        public TraySentinel(Action onOpen, Action onRescan, Action onExit)
+        public TraySentinel(Action onOpen, Action onRescan, Action onExit, Action<string> onNavigate = null)
         {
             _onOpenRequested = onOpen;
             _onRescanRequested = onRescan;
             _onExitRequested = onExit;
+            _onNavigate = onNavigate;
             _dispatcher = System.Windows.Threading.Dispatcher.CurrentDispatcher;
         }
 
@@ -135,6 +138,45 @@ namespace WinCrashDoctor
             RefreshMenuLocalization();
         }
 
+        /// <summary>Live System-log events the sentinel alerts on.</summary>
+        public enum LiveAlert { None, Gpu, Whea, Nvme, Commit }
+
+        /// <summary>Which alert a watched System event raises (None = no alert).</summary>
+        internal static LiveAlert Classify(string provider, int id)
+        {
+            string prov = provider ?? "";
+            if (prov.IndexOf("nvlddmkm", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                prov.IndexOf("amdwddmg", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                prov.IndexOf("amdkmdag", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                (prov.Equals("Display", StringComparison.OrdinalIgnoreCase) && id == 4101))
+                return LiveAlert.Gpu;
+            if (prov.IndexOf("WHEA", StringComparison.OrdinalIgnoreCase) >= 0) return LiveAlert.Whea;
+            if (prov.IndexOf("stornvme", StringComparison.OrdinalIgnoreCase) >= 0) return LiveAlert.Nvme;
+            if (id == 2004) return LiveAlert.Commit;
+            return LiveAlert.None;
+        }
+
+        /// <summary>Where a click on the alert leads; the alert texts promise exactly this.</summary>
+        internal static string NavCommandFor(LiveAlert kind)
+        {
+            switch (kind)
+            {
+                case LiveAlert.Gpu: return "nav:fixes:tdr";              // display driver timeout -> TDR fix
+                case LiveAlert.Nvme: return "nav:fixes:nvme_hmb";        // controller reset -> HMB fix
+                case LiveAlert.Commit: return "nav:fixes:pagefile_auto"; // commit exhaustion -> pagefile fix
+                case LiveAlert.Whea: return "nav:hardware";              // hardware error -> Hardware page
+                default: return null;
+            }
+        }
+
+        /// <summary>Click action of a live alert (null: the click just opens the window).</summary>
+        internal Action ClickActionFor(LiveAlert kind)
+        {
+            string cmd = NavCommandFor(kind);
+            if (cmd == null || _onNavigate == null) return null;
+            return () => _onNavigate(cmd);
+        }
+
         private void StartEventWatcher()
         {
             StopEventWatcher();
@@ -176,49 +218,46 @@ namespace WinCrashDoctor
 
                 string title = "";
                 string msg = "";
+                LiveAlert kind = Classify(prov, id);
 
-                if (prov.IndexOf("nvlddmkm", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                    prov.IndexOf("amdwddmg", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                    prov.IndexOf("amdkmdag", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                    (prov.Equals("Display", StringComparison.OrdinalIgnoreCase) && id == 4101))
+                switch (kind)
                 {
-                    title = Localizer.F("tray_sentinel.gpu_fault_detected", prov);
-                    msg = Localizer.F("tray_sentinel.your_graphics_driver_just_experienced_a", id);
-                }
-                else if (prov.IndexOf("WHEA", StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    title = Localizer.F("tray_sentinel.whea_hardware_error_id", id);
-                    msg = Localizer.S("tray_sentinel.live_cpu_or_pcie_hardware_error");
-                }
-                else if (prov.IndexOf("stornvme", StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    title = Localizer.F("tray_sentinel.nvme_ssd_timeout_stornvme", id);
-                    msg = Localizer.S("tray_sentinel.your_nvme_ssd_controller_just_reset");
-                }
-                else if (id == 2004)
-                {
-                    title = Localizer.S("tray_sentinel.virtual_memory_exhaustion");
-                    msg = Localizer.S("tray_sentinel.windows_ran_low_on_commit_memory");
+                    case LiveAlert.Gpu:
+                        title = Localizer.F("tray_sentinel.gpu_fault_detected", prov);
+                        msg = Localizer.F("tray_sentinel.your_graphics_driver_just_experienced_a", id);
+                        break;
+                    case LiveAlert.Whea:
+                        title = Localizer.F("tray_sentinel.whea_hardware_error_id", id);
+                        msg = Localizer.S("tray_sentinel.live_cpu_or_pcie_hardware_error");
+                        break;
+                    case LiveAlert.Nvme:
+                        title = Localizer.F("tray_sentinel.nvme_ssd_timeout_stornvme", id);
+                        msg = Localizer.S("tray_sentinel.your_nvme_ssd_controller_just_reset");
+                        break;
+                    case LiveAlert.Commit:
+                        title = Localizer.S("tray_sentinel.virtual_memory_exhaustion");
+                        msg = Localizer.S("tray_sentinel.windows_ran_low_on_commit_memory");
+                        break;
                 }
 
                 if (!string.IsNullOrEmpty(title))
                 {
                     string t = title, m = msg;
-                    _dispatcher.BeginInvoke(new Action(() => ShowAlert(t, m)));
+                    _dispatcher.BeginInvoke(new Action(() => ShowAlert(t, m, kind)));
                 }
             }
             catch (Exception ex) { Log.Warn(ex); }
         }
 
-        /// <summary>UI thread: throttled live alert balloon.</summary>
-        private void ShowAlert(string title, string msg)
+        /// <summary>UI thread: throttled live alert balloon; a click runs that alert's navigation.</summary>
+        private void ShowAlert(string title, string msg, LiveAlert kind)
         {
             try
             {
                 if (_disposed || _notifyIcon == null || !_notifyIcon.Visible) return;
                 if ((DateTime.Now - _lastAlertTime).TotalSeconds < 6) return;
                 _lastAlertTime = DateTime.Now;
-                _pendingClick = null;
+                _pendingClick = ClickActionFor(kind);
                 _notifyIcon.ShowBalloonTip(6000, title, msg, ToolTipIcon.Warning);
             }
             catch (Exception ex) { Log.Warn(ex); }

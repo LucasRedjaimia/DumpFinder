@@ -127,8 +127,13 @@ namespace WinCrashDoctor
         }
 
         /// <summary>Used by the --screenshot harness / tests: writes all three formats to a folder.</summary>
+        /// <summary>
+        /// Capture harness export (--screenshot): the three report formats, plus nav_selftest.txt, the check that
+        /// every nav: command and tray alert click lands on the right tab / card (navigation state is restored).
+        /// </summary>
         public void ExportAllReportsTo(string dir)
         {
+            if (Localizer.ReadOnlySettings) RunNavSelfCheck(Path.Combine(dir, "nav_selftest.txt"));
             var data = BuildReportData();
             if (data == null) return;
             File.WriteAllText(Path.Combine(dir, "report.html"), ReportBuilder.Html(data), new UTF8Encoding(false));

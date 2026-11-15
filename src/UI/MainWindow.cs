@@ -1234,7 +1234,18 @@ namespace WinCrashDoctor
             }
 
             foreach (var fix in filtered)
-                _fixesListPanel.Children.Add(BuildFixCard(fix, ExecuteSingleFix));
+            {
+                Border card = BuildFixCard(fix, ExecuteSingleFix);
+                card.Tag = fix.Id; // OpenFix finds its card by id
+                _fixesListPanel.Children.Add(card);
+            }
+            ApplyPendingFixFocus();
+        }
+
+        /// <summary>Resting border of a fix card (also restored after the OpenFix highlight).</summary>
+        private static string FixCardBorderKey(RegistryFixItem fix)
+        {
+            return fix.Status == FixStatus.Recommended ? "WarnBorder" : "BorderCard";
         }
 
         /// <summary>One fix / setting card (title, status, explanation, primary button, technical drawer). Shared with Optimiser.</summary>
@@ -1250,7 +1261,7 @@ namespace WinCrashDoctor
                     BorderThickness = new Thickness(1),
                     Padding = new Thickness(16, 13, 16, 13),
                     Margin = new Thickness(0, 0, 0, 8)
-                }, "BgCard"), fix.Status == FixStatus.Recommended ? "WarnBorder" : "BorderCard");
+                }, "BgCard"), FixCardBorderKey(fix));
 
                 StackPanel cardStack = new StackPanel();
                 Grid mainRow = new Grid();
