@@ -67,6 +67,8 @@ namespace WinCrashDoctor
                     return WinCrashDoctor.Detection.DetectionSelfTest.Run(args[1]);
                 if (args[0] == "--parse-selftest" && args.Length >= 2)
                     return ParseSelfTest.Run(args[1]);
+                if (args[0] == "--ui-selftest" && args.Length >= 2)
+                    return MainWindow.RunUiSelfTest(args[1]);
                 if (args[0] == "--update-selftest" && args.Length >= 2)
                     return UpdateSelfTest.Run(args[1]);
                 if (args[0] == "--stress-selftest" && args.Length >= 2)
@@ -87,18 +89,21 @@ namespace WinCrashDoctor
                     string outDir = args[1];
                     WindowShell.ForceSolidBackground = true; // RenderTargetBitmap cannot capture Mica
                     Localizer.ReadOnlySettings = true;       // captures must never alter the user's settings
+                    ThemeManager.ForceHighContrast = Array.IndexOf(args, "--high-contrast") > 0; // contrast-theme palette, system colours
                     AppSettings sSaved = Localizer.LoadSettings();
-                    // Capture-only language override (in memory; settings are read-only here): --lang fr|en|es|de|it|pt|pl|nl|tr|ru|uk|zh|ja|ko
+                    // Capture-only language override (in memory; settings are read-only here): --lang fr|en|es|de|it|pt|pl|nl|tr|ru|uk|zh|ja|ko|qps
                     int langArg = Array.IndexOf(args, "--lang");
                     if (langArg > 0 && langArg + 1 < args.Length)
                     {
-                        AppLang? chosen = Localizer.FromCode(args[langArg + 1]);
+                        // "qps" = pseudo-language for layout checks (accented, ~40% longer English, see Localizer.Pseudo)
+                        Localizer.Pseudo = args[langArg + 1] == "qps";
+                        AppLang? chosen = Localizer.Pseudo ? AppLang.EN : Localizer.FromCode(args[langArg + 1]);
                         if (chosen.HasValue) { sSaved.Language = (int)chosen.Value; Localizer.Current = chosen.Value; }
                     }
                     Application sApp = new Application();
                     MainWindow sWin = new MainWindow(sSaved);
 
-                    // Optional capture-only overrides (never persisted): --theme light|dark, --collapsed
+                    // Optional capture-only overrides (never persisted): --theme light|dark, --collapsed, --high-contrast
                     int themeArg = Array.IndexOf(args, "--theme");
                     if (themeArg > 0 && themeArg + 1 < args.Length)
                         ThemeManager.ApplyTheme(sWin, args[themeArg + 1] == "light" ? AppThemeMode.Light : AppThemeMode.Dark);

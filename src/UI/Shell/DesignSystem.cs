@@ -2,6 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Automation;
+using System.Windows.Automation.Peers;
+using System.Windows.Automation.Provider;
 using System.Windows.Media;
 
 namespace WinCrashDoctor
@@ -167,6 +170,166 @@ namespace WinCrashDoctor
     }
 
     /// <summary>
+    /// Card that acts as a button: click, Enter or Space raise <see cref="Activated"/>, it takes the keyboard focus
+    /// (with the app's focus ring), and screen readers see a button (Invoke) — or an expandable item when
+    /// <see cref="Expanded"/> is set. A plain Border is invisible to UI Automation.
+    /// </summary>
+    public class ClickableCard : Border
+    {
+        public event Action Activated;
+
+        /// <summary>null = plain button; true / false = expandable card in that state (ExpandCollapse pattern).</summary>
+        public bool? Expanded
+        {
+            get { return _expanded; }
+            set
+            {
+                bool? old = _expanded;
+                _expanded = value;
+                var peer = UIElementAutomationPeer.FromElement(this) as ClickableCardPeer;
+                if (peer != null && old.HasValue && value.HasValue && old != value)
+                    peer.RaiseExpandChanged(old.Value, value.Value);
+            }
+        }
+        private bool? _expanded;
+
+        public ClickableCard()
+        {
+            Focusable = true;
+            Cursor = System.Windows.Input.Cursors.Hand;
+            SetResourceReference(FocusVisualStyleProperty, "DfCardFocusVisual");
+        }
+
+        internal void Activate()
+        {
+            Action a = Activated;
+            if (a != null) a();
+        }
+
+        protected override void OnMouseLeftButtonUp(System.Windows.Input.MouseButtonEventArgs e)
+        {
+            base.OnMouseLeftButtonUp(e);
+            // A button inside the card handles its own click.
+            if (e.Handled || e.OriginalSource is System.Windows.Controls.Primitives.ButtonBase) return;
+            Activate();
+        }
+
+        protected override void OnKeyDown(System.Windows.Input.KeyEventArgs e)
+        {
+            base.OnKeyDown(e);
+            if (e.Handled || e.OriginalSource != this) return;
+            if (e.Key == System.Windows.Input.Key.Enter || e.Key == System.Windows.Input.Key.Space)
+            {
+                Activate();
+                e.Handled = true;
+            }
+        }
+
+        protected override AutomationPeer OnCreateAutomationPeer() { return new ClickableCardPeer(this); }
+    }
+
+    internal sealed class ClickableCardPeer : FrameworkElementAutomationPeer, IInvokeProvider, IExpandCollapseProvider
+    {
+        public ClickableCardPeer(ClickableCard owner) : base(owner) { }
+
+        private ClickableCard Card { get { return (ClickableCard)Owner; } }
+
+        protected override string GetClassNameCore() { return "ClickableCard"; }
+        protected override AutomationControlType GetAutomationControlTypeCore() { return AutomationControlType.Button; }
+        protected override bool IsKeyboardFocusableCore() { return true; }
+
+        protected override string GetNameCore()
+        {
+            string n = base.GetNameCore();
+            return string.IsNullOrEmpty(n) ? AccessibleText.Of(Owner) : n;
+        }
+
+        public override object GetPattern(PatternInterface pattern)
+        {
+            if (pattern == PatternInterface.Invoke) return this;
+            if (pattern == PatternInterface.ExpandCollapse && Card.Expanded.HasValue) return this;
+            return base.GetPattern(pattern);
+        }
+
+        void IInvokeProvider.Invoke() { Card.Activate(); }
+
+        ExpandCollapseState IExpandCollapseProvider.ExpandCollapseState
+        {
+            get { return Card.Expanded == true ? ExpandCollapseState.Expanded : ExpandCollapseState.Collapsed; }
+        }
+        void IExpandCollapseProvider.Expand() { if (Card.Expanded == false) Card.Activate(); }
+        void IExpandCollapseProvider.Collapse() { if (Card.Expanded == true) Card.Activate(); }
+
+        internal void RaiseExpandChanged(bool oldValue, bool newValue)
+        {
+            RaisePropertyChangedEvent(ExpandCollapsePatternIdentifiers.ExpandCollapseStateProperty,
+                oldValue ? ExpandCollapseState.Expanded : ExpandCollapseState.Collapsed,
+                newValue ? ExpandCollapseState.Expanded : ExpandCollapseState.Collapsed);
+        }
+    }
+
+    /// <summary>Screen-reader helpers.</summary>
+    internal static class A11y
+    {
+        /// <summary>
+        /// Names a field after its visible caption. LabeledBy alone is not turned into the name on .NET Framework,
+        /// and screen readers announce the name: it is bound to the caption text, so it follows language changes.
+        /// </summary>
+        public static void LabelFor(FrameworkElement control, TextBlock caption)
+        {
+            if (control == null || caption == null) return;
+            AutomationProperties.SetLabeledBy(control, caption);
+            System.Windows.Data.BindingOperations.SetBinding(control, AutomationProperties.NameProperty,
+                new System.Windows.Data.Binding("Text") { Source = caption, Mode = System.Windows.Data.BindingMode.OneWay });
+        }
+    }
+
+    /// <summary>Readable text of an element for screen readers: its text blocks joined, icon glyphs left out.</summary>
+    internal static class AccessibleText
+    {
+        public static string Of(DependencyObject root)
+        {
+            var parts = new List<string>();
+            Collect(root, parts, 0);
+            return string.Join(" — ", parts);
+        }
+
+        private static void Collect(DependencyObject d, List<string> parts, int depth)
+        {
+            if (d == null || depth > 12 || parts.Count >= 4) return;
+            var fe = d as FrameworkElement;
+            if (fe != null && fe.Visibility != Visibility.Visible) return;
+            var tb = d as TextBlock;
+            if (tb != null)
+            {
+                string t = Clean(tb.Text);
+                if (t.Length > 0) parts.Add(t);
+                return;
+            }
+            // Logical children: also works before the element is rendered.
+            foreach (object child in LogicalTreeHelper.GetChildren(d))
+            {
+                var c = child as DependencyObject;
+                if (c != null) Collect(c, parts, depth + 1);
+            }
+        }
+
+        /// <summary>Drops Segoe Fluent Icons code points (private use area) and arrows used as chevrons.</summary>
+        public static string Clean(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return "";
+            var sb = new System.Text.StringBuilder(s.Length);
+            foreach (char c in s)
+            {
+                if (c >= '' && c <= '') continue;
+                if (c == '▾' || c == '▴') continue;
+                sb.Append(c);
+            }
+            return sb.ToString().Trim();
+        }
+    }
+
+    /// <summary>
     /// Button that renders legacy "emoji + label" strings as a Fluent icon + label,
     /// so all existing localized captions get consistent iconography for free.
     /// </summary>
@@ -185,13 +348,29 @@ namespace WinCrashDoctor
             panel.Children.Add(icon);
             if (rest.Length > 0)
                 panel.Children.Add(new TextBlock { Text = rest, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis });
-            AutomationNameFrom(rest);
             Content = panel;
         }
 
-        private void AutomationNameFrom(string label)
+        protected override AutomationPeer OnCreateAutomationPeer() { return new DfButtonPeer(this); }
+    }
+
+    /// <summary>
+    /// Screen-reader name of a DfButton, computed when asked so it follows content and language changes:
+    /// AutomationProperties.Name if set, else the visible label (icon glyphs left out), else the tooltip.
+    /// </summary>
+    internal sealed class DfButtonPeer : ButtonAutomationPeer
+    {
+        public DfButtonPeer(Button owner) : base(owner) { }
+
+        protected override string GetNameCore()
         {
-            System.Windows.Automation.AutomationProperties.SetName(this, label);
+            string n = AutomationProperties.GetName(Owner);
+            if (!string.IsNullOrEmpty(n)) return n;
+            var b = (Button)Owner;
+            var s = b.Content as string;
+            n = s != null ? AccessibleText.Clean(s) : AccessibleText.Of(b);
+            if (n.Length == 0) n = AccessibleText.Clean(b.ToolTip as string);
+            return n;
         }
     }
 }

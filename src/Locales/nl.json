@@ -1228,5 +1228,9 @@
   "stress_advice.gpu_cooling_advice": "Geen fout resultaat, maar de videokaart wordt te heet. Maak hem stofvrij, controleer of de ventilatoren draaien en de luchtstroom in de kast; een agressievere ventilatorcurve (MSI Afterburner) of een iets lagere vermogenslimiet helpt. Is dat niet genoeg, dan moeten de koelpasta en thermal pads worden vervangen.",
   "system_health_scanner.smart_summary": "  •  {0} °C  •  Slijtage: {1}%  •  Fouten: {2}",
   "system_health_scanner.rebar_unknown": "Niet bepaald",
-  "system_health_scanner.rebar_unknown_detail": "Zonder de tool van de fabrikant meldt Windows de grootte van dit venster niet. Controleer het in AMD Software (Smart Access Memory) of Intel Arc Control (Resizable BAR); staat het uit, schakel dan 'Above 4G Decoding' en 'Re-Size BAR' in het BIOS in."
+  "system_health_scanner.rebar_unknown_detail": "Zonder de tool van de fabrikant meldt Windows de grootte van dit venster niet. Controleer het in AMD Software (Smart Access Memory) of Intel Arc Control (Resizable BAR); staat het uit, schakel dan 'Above 4G Decoding' en 'Re-Size BAR' in het BIOS in.",
+  "main_window.details": "Details",
+  "crashes.filter_period": "Periode",
+  "crashes.filter_category": "Categorie",
+  "ai.claude_model": "Claude-model"
 }

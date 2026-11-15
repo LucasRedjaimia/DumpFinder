@@ -125,9 +125,11 @@ namespace WinCrashDoctor
             catch (Exception ex) { Log.Warn(ex); }
 
             SystemEvents.UserPreferenceChanged += OnWindowsPreferenceChanged;
+            SystemParameters.StaticPropertyChanged += OnSystemParameterChanged;
 
             InitTraySentinel(initialSettings != null && initialSettings.TraySentinelEnabled);
             BuildLayout();
+            InstallKeyboardShortcuts();
 
             Closing += OnWindowClosing;
             Closed += (s, e) => RunExitCleanup();
@@ -196,7 +198,11 @@ namespace WinCrashDoctor
             if (_exitCleanupDone) return;
             _exitCleanupDone = true;
 
-            try { SystemEvents.UserPreferenceChanged -= OnWindowsPreferenceChanged; }
+            try
+            {
+                SystemEvents.UserPreferenceChanged -= OnWindowsPreferenceChanged;
+                SystemParameters.StaticPropertyChanged -= OnSystemParameterChanged;
+            }
             catch (Exception ex) { Log.Warn(ex, "Exit: SystemEvents"); }
 
             try
@@ -242,14 +248,27 @@ namespace WinCrashDoctor
 
         private void OnWindowsPreferenceChanged(object sender, UserPreferenceChangedEventArgs e)
         {
-            if (ThemeManager.CurrentMode == AppThemeMode.SystemAuto)
+            // Also when a contrast theme is on: switching between two of them changes the system colours.
+            if (ThemeManager.CurrentMode == AppThemeMode.SystemAuto || ThemeManager.HighContrastApplied)
             {
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    ThemeManager.ApplyTheme(this, AppThemeMode.SystemAuto);
+                    ThemeManager.ApplyTheme(this, ThemeManager.CurrentMode);
                     RefreshDynamicThemeAccents();
                 }));
             }
+        }
+
+        /// <summary>Contrast theme switched on / off in Windows: re-apply the palette (WPF has already updated SystemColors).</summary>
+        private void OnSystemParameterChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName != "HighContrast") return;
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (SystemParameters.HighContrast == ThemeManager.HighContrastApplied) return;
+                ThemeManager.ApplyTheme(this, ThemeManager.CurrentMode);
+                RefreshDynamicThemeAccents();
+            }));
         }
 
         // Resource binding helpers
@@ -268,7 +287,7 @@ namespace WinCrashDoctor
             return el;
         }
 
-        private static Border ResBorder(Border b, string key)
+        private static T ResBorder<T>(T b, string key) where T : Border
         {
             b.SetResourceReference(Border.BorderBrushProperty, key);
             return b;
@@ -1000,6 +1019,8 @@ namespace WinCrashDoctor
             _cbTheme.Items.Add(Localizer.S("main_window.light_mode"));
             _cbTheme.SelectedIndex = curTheme;
 
+            System.Windows.Automation.AutomationProperties.SetName(_cbTimeframe, Localizer.S("crashes.filter_period"));
+            System.Windows.Automation.AutomationProperties.SetName(_cbEventCategory, Localizer.S("crashes.filter_category"));
             _cbTimeframe.Items.Clear();
             _cbTimeframe.Items.Add(Localizer.S("main_window.since_last_boot"));
             _cbTimeframe.Items.Add(Localizer.S("main_window.last_3_days"));
@@ -1341,6 +1362,7 @@ namespace WinCrashDoctor
                 }, "BgSubtle");
 
                 Button btnMore = CreateFlatButton("▾", "BgSubtle", "TextSecondary", "BorderCard", new Thickness(9, 6, 9, 6), 12);
+                btnMore.ToolTip = Localizer.S("main_window.details");
                 btnMore.Margin = new Thickness(6, 0, 0, 0);
                 btnMore.Click += (s, e) =>
                 {
@@ -1439,13 +1461,13 @@ namespace WinCrashDoctor
                 bool openDefault = (idx == 0);
                 Brush tagBrush = ThemeManager.Hex(k.BadgeColorHex);
 
-                Border card = ResBorder(ResBg(new Border
+                ClickableCard card = ResBorder(ResBg(new ClickableCard
                 {
                     CornerRadius = new CornerRadius(12),
                     BorderThickness = new Thickness(1),
                     Padding = new Thickness(16, 13, 16, 13),
                     Margin = new Thickness(0, 0, 0, 8),
-                    Cursor = Cursors.Hand
+                    Expanded = openDefault
                 }, "BgCard"), "BorderCard");
 
                 StackPanel sp = new StackPanel();
@@ -1496,11 +1518,13 @@ namespace WinCrashDoctor
                 sp.Children.Add(body);
 
                 card.Child = sp;
-                card.MouseLeftButtonUp += (s, e) =>
+                System.Windows.Automation.AutomationProperties.SetName(card, title.Text);
+                card.Activated += () =>
                 {
                     bool show = body.Visibility != Visibility.Visible;
                     body.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
                     chev.Text = show ? "▴" : "▾";
+                    card.Expanded = show;
                 };
                 _guideListPanel.Children.Add(card);
             }

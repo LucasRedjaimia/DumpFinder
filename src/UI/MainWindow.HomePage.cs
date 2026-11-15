@@ -416,16 +416,16 @@ namespace WinCrashDoctor
                 Grid.SetColumn(when, 2);
                 row.Children.Add(when);
 
-                Border wrap = ResBorder(new Border
+                ClickableCard wrap = ResBorder(new ClickableCard
                 {
                     BorderThickness = new Thickness(0, i == 0 ? 0 : 1, 0, 0),
                     Padding = new Thickness(0, 10, 0, 10),
                     Background = Brushes.Transparent,
-                    Cursor = Cursors.Hand,
                     Child = row
                 }, "BorderCard");
                 string key = c.Key;
-                wrap.MouseLeftButtonUp += (s, e) => OpenCrash(key);
+                wrap.Activated += () => OpenCrash(key);
+                System.Windows.Automation.AutomationProperties.SetName(wrap, c.Title + " — " + RelativeTime(c.Time, now));
                 _homeRecentList.Children.Add(wrap);
             }
         }

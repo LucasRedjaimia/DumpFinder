@@ -101,6 +101,7 @@ namespace WinCrashDoctor
             stack.Children.Add(_lblStressPlanCaption);
 
             _cbStressPlan = new ComboBox { Margin = new Thickness(0, 0, 0, 8) };
+            A11y.LabelFor(_cbStressPlan, _lblStressPlanCaption);
             _cbStressPlan.SelectionChanged += (s, e) =>
             {
                 if (_suppressDropdownEvents || _cbStressPlan.SelectedIndex < 0) return;
@@ -123,6 +124,7 @@ namespace WinCrashDoctor
             row.Children.Add(_valStressDuration);
             _stressDurationRow.Children.Add(row);
             _slStressDuration = new Slider { Minimum = 1, Maximum = 120, Value = 10, TickFrequency = 1, IsSnapToTickEnabled = true, Margin = new Thickness(0, 6, 0, 0) };
+            A11y.LabelFor(_slStressDuration, _lblStressDuration);
             _slStressDuration.ValueChanged += (s, e) => { UpdateStressDurationLabel(); UpdateStressPlanHint(); };
             _stressDurationRow.Children.Add(_slStressDuration);
             stack.Children.Add(_stressDurationRow);
@@ -207,7 +209,8 @@ namespace WinCrashDoctor
             {
                 Border t = StressCard(new Thickness(i == 0 ? 0 : 5, 0, i == 3 ? 0 : 5, 0), new Thickness(13, 10, 13, 10));
                 var st = new StackPanel();
-                _stTileTitles[i] = ResFg(new TextBlock { FontSize = 11, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis }, "TextSecondary");
+                // Two lines at most (long German / Polish labels), the full text in the tooltip when still cut.
+                _stTileTitles[i] = ResFg(new TextBlock { FontSize = 11, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap, MaxHeight = 31, TextTrimming = TextTrimming.CharacterEllipsis }, "TextSecondary");
                 _stTileVals[i] = ResFg(new TextBlock { FontSize = 18, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 3, 0, 1), TextTrimming = TextTrimming.CharacterEllipsis }, "TextPrimary");
                 _stTileSubs[i] = ResFg(new TextBlock { FontSize = 11, TextTrimming = TextTrimming.CharacterEllipsis }, "TextMuted");
                 st.Children.Add(_stTileTitles[i]);
@@ -436,6 +439,7 @@ namespace WinCrashDoctor
             for (int i = 0; i < 4; i++)
             {
                 _stTileTitles[i].Text = titles[i];
+                _stTileTitles[i].ToolTip = titles[i];
                 _stTileVals[i].Text = "—";
                 _stTileVals[i].SetResourceReference(TextBlock.ForegroundProperty, "TextPrimary");
                 _stTileSubs[i].Text = "";
@@ -570,7 +574,7 @@ namespace WinCrashDoctor
             for (int i = 0; i < 4 && i < s.Tiles.Length; i++)
             {
                 StressTile t = s.Tiles[i];
-                _stTileTitles[i].Text = t.Title;
+                if (_stTileTitles[i].Text != t.Title) { _stTileTitles[i].Text = t.Title; _stTileTitles[i].ToolTip = t.Title; }
                 _stTileVals[i].Text = t.Value;
                 _stTileSubs[i].Text = t.Sub ?? "";
                 _stTileVals[i].SetResourceReference(TextBlock.ForegroundProperty, t.Tone == 2 ? "DangerFg" : (t.Tone == 1 ? "SuccessFg" : "TextPrimary"));

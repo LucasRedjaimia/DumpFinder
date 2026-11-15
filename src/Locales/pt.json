@@ -1228,5 +1228,9 @@
   "stress_advice.gpu_cooling_advice": "Nenhum resultado errado, mas a placa de vídeo está esquentando demais. Tire a poeira dela, verifique se as ventoinhas giram e o fluxo de ar do gabinete; uma curva de ventilação mais agressiva (MSI Afterburner) ou um limite de potência um pouco menor ajuda. Se não bastar, é preciso trocar a pasta e os pads térmicos.",
   "system_health_scanner.smart_summary": "  •  {0} °C  •  Desgaste: {1}%  •  Erros: {2}",
   "system_health_scanner.rebar_unknown": "Não determinado",
-  "system_health_scanner.rebar_unknown_detail": "Sem a ferramenta do fabricante, o Windows não informa o tamanho dessa janela. Verifique no AMD Software (Smart Access Memory) ou no Intel Arc Control (Resizable BAR); se estiver desativado, ative 'Above 4G Decoding' e 'Re-Size BAR' na BIOS."
+  "system_health_scanner.rebar_unknown_detail": "Sem a ferramenta do fabricante, o Windows não informa o tamanho dessa janela. Verifique no AMD Software (Smart Access Memory) ou no Intel Arc Control (Resizable BAR); se estiver desativado, ative 'Above 4G Decoding' e 'Re-Size BAR' na BIOS.",
+  "main_window.details": "Detalhes",
+  "crashes.filter_period": "Período",
+  "crashes.filter_category": "Categoria",
+  "ai.claude_model": "Modelo do Claude"
 }

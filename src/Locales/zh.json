@@ -1228,5 +1228,9 @@
   "stress_advice.gpu_cooling_advice": "没有计算错误，但显卡温度过高。请给它除尘，检查风扇是否转动以及机箱风道；更激进的风扇曲线（MSI Afterburner）或稍低的功耗限制会有帮助。如果还不够，就需要重新涂抹导热硅脂并更换导热垫。",
   "system_health_scanner.smart_summary": "  •  {0} °C  •  磨损：{1}%  •  错误：{2}",
   "system_health_scanner.rebar_unknown": "无法确定",
-  "system_health_scanner.rebar_unknown_detail": "没有厂商工具时，Windows 不会报告此窗口的大小。请在 AMD Software（Smart Access Memory）或 Intel Arc Control（Resizable BAR）中查看；如果未开启，请在 BIOS 中启用 'Above 4G Decoding' 和 'Re-Size BAR'。"
+  "system_health_scanner.rebar_unknown_detail": "没有厂商工具时，Windows 不会报告此窗口的大小。请在 AMD Software（Smart Access Memory）或 Intel Arc Control（Resizable BAR）中查看；如果未开启，请在 BIOS 中启用 'Above 4G Decoding' 和 'Re-Size BAR'。",
+  "main_window.details": "详细信息",
+  "crashes.filter_period": "时间范围",
+  "crashes.filter_category": "类别",
+  "ai.claude_model": "Claude 模型"
 }

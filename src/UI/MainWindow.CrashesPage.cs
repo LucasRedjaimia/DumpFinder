@@ -252,7 +252,7 @@ namespace WinCrashDoctor
             Grid.SetColumn(when, 2);
             row.Children.Add(when);
 
-            Border wrap = new Border
+            var wrap = new ClickableCard
             {
                 CornerRadius = new CornerRadius(10),
                 BorderThickness = new Thickness(1),
@@ -275,16 +275,24 @@ namespace WinCrashDoctor
                 wrap.MouseLeave += (s, e) => wrap.Background = Brushes.Transparent;
             }
             string key = c.Key;
-            wrap.MouseLeftButtonUp += (s, e) => SelectCrash(key);
-            wrap.KeyDown += (s, e) => { if (e.Key == Key.Enter || e.Key == Key.Space) SelectCrash(key); };
-            System.Windows.Automation.AutomationProperties.SetName(wrap, Localizer.CategoryName(c.Category) + " — " + c.Title + " — " + c.Time.ToString("g"));
+            wrap.Tag = key;
+            wrap.Activated += () => SelectCrash(key);
+            System.Windows.Automation.AutomationProperties.SetName(wrap, Localizer.CategoryName(c.Category) + " — " + c.Title + " — " + c.Time.ToString("g", Localizer.Culture));
             return wrap;
         }
 
         private void SelectCrash(string key)
         {
+            // The list is rebuilt: give the keyboard focus back to the chosen row.
+            bool hadFocus = _crashListPanel != null && _crashListPanel.IsKeyboardFocusWithin;
             _selectedCrashKey = key;
             RenderCrashList();
+            if (!hadFocus) return;
+            foreach (object child in _crashListPanel.Children)
+            {
+                var row = child as ClickableCard;
+                if (row != null && (row.Tag as string) == key) { row.Focus(); break; }
+            }
         }
 
         /// <summary>Navigates to Crashs and opens the given crash (used by the home page).</summary>

@@ -1228,5 +1228,9 @@
   "stress_advice.gpu_cooling_advice": "No wrong result, but the graphics card runs too hot. Dust it, check that its fans spin and the case airflow; a more aggressive fan curve (MSI Afterburner) or a slightly lower power limit helps. If that is not enough, the thermal paste and pads need redoing.",
   "system_health_scanner.smart_summary": "  •  {0} °C  •  Wear: {1}%  •  Errors: {2}",
   "system_health_scanner.rebar_unknown": "Not determined",
-  "system_health_scanner.rebar_unknown_detail": "Windows does not report the size of this window without the vendor's tool. Check in AMD Software (Smart Access Memory) or Intel Arc Control (Resizable BAR); if it is off, enable 'Above 4G Decoding' and 'Re-Size BAR' in the BIOS."
+  "system_health_scanner.rebar_unknown_detail": "Windows does not report the size of this window without the vendor's tool. Check in AMD Software (Smart Access Memory) or Intel Arc Control (Resizable BAR); if it is off, enable 'Above 4G Decoding' and 'Re-Size BAR' in the BIOS.",
+  "main_window.details": "Details",
+  "crashes.filter_period": "Period",
+  "crashes.filter_category": "Category",
+  "ai.claude_model": "Claude model"
 }

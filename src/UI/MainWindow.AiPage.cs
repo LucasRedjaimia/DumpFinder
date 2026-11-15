@@ -63,6 +63,7 @@ namespace WinCrashDoctor
             StackPanel provCol = new StackPanel();
             _lblAiProviderCaption = ResFg(new TextBlock { FontSize = 11, FontWeight = FontWeights.SemiBold, Margin = new Thickness(2, 0, 0, 4) }, "TextMuted");
             _cbAiProvider = new ComboBox();
+            A11y.LabelFor(_cbAiProvider, _lblAiProviderCaption);
             _cbAiProvider.Items.Add("Google Gemini");
             _cbAiProvider.Items.Add("Anthropic Claude");
             _cbAiProvider.Items.Add("Ollama (local)");
@@ -107,6 +108,7 @@ namespace WinCrashDoctor
                 Password = (Localizer.CachedSettings != null && Localizer.CachedSettings.AiApiKey != null) ? Localizer.CachedSettings.AiApiKey : ""
             }, "TextPrimary");
             _pbAiApiKey.PasswordChanged += (s, e) => SaveAiSettingsFromUi();
+            A11y.LabelFor(_pbAiApiKey, _lblAiCredentialCaption);
             _bdAiApiKeyWrap.Child = _pbAiApiKey;
             credCol.Children.Add(_bdAiApiKeyWrap);
 
@@ -125,6 +127,7 @@ namespace WinCrashDoctor
                 Text = (Localizer.CachedSettings != null && !string.IsNullOrEmpty(Localizer.CachedSettings.OllamaModel)) ? Localizer.CachedSettings.OllamaModel : "llama3.2"
             }, "TextPrimary");
             _txtOllamaModel.TextChanged += (s, e) => SaveAiSettingsFromUi();
+            A11y.LabelFor(_txtOllamaModel, _lblAiCredentialCaption);
             _bdOllamaModelWrap.Child = _txtOllamaModel;
             credCol.Children.Add(_bdOllamaModelWrap);
             Grid.SetColumn(credCol, 2);
@@ -310,6 +313,7 @@ namespace WinCrashDoctor
         {
             if (_lblAiProviderCaption == null) return;
             _lblAiProviderCaption.Text = Localizer.S("ai.ai_provider");
+            System.Windows.Automation.AutomationProperties.SetName(_cbClaudeModel, Localizer.S("ai.claude_model"));
             UpdateAiCredentialVisibility();
             _btnCopyAiPrompt.Content = Localizer.S("ai.copy_prompt");
 

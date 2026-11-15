@@ -53,6 +53,15 @@ namespace WinCrashDoctor
             EnsureControlStylesLoaded(win);
 
             ResourceDictionary r = win.Resources;
+            HighContrastApplied = SystemParameters.HighContrast || ForceHighContrast;
+            if (HighContrastApplied)
+            {
+                // Windows contrast theme: its colours win over the app's own (light / dark choice ignored).
+                ApplyHighContrast(r);
+                IsDark = Luminance(SystemColors.WindowColor) < 0.4;
+                ApplyTitleBarTheme(win, IsDark);
+                return;
+            }
             if (dark)
             {
                 // "Ink" dark palette: neutral-violet greys, indigo brand, coral reserved for faults.
@@ -67,9 +76,9 @@ namespace WinCrashDoctor
 
                 r["TextPrimary"]   = Hex("#F2F1F7");
                 r["TextSecondary"] = Hex("#A6A3B8");
-                r["TextMuted"]     = Hex("#76728C");
+                r["TextMuted"]     = Hex("#8C88A3"); // ≥ 4.5:1 on every dark surface (BgSubtle included)
 
-                r["Accent"]        = Hex("#7C68FA");
+                r["Accent"]        = Hex("#6A55F0"); // white button text 5:1
                 r["AccentSoftBg"]  = Hex("#221C44");
                 r["AccentText"]    = Hex("#A99CFF");
                 r["OnAccent"]      = Hex("#FFFFFF");
@@ -110,22 +119,22 @@ namespace WinCrashDoctor
 
                 r["TextPrimary"]   = Hex("#14121F");
                 r["TextSecondary"] = Hex("#55516A");
-                r["TextMuted"]     = Hex("#6F6B85");
+                r["TextMuted"]     = Hex("#66627C"); // ≥ 4.5:1 on BgShell / BgSubtle
 
                 r["Accent"]        = Hex("#5B47F5");
                 r["AccentSoftBg"]  = Hex("#ECE9FF");
                 r["AccentText"]    = Hex("#4632D8");
                 r["OnAccent"]      = Hex("#FFFFFF");
 
-                r["SuccessFg"]     = Hex("#0E8A57");
+                r["SuccessFg"]     = Hex("#0B7A4C");
                 r["SuccessSoftBg"] = Hex("#E9F8F0");
                 r["SuccessBorder"] = Hex("#B5E6CD");
 
-                r["WarnFg"]        = Hex("#A86400");
+                r["WarnFg"]        = Hex("#955800");
                 r["WarnSoftBg"]    = Hex("#FFF6E5");
                 r["WarnBorder"]    = Hex("#F2D08A");
 
-                r["DangerFg"]      = Hex("#D33A33");
+                r["DangerFg"]      = Hex("#C0302A");
                 r["DangerSoftBg"]  = Hex("#FDEEEC");
                 r["DangerBorder"]  = Hex("#F5C4BF");
 
@@ -143,6 +152,54 @@ namespace WinCrashDoctor
 
             ApplyTitleBarTheme(win, dark);
         }
+
+        /// <summary>Capture harness only (--high-contrast): use the contrast palette with the current system colours.</summary>
+        public static bool ForceHighContrast;
+
+        /// <summary>True when the last ApplyTheme used the Windows contrast theme colours.</summary>
+        public static bool HighContrastApplied { get; private set; }
+
+        /// <summary>
+        /// Palette from the Windows contrast theme (Settings › Accessibility › Contrast themes): every token maps
+        /// to a system colour, so text, links, selection and borders keep the user's chosen pairs. Status colours
+        /// (success / warning / danger) are not used to carry meaning there: icons and labels already do.
+        /// </summary>
+        private static void ApplyHighContrast(ResourceDictionary r)
+        {
+            Brush window = SystemColors.WindowBrush, text = SystemColors.WindowTextBrush;
+            Brush highlight = SystemColors.HighlightBrush, onHighlight = SystemColors.HighlightTextBrush;
+            Brush link = SystemColors.HotTrackBrush, button = SystemColors.ControlBrush;
+
+            r["BgShell"] = window; r["BgWindow"] = window; r["BgSidebar"] = window; r["BgCard"] = window;
+            r["BgSubtle"] = button; r["BgInput"] = window;
+            r["BorderCard"] = text; r["BorderStrong"] = text;
+
+            r["TextPrimary"] = text; r["TextSecondary"] = text; r["TextMuted"] = text;
+
+            r["Accent"] = highlight; r["AccentSoftBg"] = window; r["AccentText"] = link; r["OnAccent"] = onHighlight;
+
+            foreach (string tone in new[] { "Success", "Warn", "Danger" })
+            {
+                r[tone + "Fg"] = text;
+                r[tone + "SoftBg"] = window;
+                r[tone + "Border"] = text;
+            }
+
+            Color hl = SystemColors.HighlightColor;
+            r["HoverOverlay"] = Frozen(new SolidColorBrush(Color.FromArgb(0x40, hl.R, hl.G, hl.B)));
+            r["PressOverlay"] = Frozen(new SolidColorBrush(Color.FromArgb(0x70, hl.R, hl.G, hl.B)));
+            r["FocusRing"] = text;
+            r["ToastBg"] = window;
+            Color w = SystemColors.WindowColor;
+            r["ScrimBg"] = Frozen(new SolidColorBrush(Color.FromArgb(0xB0, w.R, w.G, w.B)));
+
+            r["ChartBg"] = window; r["ChartGrid"] = SystemColors.GrayTextBrush;
+            r["ChartPower"] = highlight; r["ChartTemp"] = link;
+        }
+
+        private static Brush Frozen(SolidColorBrush b) { b.Freeze(); return b; }
+
+        private static double Luminance(Color c) { return (0.2126 * c.R + 0.7152 * c.G + 0.0722 * c.B) / 255.0; }
 
         public static void ApplyTitleBarTheme(Window win, bool dark)
         {
