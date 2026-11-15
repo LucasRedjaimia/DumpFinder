@@ -177,7 +177,7 @@ namespace WinCrashDoctor
                             // Only admin ops belong here: user-profile ops run unelevated in the caller.
                             FixRunResult r = DiagnosticsEngine.OpNeedsAdmin(op)
                                 ? RunRecorded(op)
-                                : new FixRunResult { Op = op, Ok = false, Changes = new List<ChangeRecord>(), MessageFr = "Opération refusée en mode Administrateur.", MessageEn = "Operation refused in Administrator mode." };
+                                : new FixRunResult { Op = op, Ok = false, Changes = new List<ChangeRecord>(), MessageFr = Localizer.Ref("engine.fix_runner.operation_refused_in_administrator_mode"), MessageEn = Localizer.Ref("engine.fix_runner.operation_refused_in_administrator_mode") };
                             sw.WriteLine(ser.Serialize(r)); // one result per line, sent as soon as the op is done
                         }
                     }
@@ -244,19 +244,19 @@ namespace WinCrashDoctor
             string fr, en;
             if (outcome == ElevationOutcome.Cancelled)
             {
-                fr = "Opération annulée au contrôle Administrateur (UAC).";
-                en = "Operation cancelled at the UAC Administrator prompt.";
+                fr = Localizer.Ref("engine.fix_runner.operation_cancelled_at_the_uac_administr");
+                en = fr;
             }
             else if (outcome == ElevationOutcome.Success || partial || outcome == ElevationOutcome.TimedOut)
             {
                 // The child ran but this op never reported back: it may have been applied in part.
-                fr = "Aucun résultat reçu pour cette opération (délai dépassé ou arrêt du processus Administrateur). Elle a pu être appliquée en partie : relance une analyse pour vérifier son état.";
-                en = "No result received for this operation (timeout or the Administrator process stopped). It may have been partly applied: run a new scan to check its state.";
+                fr = Localizer.Ref("engine.fix_runner.no_result_received_for_this_operation");
+                en = fr;
             }
             else
             {
-                fr = "L'opération Administrateur a échoué (détails dans le journal).";
-                en = "The Administrator operation failed (see log for details).";
+                fr = Localizer.Ref("engine.fix_runner.the_administrator_operation_failed_see_l");
+                en = fr;
             }
             return new FixRunResult { Op = op, Ok = false, Changes = new List<ChangeRecord>(), MessageFr = fr, MessageEn = en };
         }

@@ -367,8 +367,8 @@ namespace WinCrashDoctor
                         CodeOrId = bugCode,
                         SummaryFr = bugNameFr,
                         SummaryEn = bugNameEn,
-                        DetailsFr = explainFr + "\n\nMessage Windows :\n" + r.Msg,
-                        DetailsEn = explainEn + "\n\nWindows Message:\n" + r.Msg
+                        DetailsFr = Localizer.Ref("engine.diagnostics_engine.bugcheck_details", explainEn, r.Msg),
+                        DetailsEn = Localizer.Ref("engine.diagnostics_engine.bugcheck_details", explainEn, r.Msg)
                     });
                 }
                 else if (r.Provider.IndexOf("Kernel-Power", StringComparison.OrdinalIgnoreCase) >= 0 && r.Id == 41)
@@ -382,11 +382,10 @@ namespace WinCrashDoctor
                             Category = CrashCategory.UnexpectedReboot,
                             Source = "Kernel-Power",
                             CodeOrId = "Event 41",
-                            SummaryFr = "Redémarrage brutal SANS Minidump (Coupure alim / Curve Optimizer Ryzen / Hard Reset)",
-                            SummaryEn = "Sudden reboot WITHOUT Minidump (PSU trip / Ryzen Curve Optimizer / Hard Reset)",
-                            DetailsFr = "Le PC a coupé ou redémarré sans que Windows ait pu écrire de fichier .dmp.\nCauses principales sur Reddit : (1) En charge 3D lourde : sécurité alimentation PSU ou câble 12VHPWR mal clipsé ; (2) Au repos sur Ryzen : Curve Optimizer trop négatif ; (3) Extinction forcée au bouton.\n\nMessage Windows :\n" + r.Msg,
-                            DetailsEn = "The PC lost power or reset without writing any .dmp minidump.\nTop causes on Reddit: (1) Under heavy 3D load: PSU OCP trip or loose 12VHPWR/PCIe cable; (2) At idle on Ryzen: overly negative Curve Optimizer; (3) Forced physical reset.\n\nWindows Message:\n" + r.Msg
-                        });
+                            SummaryFr = Localizer.Ref("engine.diagnostics_engine.sudden_reboot_without_minidump_psu_trip"),
+                            SummaryEn = Localizer.Ref("engine.diagnostics_engine.sudden_reboot_without_minidump_psu_trip"),
+                            DetailsFr = Localizer.Ref("engine.diagnostics_engine.the_pc_lost_power_or_reset", r.Msg),
+                            DetailsEn = Localizer.Ref("engine.diagnostics_engine.the_pc_lost_power_or_reset", r.Msg)                        });
                     }
                 }
                 else if (r.Provider.IndexOf("WHEA-Logger", StringComparison.OrdinalIgnoreCase) >= 0)
@@ -394,24 +393,24 @@ namespace WinCrashDoctor
                     string sumFr, sumEn, detFr, detEn;
                     if (r.Id == 18)
                     {
-                        sumFr = "Erreur Matérielle CPU Critique : WHEA Event 18 (Cache Hierarchy — Typique Ryzen Curve Optimizer / Idle)";
-                        sumEn = "Critical CPU Hardware Fault: WHEA Event 18 (Cache Hierarchy — Classic Ryzen Curve Optimizer / Idle)";
-                        detFr = "WHEA Event 18 indique qu'un cœur du processeur a manqué de tension lors d'une transition basse consommation. Sur CPU AMD Ryzen, baissez votre Curve Optimizer négatif dans le BIOS et activez 'Typical Current Idle'.\n\n" + r.Msg;
-                        detEn = "WHEA Event 18 means a CPU core starved for voltage during a low-load C-state transition. On AMD Ryzen, relax your negative Curve Optimizer in BIOS and set Power Supply Idle Control to 'Typical Current Idle'.\n\n" + r.Msg;
+                        sumFr = Localizer.Ref("engine.diagnostics_engine.critical_cpu_hardware_fault_whea_event");
+                        sumEn = sumFr;
+                        detFr = Localizer.Ref("engine.diagnostics_engine.whea_event_18_means_a_cpu", r.Msg);
+                        detEn = detFr;
                     }
                     else if (r.Id == 17)
                     {
-                        sumFr = "Erreur Bus PCI-Express : WHEA Event 17 (Câble Riser ITX Gen4/Gen5 ou ASPM PCIe)";
-                        sumEn = "PCI-Express Bus Error: WHEA Event 17 (ITX PCIe Riser Cable Signal or PCIe ASPM)";
-                        detFr = "WHEA Event 17 signale des erreurs de transmission sur le port PCIe (très fréquent avec un câble riser PCIe en boîtier ITX lorsque le BIOS est en Auto/Gen5 au lieu de Gen4, ou avec ASPM actif).\n\n" + r.Msg;
-                        detEn = "WHEA Event 17 indicates corrected/uncorrected AER errors on a PCIe port (very common with SFF PCIe riser cables running at Gen5 instead of Gen4, or aggressive PCIe ASPM).\n\n" + r.Msg;
+                        sumFr = Localizer.Ref("engine.diagnostics_engine.pci_express_bus_error_whea_event");
+                        sumEn = sumFr;
+                        detFr = Localizer.Ref("engine.diagnostics_engine.whea_event_17_indicates_corrected_uncorr", r.Msg);
+                        detEn = detFr;
                     }
                     else
                     {
-                        sumFr = "Erreur matérielle détectée (WHEA-Logger ID " + r.Id + ")";
-                        sumEn = "Hardware error reported (WHEA-Logger ID " + r.Id + ")";
-                        detFr = "Erreur matérielle CPU / RAM / PCIe signalée au noyau.\n\n" + r.Msg;
-                        detEn = "Low-level CPU / RAM / PCIe hardware error reported to Windows.\n\n" + r.Msg;
+                        sumFr = Localizer.Ref("engine.diagnostics_engine.hardware_error_reported_whea_logger_id", r.Id);
+                        sumEn = sumFr;
+                        detFr = Localizer.Ref("engine.diagnostics_engine.low_level_cpu_ram_pcie_hardware", r.Msg);
+                        detEn = detFr;
                     }
 
                     list.Add(new CrashEventItem
@@ -444,9 +443,8 @@ namespace WinCrashDoctor
                         SummaryEn = is129
                             ? "NVMe SSD Controller Timeout Reset (stornvme Event 129 — Win11 HMB / ASPM Bug)"
                             : ("SSD/Disk Storage Error (" + r.Provider + " Event " + r.Id + ")"),
-                        DetailsFr = "Le SSD NVMe a cessé de répondre temporairement, figeant Windows. Sous Windows 11 24H2+, c'est fréquemment causé par l'allocation HMB sur les SSD sans DRAM (WD SN770/SN580, Lexar, Maxio) ou l'ASPM PCIe. Appliquez le correctif NVMe HMB dans l'onglet Correctifs.\n\n" + r.Msg,
-                        DetailsEn = "Your NVMe SSD stalled temporarily, freezing Windows. On Windows 11 24H2+, this is commonly caused by excessive HMB allocation on DRAM-less drives (WD SN770/SN580, Lexar, Maxio) or PCIe ASPM. Apply the NVMe HMB Fix in the Fixes tab.\n\n" + r.Msg
-                    });
+                        DetailsFr = Localizer.Ref("engine.diagnostics_engine.your_nvme_ssd_stalled_temporarily_freezi", r.Msg),
+                        DetailsEn = Localizer.Ref("engine.diagnostics_engine.your_nvme_ssd_stalled_temporarily_freezi", r.Msg)                    });
                 }
                 else if (r.Provider.IndexOf("Resource-Exhaustion-Detector", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
@@ -456,11 +454,10 @@ namespace WinCrashDoctor
                         Category = CrashCategory.MemoryExhaustion,
                         Source = "Virtual Memory OOM",
                         CodeOrId = "Event 2004",
-                        SummaryFr = "Saturation de la Mémoire Virtuelle Windows (Pagefile insuffisant ou fuite mémoire)",
-                        SummaryEn = "Windows Virtual Memory Exhaustion (Disabled/Small Pagefile or RAM Leak)",
-                        DetailsFr = "Windows a manqué de mémoire virtuelle validée (Commit Charge), provoquant la fermeture brutale des jeux ou de Chrome. Vérifiez que le Fichier d'échange (Pagefile) est bien en gestion automatique dans l'onglet Correctifs !\n\n" + r.Msg,
-                        DetailsEn = "Windows ran out of committable virtual memory, causing games or browsers to crash immediately. Ensure Automatic Windows Pagefile is enabled in the Fixes tab!\n\n" + r.Msg
-                    });
+                        SummaryFr = Localizer.Ref("engine.diagnostics_engine.windows_virtual_memory_exhaustion_disabl"),
+                        SummaryEn = Localizer.Ref("engine.diagnostics_engine.windows_virtual_memory_exhaustion_disabl"),
+                        DetailsFr = Localizer.Ref("engine.diagnostics_engine.windows_ran_out_of_committable_virtual", r.Msg),
+                        DetailsEn = Localizer.Ref("engine.diagnostics_engine.windows_ran_out_of_committable_virtual", r.Msg)                    });
                 }
                 else if (r.Provider.Equals("NDIS", StringComparison.OrdinalIgnoreCase) && r.Id == 10400)
                 {
@@ -470,11 +467,10 @@ namespace WinCrashDoctor
                         Category = CrashCategory.HardwareWhea,
                         Source = "NDIS Network Reset",
                         CodeOrId = "NDIS 10400",
-                        SummaryFr = "Réinitialisation matérielle Carte Réseau / Wi-Fi (NDIS 10400 — EEE / Veille PCIe)",
-                        SummaryEn = "Network / Wi-Fi Adapter Hardware Reset (NDIS 10400 — EEE / PCIe Sleep)",
-                        DetailsFr = "L'adaptateur réseau a cessé de répondre et a dû être réinitialisé par Windows (très fréquent sur Realtek 2.5GbE et MediaTek RZ616 avec l'économie d'énergie EEE/Green Ethernet active). Appliquez le correctif Réseau Anti-Freeze dans l'onglet Correctifs.\n\n" + r.Msg,
-                        DetailsEn = "The network adapter hung and was reset by Windows (notorious on Realtek 2.5GbE and MediaTek RZ616 when EEE/Green Ethernet power saving is active). Apply the Network Anti-Freeze fix in Fixes.\n\n" + r.Msg
-                    });
+                        SummaryFr = Localizer.Ref("engine.diagnostics_engine.network_wi_fi_adapter_hardware_reset"),
+                        SummaryEn = Localizer.Ref("engine.diagnostics_engine.network_wi_fi_adapter_hardware_reset"),
+                        DetailsFr = Localizer.Ref("engine.diagnostics_engine.the_network_adapter_hung_and_was", r.Msg),
+                        DetailsEn = Localizer.Ref("engine.diagnostics_engine.the_network_adapter_hung_and_was", r.Msg)                    });
                 }
                 else if (r.Provider.IndexOf("TPM", StringComparison.OrdinalIgnoreCase) >= 0 && (r.Id == 14 || r.Id == 1796))
                 {
@@ -484,11 +480,10 @@ namespace WinCrashDoctor
                         Category = CrashCategory.HardwareWhea,
                         Source = r.Provider,
                         CodeOrId = "TPM " + r.Id,
-                        SummaryFr = "Erreur Module Sécurité TPM 2.0 / fTPM (" + r.Provider + " Event " + r.Id + ")",
-                        SummaryEn = "TPM 2.0 / fTPM Security Module Error (" + r.Provider + " Event " + r.Id + ")",
-                        DetailsFr = "Erreur matérielle ou d'attestation TPM 2.0 (peut causer des micro-saccades fTPM ou le rejet d'anti-cheats comme Vanguard/RICOCHET). Une mise à jour du BIOS AGESA/UEFI corrige généralement ce bug.\n\n" + r.Msg,
-                        DetailsEn = "TPM 2.0 hardware or attestation error (can cause fTPM stutters or Vanguard/RICOCHET anti-cheat rejections). Updating motherboard BIOS typically resolves this.\n\n" + r.Msg
-                    });
+                        SummaryFr = Localizer.Ref("engine.diagnostics_engine.tpm_2_0_ftpm_security_module", r.Provider, r.Id),
+                        SummaryEn = Localizer.Ref("engine.diagnostics_engine.tpm_2_0_ftpm_security_module", r.Provider, r.Id),
+                        DetailsFr = Localizer.Ref("engine.diagnostics_engine.tpm_2_0_hardware_or_attestation", r.Msg),
+                        DetailsEn = Localizer.Ref("engine.diagnostics_engine.tpm_2_0_hardware_or_attestation", r.Msg)                    });
                 }
                 else
                 {
@@ -508,8 +503,8 @@ namespace WinCrashDoctor
                         Category = CrashCategory.GpuDriver,
                         Source = r.Provider + " (" + vendorLabel + ")",
                         CodeOrId = "Event " + r.Id,
-                        SummaryFr = "Timeout / Crash du pilote " + vendorLabel + " (" + r.Provider + " ID " + r.Id + " — " + propJoined + ")",
-                        SummaryEn = vendorLabel + " Driver Timeout / Fault (" + r.Provider + " ID " + r.Id + " — " + propJoined + ")",
+                        SummaryFr = Localizer.Ref("engine.diagnostics_engine.driver_timeout_fault_id", vendorLabel, r.Provider, r.Id, propJoined),
+                        SummaryEn = Localizer.Ref("engine.diagnostics_engine.driver_timeout_fault_id", vendorLabel, r.Provider, r.Id, propJoined),
                         DetailsFr = isAmd
                             ? ("Expiration du délai du pilote AMD Radeon (Driver Timeout). Sur Reddit r/AMDHelp, les 3 solutions majeures sont : bloquer l'écrasement du pilote par Windows Update, désactiver ULPS (EnableUlps=0) et désactiver MPO.\n\nDétails : " + (string.IsNullOrEmpty(r.Msg) ? propJoined : r.Msg))
                             : ("Le pilote graphique NVIDIA a cessé de répondre (TDR). Souvent causé par MPO + Skia Graphite en vidéo Chrome/YouTube, ou un undervolt GPU trop haut entre 750 et 850 mV.\n\nDétails : " + (string.IsNullOrEmpty(r.Msg) ? propJoined : r.Msg)),
@@ -557,32 +552,26 @@ namespace WinCrashDoctor
                             string msg = SafeFormatDescription(rec);
 
                             bool isHang = rec.Id == 1002;
-                            string extraHintFr = "";
-                            string extraHintEn = "";
+                            string extraHint = "";
                             if (excCode.IndexOf("c0000005", StringComparison.OrdinalIgnoreCase) >= 0)
-                            {
-                                extraHintFr = hw.IsIntel13Or14Gen
-                                    ? "\n\n⚠ Note CPU Intel 13e/14e Gen : L'erreur 0xc0000005 en jeu (notamment Unreal Engine) provient souvent des limites de puissance du BIOS ou d'un microcode antérieur au 0x12F."
-                                    : "\n\n💡 Info : 0xc0000005 (Access Violation) indique un accès mémoire invalide (bug du jeu, shader corrompu à purger, ou profil RAM XMP/EXPO limite).";
-                                extraHintEn = hw.IsIntel13Or14Gen
-                                    ? "\n\n⚠ Intel 13th/14th Gen Note: 0xc0000005 crashes in games (especially Unreal Engine) are frequently caused by Raptor Lake Vmin / BIOS power limits (make sure the BIOS ships microcode 0x12F or later)."
-                                    : "\n\n💡 Hint: 0xc0000005 (Access Violation) indicates an invalid memory access (game bug, corrupted shader cache, or borderline XMP/EXPO RAM).";
-                            }
+                                extraHint = Localizer.Ref(hw.IsIntel13Or14Gen ? "engine.diagnostics_engine.hint_c0000005_intel_13_14" : "engine.diagnostics_engine.hint_c0000005");
 
+                            // Deferred texts (rendered in the display language); the Windows message itself stays as Windows wrote it.
+                            string summary = isHang
+                                ? Localizer.Ref("engine.diagnostics_engine.app_freeze_title", appName)
+                                : Localizer.Ref("engine.diagnostics_engine.app_crash_title", appName, modName);
+                            string details = (string.IsNullOrEmpty(excCode) ? "" : Localizer.Ref("engine.diagnostics_engine.exception_code_line", excCode))
+                                             + msg + extraHint;
                             list.Add(new CrashEventItem
                             {
                                 Timestamp = ts,
                                 Category = CrashCategory.AppCrash,
                                 Source = appName,
                                 CodeOrId = isHang ? "Hang 1002" : ("Crash " + (string.IsNullOrEmpty(excCode) ? "1000" : excCode)),
-                                SummaryFr = isHang
-                                    ? ("Freeze d'application : " + appName + " ne répondait plus")
-                                    : ("Crash d'application : " + appName + " (module : " + modName + ")"),
-                                SummaryEn = isHang
-                                    ? ("Application Freeze: " + appName + " stopped responding")
-                                    : ("Application Crash: " + appName + " (faulting module: " + modName + ")"),
-                                DetailsFr = (string.IsNullOrEmpty(excCode) ? "" : "Code d'exception : " + excCode + "\n") + msg + extraHintFr,
-                                DetailsEn = (string.IsNullOrEmpty(excCode) ? "" : "Exception code: " + excCode + "\n") + msg + extraHintEn
+                                SummaryFr = summary,
+                                SummaryEn = summary,
+                                DetailsFr = details,
+                                DetailsEn = details
                             });
                             count++;
                         }
@@ -627,23 +616,25 @@ namespace WinCrashDoctor
                             Category = CrashCategory.BrowserGpu,
                             Source = b.Name,
                             CodeOrId = string.IsNullOrEmpty(engine) ? "Crashpad .dmp" : engine,
-                            SummaryFr = "Crash interne " + b.Name + " (" + extra + ")",
-                            SummaryEn = b.Name + " internal crash dump (" + extra + ")",
-                            DetailsFr = "Fichier dump navigateur : " + file + "\n" +
-                                        (string.IsNullOrEmpty(engine) ? "" : "Moteur GPU détecté : " + engine + "\n") +
-                                        (string.IsNullOrEmpty(decoder) ? "" : "Décodeur vidéo actif : " + decoder + "\n") +
-                                        (string.IsNullOrEmpty(url) ? "" : "URL active lors du crash : " + url + "\n") +
-                                        (string.IsNullOrEmpty(errorDetail) ? "" : "Erreur interne : " + errorDetail + "\n"),
-                            DetailsEn = "Browser dump file: " + file + "\n" +
-                                        (string.IsNullOrEmpty(engine) ? "" : "Detected GPU Engine: " + engine + "\n") +
-                                        (string.IsNullOrEmpty(decoder) ? "" : "Active Video Decoder: " + decoder + "\n") +
-                                        (string.IsNullOrEmpty(url) ? "" : "Active URL at crash: " + url + "\n") +
-                                        (string.IsNullOrEmpty(errorDetail) ? "" : "Internal error: " + errorDetail + "\n")
+                            SummaryFr = Localizer.Ref("engine.diagnostics_engine.internal_crash_dump", b.Name, extra),
+                            SummaryEn = Localizer.Ref("engine.diagnostics_engine.internal_crash_dump", b.Name, extra),
+                            DetailsFr = BrowserDumpDetails(file, engine, decoder, url, errorDetail),
+                            DetailsEn = BrowserDumpDetails(file, engine, decoder, url, errorDetail)
                         });
                     }
                 }
                 catch (Exception ex) { Log.Warn(ex); }
             }
+        }
+
+        /// <summary>Browser dump details as deferred lines (only the lines that have a value).</summary>
+        private static string BrowserDumpDetails(string file, string engine, string decoder, string url, string errorDetail)
+        {
+            return Localizer.Ref("engine.diagnostics_engine.browser_dump_file", file)
+                 + (string.IsNullOrEmpty(engine) ? "" : Localizer.Ref("engine.diagnostics_engine.detected_gpu_engine", engine))
+                 + (string.IsNullOrEmpty(decoder) ? "" : Localizer.Ref("engine.diagnostics_engine.active_video_decoder", decoder))
+                 + (string.IsNullOrEmpty(url) ? "" : Localizer.Ref("engine.diagnostics_engine.active_url_at_crash", url))
+                 + (string.IsNullOrEmpty(errorDetail) ? "" : Localizer.Ref("engine.diagnostics_engine.internal_error", errorDetail));
         }
 
         private static void ParseChromiumDumpMetadata(string filePath, out string engine, out string decoder, out string url, out string errorLine)
@@ -690,20 +681,20 @@ namespace WinCrashDoctor
             switch (baseCode)
             {
                 case 0x116: case 0x117: case 0x119: case 0x10E: case 0x113: case 0xEA: case 0x1E4:
-                    famFr = "Écran bleu GPU"; famEn = "GPU blue screen"; break;
+                    famFr = Localizer.Ref("engine.diagnostics_engine.gpu_blue_screen"); famEn = famFr; break;
                 case 0x124: case 0x9C: case 0x101: case 0x12B: case 0x80:
-                    famFr = "Erreur matérielle fatale"; famEn = "Fatal hardware error"; break;
+                    famFr = Localizer.Ref("engine.diagnostics_engine.fatal_hardware_error"); famEn = famFr; break;
                 case 0xEF: case 0x7A: case 0xF4: case 0x154: case 0x24: case 0x7B: case 0x133:
-                    famFr = "Écran bleu système / stockage"; famEn = "System / storage blue screen"; break;
+                    famFr = Localizer.Ref("engine.diagnostics_engine.system_storage_blue_screen"); famEn = famFr; break;
                 case 0x9F: case 0xA0:
-                    famFr = "Écran bleu alimentation pilote"; famEn = "Driver power blue screen"; break;
+                    famFr = Localizer.Ref("engine.diagnostics_engine.driver_power_blue_screen"); famEn = famFr; break;
                 case 0x1A: case 0x4E: case 0x50: case 0x0A: case 0x3B: case 0x19: case 0xC2: case 0xD1: case 0x139: case 0x13A:
-                    famFr = "Écran bleu mémoire / pilote"; famEn = "Memory / driver blue screen"; break;
+                    famFr = Localizer.Ref("engine.diagnostics_engine.memory_driver_blue_screen"); famEn = famFr; break;
                 default:
-                    famFr = "Écran bleu Windows"; famEn = "Windows blue screen"; break;
+                    famFr = Localizer.Ref("engine.diagnostics_engine.windows_blue_screen"); famEn = famFr; break;
             }
-            titleFr = famFr + " : " + name + " (" + hex + ")";
-            titleEn = famEn + ": " + name + " (" + hex + ")";
+            titleFr = Localizer.Ref("engine.diagnostics_engine.bugcheck_title", famFr, name, hex);
+            titleEn = titleFr;
 
             // Only what the stop code establishes: no assumed symptoms, they differ from one PC to another.
             if (bc != null && bc.ExplanationFr != null)
@@ -713,8 +704,8 @@ namespace WinCrashDoctor
             }
             else
             {
-                descFr = "Redémarrage suite à une erreur critique du noyau Windows (" + name + ", " + hex + ").";
-                descEn = "System rebooted from a Windows kernel stop error (" + name + ", " + hex + ").";
+                descFr = Localizer.Ref("engine.diagnostics_engine.system_rebooted_from_a_windows_kernel", name, hex);
+                descEn = descFr;
             }
         }
 
@@ -1248,20 +1239,20 @@ namespace WinCrashDoctor
                 switch (outcome)
                 {
                     case ElevationOutcome.Success:
-                        messageFr = "✓ Modification enregistrée dans le Registre Windows ! (Un redémarrage du PC est conseillé).";
-                        messageEn = "✓ Windows Registry updated successfully! (A PC reboot is recommended).";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.windows_registry_updated_successfully_a");
+                        messageEn = messageFr;
                         return true;
                     case ElevationOutcome.Cancelled:
-                        messageFr = "Opération annulée au contrôle Administrateur (UAC).";
-                        messageEn = "Operation cancelled at the UAC Administrator prompt.";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.operation_cancelled_at_the_uac_administr");
+                        messageEn = messageFr;
                         return false;
                     case ElevationOutcome.TimedOut:
-                        messageFr = "L'opération Administrateur n'a pas répondu à temps.";
-                        messageEn = "The Administrator operation did not complete in time.";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.the_administrator_operation_did_not_comp");
+                        messageEn = messageFr;
                         return false;
                     default:
-                        messageFr = "L'opération Administrateur a échoué (détails dans le journal).";
-                        messageEn = "The Administrator operation failed (see log for details).";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.the_administrator_operation_failed_see_l");
+                        messageEn = messageFr;
                         return false;
                 }
             }
@@ -1271,8 +1262,8 @@ namespace WinCrashDoctor
         /// <summary>Runs one fix in this process (caller must already hold the rights it needs).</summary>
         internal static bool ExecuteFixOperationInProc(string opName, out string messageFr, out string messageEn)
         {
-            messageFr = "Opération effectuée avec succès.";
-            messageEn = "Operation completed successfully.";
+            messageFr = Localizer.Ref("engine.diagnostics_engine.operation_completed_successfully");
+            messageEn = messageFr;
 
             try
             {
@@ -1290,97 +1281,97 @@ namespace WinCrashDoctor
                 {
                     case "mpo_apply":
                         WriteRegDword(RegistryHive.LocalMachine, @"SOFTWARE\Microsoft\Windows\Dwm", "OverlayTestMode", 5);
-                        messageFr = "✓ Multiplane Overlay (MPO) désactivé (OverlayTestMode = 5).";
-                        messageEn = "✓ Multiplane Overlay (MPO) disabled (OverlayTestMode = 5).";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.multiplane_overlay_mpo_disabled_overlayt");
+                        messageEn = messageFr;
                         return true;
 
                     case "mpo_restore":
                         DeleteRegValue(RegistryHive.LocalMachine, @"SOFTWARE\Microsoft\Windows\Dwm", "OverlayTestMode");
-                        messageFr = "MPO remis par défaut.";
-                        messageEn = "MPO restored to default.";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.mpo_restored_to_default");
+                        messageEn = messageFr;
                         return true;
 
                     case "dwm_alt_tab_apply":
                         WriteRegDword(RegistryHive.LocalMachine, @"SOFTWARE\Microsoft\Windows\Dwm", "OverlayMinFPS", 0);
-                        messageFr = "✓ Correctif Alt+Tab Windows 11 24H2+ activé (OverlayMinFPS = 0).";
-                        messageEn = "✓ Windows 11 24H2+ Alt+Tab freeze fix applied (OverlayMinFPS = 0).";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.windows_11_24h2_alt_tab_freeze");
+                        messageEn = messageFr;
                         return true;
 
                     case "dwm_alt_tab_restore":
                         DeleteRegValue(RegistryHive.LocalMachine, @"SOFTWARE\Microsoft\Windows\Dwm", "OverlayMinFPS");
-                        messageFr = "OverlayMinFPS remis par défaut.";
-                        messageEn = "OverlayMinFPS restored to default.";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.overlayminfps_restored_to_default");
+                        messageEn = messageFr;
                         return true;
 
                     case "nic_powersave_apply":
                         SetNicPowerSaving(false);
-                        messageFr = "✓ Économie EEE / Green Ethernet & mise en veille réseau désactivées (redémarrez le PC pour appliquer).";
-                        messageEn = "✓ Network EEE / Green Ethernet & power-off disabled (reboot PC to apply).";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.network_eee_green_ethernet_power_off");
+                        messageEn = messageFr;
                         return true;
 
                     case "nic_powersave_restore":
                         SetNicPowerSaving(true);
-                        messageFr = "Économie d'énergie réseau remise par défaut.";
-                        messageEn = "Network power-saving restored to default.";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.network_power_saving_restored_to_default");
+                        messageEn = messageFr;
                         return true;
 
                     case "tdr_apply":
                         WriteRegDword(RegistryHive.LocalMachine, @"SYSTEM\CurrentControlSet\Control\GraphicsDrivers", "TdrDelay", 10);
                         WriteRegDword(RegistryHive.LocalMachine, @"SYSTEM\CurrentControlSet\Control\GraphicsDrivers", "TdrDdiDelay", 10);
-                        messageFr = "✓ Délai TDR passé à 10 secondes (TdrDelay = 10 & TdrDdiDelay = 10).";
-                        messageEn = "✓ TDR timeout set to 10 seconds (TdrDelay = 10 & TdrDdiDelay = 10).";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.tdr_timeout_set_to_10_seconds");
+                        messageEn = messageFr;
                         return true;
 
                     case "tdr_restore":
                         DeleteRegValue(RegistryHive.LocalMachine, @"SYSTEM\CurrentControlSet\Control\GraphicsDrivers", "TdrDelay");
                         DeleteRegValue(RegistryHive.LocalMachine, @"SYSTEM\CurrentControlSet\Control\GraphicsDrivers", "TdrDdiDelay");
-                        messageFr = "Délai TDR remis à 2 secondes par défaut.";
-                        messageEn = "TDR timeout restored to 2s default.";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.tdr_timeout_restored_to_2s_default");
+                        messageEn = messageFr;
                         return true;
 
                     case "amd_ulps_apply":
                         SetAmdUlps(0);
-                        messageFr = "✓ ULPS AMD désactivé (EnableUlps = 0). Redémarrez le PC pour appliquer.";
-                        messageEn = "✓ AMD ULPS disabled (EnableUlps = 0). Reboot PC to apply.";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.amd_ulps_disabled_enableulps_0_reboot");
+                        messageEn = messageFr;
                         return true;
 
                     case "amd_ulps_restore":
                         SetAmdUlps(1);
-                        messageFr = "ULPS AMD réactivé (EnableUlps = 1).";
-                        messageEn = "AMD ULPS re-enabled (EnableUlps = 1).";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.amd_ulps_re_enabled_enableulps_1");
+                        messageEn = messageFr;
                         return true;
 
                     case "amd_issue_detection_apply":
                         SetAmdIssueDetection(false);
-                        messageFr = "✓ AMD Issue Detection désactivé (EnableIssueDetection = 0). Redémarrez le PC.";
-                        messageEn = "✓ AMD Issue Detection disabled (EnableIssueDetection = 0). Reboot PC.";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.amd_issue_detection_disabled_enableissue");
+                        messageEn = messageFr;
                         return true;
 
                     case "amd_issue_detection_restore":
                         SetAmdIssueDetection(true);
-                        messageFr = "AMD Issue Detection remis par défaut.";
-                        messageEn = "AMD Issue Detection restored to default.";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.amd_issue_detection_restored_to_default");
+                        messageEn = messageFr;
                         return true;
 
                     case "wu_driver_lock_apply":
                         WriteRegDword(RegistryHive.LocalMachine, @"SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate", "ExcludeWUDriversInQualityUpdate", 1);
                         WriteRegDword(RegistryHive.LocalMachine, @"SOFTWARE\Microsoft\Windows\CurrentVersion\DriverSearching", "SearchOrderConfig", 0);
-                        messageFr = "✓ Mises à jour automatiques de pilotes bloquées dans Windows Update !";
-                        messageEn = "✓ Automatic Windows Update driver overwrites blocked!";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.automatic_windows_update_driver_overwrit");
+                        messageEn = messageFr;
                         return true;
 
                     case "wu_driver_lock_restore":
                         DeleteRegValue(RegistryHive.LocalMachine, @"SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate", "ExcludeWUDriversInQualityUpdate");
                         WriteRegDword(RegistryHive.LocalMachine, @"SOFTWARE\Microsoft\Windows\CurrentVersion\DriverSearching", "SearchOrderConfig", 1);
-                        messageFr = "Téléchargement de pilotes via Windows Update réautorisé.";
-                        messageEn = "Windows Update driver downloads re-enabled.";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.windows_update_driver_downloads_re_enabl");
+                        messageEn = messageFr;
                         return true;
 
                     case "shader_cache_apply":
                         int removed = PurgeShaderCaches();
                         _cachedShaderMb = -1;
-                        messageFr = "✓ Nettoyage terminé : " + removed + " fichier(s) de cache de shaders purgés.";
-                        messageEn = "✓ Cleanup finished: " + removed + " compiled shader cache file(s) purged.";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.cleanup_finished_compiled_shader_cache_f", removed);
+                        messageEn = messageFr;
                         return true;
 
                     case "hags_apply":
@@ -1412,43 +1403,43 @@ namespace WinCrashDoctor
                     case "nvme_hmb_apply":
                         WriteRegDword(RegistryHive.LocalMachine, @"SYSTEM\CurrentControlSet\Services\stornvme\Parameters\Device", "HmbAllocationPolicy", 2);
                         WriteRegDword(RegistryHive.LocalMachine, @"SYSTEM\CurrentControlSet\Services\stornvme\Parameters\Device", "IoTimeoutValue", 60);
-                        messageFr = "✓ Protection SSD NVMe HMB (64 Mo + Timeout 60s) activée ! Redémarrez le PC.";
-                        messageEn = "✓ NVMe SSD HMB protection (64MB cap + 60s timeout) enabled! Reboot PC.";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.nvme_ssd_hmb_protection_64mb_cap");
+                        messageEn = messageFr;
                         return true;
 
                     case "nvme_hmb_restore":
                         DeleteRegValue(RegistryHive.LocalMachine, @"SYSTEM\CurrentControlSet\Services\stornvme\Parameters\Device", "HmbAllocationPolicy");
                         DeleteRegValue(RegistryHive.LocalMachine, @"SYSTEM\CurrentControlSet\Services\stornvme\Parameters\Device", "IoTimeoutValue");
-                        messageFr = "Paramètres NVMe HMB remis par défaut.";
-                        messageEn = "NVMe HMB settings restored to default.";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.nvme_hmb_settings_restored_to_default");
+                        messageEn = messageFr;
                         return true;
 
                     case "pcie_aspm_apply":
                         SetPowerAc("501a4d13-42af-4429-9fd1-a8218c268e20", "ee12f906-d277-404b-b6da-e5fa1a576df5", 0);
                         RunHiddenCommand("powercfg", "/setactive SCHEME_CURRENT");
-                        messageFr = "✓ Économie d'énergie PCIe (ASPM) désactivée sur secteur.";
-                        messageEn = "✓ PCIe Link State Power Management (ASPM) disabled on AC.";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.pcie_link_state_power_management_aspm");
+                        messageEn = messageFr;
                         return true;
 
                     case "pcie_aspm_restore":
                         SetPowerAc("501a4d13-42af-4429-9fd1-a8218c268e20", "ee12f906-d277-404b-b6da-e5fa1a576df5", 1);
                         RunHiddenCommand("powercfg", "/setactive SCHEME_CURRENT");
-                        messageFr = "Économie PCIe remise sur Modérée.";
-                        messageEn = "PCIe ASPM restored to Moderate.";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.pcie_aspm_restored_to_moderate");
+                        messageEn = messageFr;
                         return true;
 
                     case "usb_suspend_apply":
                         SetPowerAc("2a737441-1930-4402-8d77-b2bebba308a3", "48e6b7a6-50f5-4782-a5d4-53bb8f07e226", 0);
                         RunHiddenCommand("powercfg", "/setactive SCHEME_CURRENT");
-                        messageFr = "✓ Suspension Sélective USB désactivée sur secteur.";
-                        messageEn = "✓ USB Selective Suspend disabled on AC.";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.usb_selective_suspend_disabled_on_ac");
+                        messageEn = messageFr;
                         return true;
 
                     case "usb_suspend_restore":
                         SetPowerAc("2a737441-1930-4402-8d77-b2bebba308a3", "48e6b7a6-50f5-4782-a5d4-53bb8f07e226", 1);
                         RunHiddenCommand("powercfg", "/setactive SCHEME_CURRENT");
-                        messageFr = "Suspension Sélective USB réactivée.";
-                        messageEn = "USB Selective Suspend re-enabled.";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.usb_selective_suspend_re_enabled");
+                        messageEn = messageFr;
                         return true;
 
                     case "pagefile_auto_apply":
@@ -1459,34 +1450,34 @@ namespace WinCrashDoctor
                             if (mk != null)
                                 mk.SetValue("PagingFiles", new string[] { @"?:\pagefile.sys" }, RegistryValueKind.MultiString);
                         }
-                        messageFr = "✓ Fichier d'échange (Pagefile) rétabli en gestion automatique ! Redémarrez le PC.";
-                        messageEn = "✓ Automatic Windows Pagefile restored! Reboot PC.";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.automatic_windows_pagefile_restored_rebo");
+                        messageEn = messageFr;
                         return true;
 
                     case "gamedvr_apply":
                         WriteRegDword(RegistryHive.CurrentUser, @"System\GameConfigStore", "GameDVR_Enabled", 0);
                         WriteRegDword(RegistryHive.CurrentUser, @"Software\Microsoft\Windows\CurrentVersion\GameDVR", "AppCaptureEnabled", 0);
-                        messageFr = "✓ Capture Xbox Game DVR désactivée.";
-                        messageEn = "✓ Xbox Game DVR capture disabled.";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.xbox_game_dvr_capture_disabled");
+                        messageEn = messageFr;
                         return true;
 
                     case "gamedvr_restore":
                         WriteRegDword(RegistryHive.CurrentUser, @"System\GameConfigStore", "GameDVR_Enabled", 1);
                         WriteRegDword(RegistryHive.CurrentUser, @"Software\Microsoft\Windows\CurrentVersion\GameDVR", "AppCaptureEnabled", 1);
-                        messageFr = "Capture Xbox Game DVR réactivée.";
-                        messageEn = "Xbox Game DVR capture re-enabled.";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.xbox_game_dvr_capture_re_enabled");
+                        messageEn = messageFr;
                         return true;
 
                     case "fast_startup_apply":
                         WriteRegDword(RegistryHive.LocalMachine, @"SYSTEM\CurrentControlSet\Control\Session Manager\Power", "HiberbootEnabled", 0);
-                        messageFr = "✓ Démarrage Rapide (Fast Startup) désactivé.";
-                        messageEn = "✓ Windows Fast Startup disabled.";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.windows_fast_startup_disabled");
+                        messageEn = messageFr;
                         return true;
 
                     case "fast_startup_restore":
                         WriteRegDword(RegistryHive.LocalMachine, @"SYSTEM\CurrentControlSet\Control\Session Manager\Power", "HiberbootEnabled", 1);
-                        messageFr = "Démarrage Rapide réactivé.";
-                        messageEn = "Windows Fast Startup re-enabled.";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.windows_fast_startup_re_enabled");
+                        messageEn = messageFr;
                         return true;
 
                     case "sfc_repair_apply":
@@ -1494,12 +1485,12 @@ namespace WinCrashDoctor
                         // diagnoses from, and deleting them here used to wipe crashes not analysed yet.
                         if (!Elevation.Launch("cmd.exe", "/k echo === SFC /scannow === & sfc /scannow"))
                         {
-                            messageFr = "La console SFC a été refusée au contrôle UAC.";
-                            messageEn = "The SFC console was refused at the UAC prompt.";
+                            messageFr = Localizer.Ref("engine.diagnostics_engine.the_sfc_console_was_refused_at");
+                            messageEn = messageFr;
                             return false;
                         }
-                        messageFr = "✓ Console Administrateur SFC /scannow ouverte.";
-                        messageEn = "✓ Elevated SFC /scannow console opened.";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.elevated_sfc_scannow_console_opened");
+                        messageEn = messageFr;
                         return true;
 
                     case "restore_snapshot":
@@ -1517,29 +1508,29 @@ namespace WinCrashDoctor
                     case "disable_risky_oem":
                         string neutralDetails;
                         int stoppedCnt = NeutralizeRiskyOemComponents(out neutralDetails);
-                        messageFr = string.Format("✓ {0} composant(s) à risque neutralisé(s) ({1}).", stoppedCnt, neutralDetails);
-                        messageEn = string.Format("✓ {0} risky component(s) neutralized ({1}).", stoppedCnt, neutralDetails);
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.risky_component_s_neutralized", stoppedCnt, neutralDetails);
+                        messageEn = messageFr;
                         return true;
 
                     case "disable_ryzen_igpu":
                         ChangeRecorder.Registry(RegistryHive.LocalMachine, @"SYSTEM\CurrentControlSet\Services\AMD External Events Utility", "Start");
                         RunHiddenCommand("sc.exe", "stop \"AMD External Events Utility\"");
                         RunHiddenCommand("sc.exe", "config \"AMD External Events Utility\" start= disabled");
-                        messageFr = "✓ Service AMD External Events arrêté et désactivé.";
-                        messageEn = "✓ AMD External Events service stopped and disabled.";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.amd_external_events_service_stopped_and");
+                        messageEn = messageFr;
                         return true;
 
                     case "disable_autohdr":
                         SetAutoHdr(false);
-                        messageFr = "✓ Auto HDR désactivé avec succès.";
-                        messageEn = "✓ Auto HDR disabled successfully.";
+                        messageFr = Localizer.Ref("engine.diagnostics_engine.auto_hdr_disabled_successfully");
+                        messageEn = messageFr;
                         return true;
                 }
             }
             catch (Exception ex)
             {
-                messageFr = "Erreur : " + ex.Message;
-                messageEn = "Error: " + ex.Message;
+                messageFr = Localizer.Ref("engine.diagnostics_engine.error", ex.Message);
+                messageEn = messageFr;
                 return false;
             }
             return false;
@@ -1764,8 +1755,8 @@ namespace WinCrashDoctor
             string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"discord\settings.json");
             if (!File.Exists(path))
             {
-                msgFr = "Fichier settings.json de Discord introuvable.";
-                msgEn = "Discord settings.json file not found.";
+                msgFr = Localizer.Ref("engine.diagnostics_engine.discord_settings_json_file_not_found");
+                msgEn = msgFr;
                 return false;
             }
 
@@ -1829,8 +1820,8 @@ namespace WinCrashDoctor
             string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), relLocalState);
             if (!File.Exists(path))
             {
-                msgFr = "Fichier Local State de " + browserLabel + " introuvable.";
-                msgEn = browserLabel + " Local State file not found.";
+                msgFr = Localizer.Ref("engine.diagnostics_engine.local_state_file_not_found", browserLabel);
+                msgEn = msgFr;
                 return false;
             }
 

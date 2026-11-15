@@ -149,8 +149,8 @@ namespace WinCrashDoctor
                 if (m != null && !CoreImages.Contains(m.Name))
                 {
                     info.Culprit = m.Name;
-                    info.EvidenceFr = "Le paramètre " + bc.AddressParam + " de l'erreur (0x" + addr.ToString("X") + ") pointe à l'intérieur de " + m.Name + ".";
-                    info.EvidenceEn = "Stop parameter " + bc.AddressParam + " (0x" + addr.ToString("X") + ") points inside " + m.Name + ".";
+                    info.EvidenceFr = Localizer.Ref("engine.kernel_dump_parser.stop_parameter_points_inside", bc.AddressParam, addr.ToString("X"), m.Name);
+                    info.EvidenceEn = info.EvidenceFr;
                     return;
                 }
             }
@@ -160,8 +160,8 @@ namespace WinCrashDoctor
             if (thirdParty != null)
             {
                 info.Culprit = thirdParty;
-                info.EvidenceFr = "Premier pilote non-Microsoft présent sur la pile d'appels au moment du crash.";
-                info.EvidenceEn = "First non-Microsoft driver on the call stack at crash time.";
+                info.EvidenceFr = Localizer.Ref("engine.kernel_dump_parser.first_non_microsoft_driver_on_the");
+                info.EvidenceEn = info.EvidenceFr;
                 return;
             }
 
@@ -170,14 +170,14 @@ namespace WinCrashDoctor
             if (firstDriver != null)
             {
                 info.Culprit = firstDriver;
-                info.EvidenceFr = "Pilote Windows le plus haut sur la pile d'appels ; aucun pilote tiers n'y apparaît.";
-                info.EvidenceEn = "Highest Windows driver on the call stack; no third-party driver appears there.";
+                info.EvidenceFr = Localizer.Ref("engine.kernel_dump_parser.highest_windows_driver_on_the_call");
+                info.EvidenceEn = info.EvidenceFr;
                 return;
             }
 
             info.Culprit = info.StackModules.FirstOrDefault() ?? "ntoskrnl.exe";
-            info.EvidenceFr = "Aucun pilote identifiable : le noyau lui-même a détecté l'erreur (souvent un problème matériel).";
-            info.EvidenceEn = "No identifiable driver: the kernel itself detected the error (often a hardware problem).";
+            info.EvidenceFr = Localizer.Ref("engine.kernel_dump_parser.no_identifiable_driver_the_kernel_itself");
+            info.EvidenceEn = info.EvidenceFr;
         }
 
         public static DumpModule FindModule(List<DumpModule> modules, ulong addr)

@@ -1531,7 +1531,7 @@ namespace WinCrashDoctor
             var results = await RunFixBatchAsync(new[] { opCode });
             var r = results.FirstOrDefault();
             return r == null
-                ? new FixOutcome { Ok = false, MessageFr = "Aucun résultat.", MessageEn = "No result." }
+                ? new FixOutcome { Ok = false, MessageFr = Localizer.Ref("engine.main_window.no_result"), MessageEn = Localizer.Ref("engine.main_window.no_result") }
                 : new FixOutcome { Ok = r.Ok, MessageFr = r.MessageFr, MessageEn = r.MessageEn };
         }
 
@@ -1554,7 +1554,7 @@ namespace WinCrashDoctor
                 FixId = FixIdOf(r.Op),
                 Title = OpTitle(r.Op),
                 Ok = r.Ok,
-                Message = r.Message,
+                Message = Localizer.IsRef(r.MessageEn) ? r.MessageEn : r.Message, // a deferred reference is re-rendered in the display language
                 Changes = r.Changes ?? new List<ChangeRecord>(),
                 Reversible = r.Ok && FixRunner.IsReversible(r.Op, r.Changes)
             }).ToList();
@@ -1726,7 +1726,7 @@ namespace WinCrashDoctor
                 }
 
                 int applied = results.Count(r => r.Ok), failed = results.Count - applied;
-                foreach (var r in results.Where(r => !r.Ok)) Log.Warn("Fix " + r.Op + " failed: " + r.MessageEn);
+                foreach (var r in results.Where(r => !r.Ok)) Log.Warn("Fix " + r.Op + " failed: " + Localizer.RenderEn(r.MessageEn));
                 if (failed == 0)
                     SetToast(Localizer.F("main_window.fix_es_applied_each_one_can", applied), "SuccessFg");
                 else

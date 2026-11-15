@@ -125,7 +125,7 @@ namespace WinCrashDoctor
             }
             catch (OperationCanceledException)
             {
-                return new AiReply { Ok = false, Text = Localizer.T("Requête annulée.", "Request cancelled.") };
+                return new AiReply { Ok = false, Text = Localizer.S("engine.ai_assistant.request_cancelled") };
             }
             catch (WebException wex) when (provider == AiProviderType.OllamaLocal)
             {
@@ -133,9 +133,7 @@ namespace WinCrashDoctor
                 return new AiReply
                 {
                     Ok = false,
-                    Text = Localizer.T(
-                        "Impossible de joindre Ollama sur http://127.0.0.1:11434. Lancez « ollama serve » et téléchargez le modèle (« ollama pull " + (model ?? "llama3.2") + " »).",
-                        "Could not reach Ollama at http://127.0.0.1:11434. Start \"ollama serve\" and pull the model (\"ollama pull " + (model ?? "llama3.2") + "\").")
+                    Text = Localizer.F("engine.ai_assistant.could_not_reach_ollama", model ?? "llama3.2")
                 };
             }
             catch (WebException wex)
@@ -157,9 +155,7 @@ namespace WinCrashDoctor
             return new AiReply
             {
                 Ok = false,
-                Text = Localizer.T(
-                    "Aucune clé API configurée. Ajoutez-la dans Paramètres › Assistant IA, choisissez Ollama (local, sans clé), ou utilisez « Copier le prompt ».",
-                    "No API key configured. Add it in Settings › AI assistant, choose Ollama (local, no key), or use \"Copy prompt\".")
+                Text = Localizer.S("engine.ai_assistant.no_api_key_configured_add_it")
             };
         }
 

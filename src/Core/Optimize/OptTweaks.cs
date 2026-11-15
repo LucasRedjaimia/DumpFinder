@@ -285,7 +285,7 @@ namespace WinCrashDoctor.Optimize
         {
             bool apply;
             Tweak t = FromOp(op, out apply);
-            if (t == null) { messageFr = "Réglage inconnu."; messageEn = "Unknown setting."; return false; }
+            if (t == null) { messageFr = Localizer.Ref("engine.opt_tweaks.unknown_setting"); messageEn = messageFr; return false; }
             foreach (RegSet s in t.Sets)
             {
                 ChangeRecorder.Registry(s.Hive, s.Sub, s.Name);

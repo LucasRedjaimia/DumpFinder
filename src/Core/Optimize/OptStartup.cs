@@ -201,7 +201,7 @@ namespace WinCrashDoctor.Optimize
         {
             bool disable;
             StartupEntry e = FromOp(op, out disable);
-            if (e == null) { messageFr = "Programme de démarrage introuvable."; messageEn = "Startup entry not found."; return false; }
+            if (e == null) { messageFr = Localizer.Ref("engine.opt_startup.startup_entry_not_found"); messageEn = messageFr; return false; }
             Source src = Sources.First(s => s.Scope == e.Scope);
             ChangeRecorder.Registry(src.Hive, src.ApprovedSub, e.Name);
             var data = new byte[12];

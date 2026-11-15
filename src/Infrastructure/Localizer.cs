@@ -213,9 +213,15 @@ namespace WinCrashDoctor
         /// <summary>UI text by key, in the current language; falls back to English, then to the key itself.</summary>
         public static string S(string key)
         {
+            return Text(Current, key);
+        }
+
+        /// <summary>Text by key in a given language (falls back to English, then to the key).</summary>
+        public static string Text(AppLang lang, string key)
+        {
             string v;
-            if (Table(Code(Current)).TryGetValue(key, out v) && !string.IsNullOrEmpty(v)) return v;
-            if (Current != AppLang.EN && Table("en").TryGetValue(key, out v) && !string.IsNullOrEmpty(v)) return v;
+            if (Table(Code(lang)).TryGetValue(key, out v) && !string.IsNullOrEmpty(v)) return v;
+            if (lang != AppLang.EN && Table("en").TryGetValue(key, out v) && !string.IsNullOrEmpty(v)) return v;
             Log.Warn("Missing text: " + key);
             return key;
         }
@@ -224,6 +230,131 @@ namespace WinCrashDoctor
         public static string F(string key, params object[] args)
         {
             return SafeFormat(S(key), key, args);
+        }
+
+        // ==================== Deferred texts (engine) ====================
+        // The diagnostic engine builds texts while scanning, long before (and sometimes in another process than)
+        // they are shown, and the same text is shown in the UI language, sent in English to MCP / AI / exports, and
+        // kept in history. Instead of a finished sentence it stores a reference: key + values, rendered on display.
+        // Format: \u0001key(\u0002arg)*\u0003 — references may be concatenated with plain text and nested in args.
+        private const char RefStart = '\u0001', RefArg = '\u0002', RefEnd = '\u0003', RefTyped = '\u0004';
+
+        /// <summary>Reference to a text, rendered later with <see cref="Render(string)"/> in the language of display.</summary>
+        public static string Ref(string key, params object[] args)
+        {
+            var sb = new StringBuilder();
+            sb.Append(RefStart).Append(key);
+            if (args != null)
+            {
+                foreach (object a in args) sb.Append(RefArg).Append(EncodeArg(a));
+            }
+            return sb.Append(RefEnd).ToString();
+        }
+
+        /// <summary>True when the string holds at least one deferred reference.</summary>
+        public static bool IsRef(string s) { return s != null && s.IndexOf(RefStart) >= 0; }
+
+        /// <summary>Text with every reference rendered in the current language (plain text is returned as is).</summary>
+        public static string Render(string s) { return Render(s, Current); }
+
+        /// <summary>English rendering (MCP, AI prompts, exports, logs).</summary>
+        public static string RenderEn(string s) { return Render(s, AppLang.EN); }
+
+        public static string Render(string s, AppLang lang)
+        {
+            if (!IsRef(s)) return s;
+            try
+            {
+                int i = 0;
+                return RenderSpan(s, ref i, lang, false);
+            }
+            catch (Exception ex)
+            {
+                Log.Warn(ex, "Bad text reference");
+                // Never show control characters: drop them.
+                var sb = new StringBuilder();
+                foreach (char c in s) if (c > RefTyped) sb.Append(c);
+                return sb.ToString();
+            }
+        }
+
+        /// <summary>Renders plain text and references until the end, or until an argument separator / end of the enclosing reference.</summary>
+        private static string RenderSpan(string s, ref int i, AppLang lang, bool insideArg)
+        {
+            var sb = new StringBuilder();
+            while (i < s.Length)
+            {
+                char c = s[i];
+                if (insideArg && (c == RefArg || c == RefEnd)) break;
+                if (c == RefStart) { i++; sb.Append(RenderRef(s, ref i, lang)); continue; }
+                sb.Append(c);
+                i++;
+            }
+            return sb.ToString();
+        }
+
+        private static string RenderRef(string s, ref int i, AppLang lang)
+        {
+            int keyStart = i;
+            while (i < s.Length && s[i] != RefArg && s[i] != RefEnd) i++;
+            string key = s.Substring(keyStart, i - keyStart);
+            var args = new List<object>();
+            while (i < s.Length && s[i] == RefArg)
+            {
+                i++;
+                if (i < s.Length && s[i] == RefTyped)
+                {
+                    int start = i;
+                    while (i < s.Length && s[i] != RefArg && s[i] != RefEnd) i++;
+                    args.Add(DecodeArg(s.Substring(start, i - start)));
+                }
+                else args.Add(RenderSpan(s, ref i, lang, true));
+            }
+            if (i < s.Length && s[i] == RefEnd) i++;
+            string template = Text(lang, key);
+            if (args.Count == 0) return template;
+            try { return string.Format(CultureOf(lang), template, args.ToArray()); }
+            catch (FormatException ex) { Log.Warn(ex, "Bad placeholders in text " + key); return template; }
+        }
+
+        /// <summary>Numbers and dates keep their type, so "{0:F1}" or "{0:HH:mm}" still format them in the display language.</summary>
+        private static string EncodeArg(object a)
+        {
+            if (a == null) return "";
+            if (a is string) return (string)a; // may itself hold (balanced) references: rendered recursively
+            var inv = CultureInfo.InvariantCulture;
+            if (a is int || a is long || a is short || a is byte || a is sbyte || a is ushort) return RefTyped + "l:" + Convert.ToInt64(a, inv).ToString(inv);
+            if (a is uint || a is ulong) return RefTyped + "u:" + Convert.ToUInt64(a, inv).ToString(inv);
+            if (a is double || a is float) return RefTyped + "d:" + Convert.ToDouble(a, inv).ToString("R", inv);
+            if (a is decimal) return RefTyped + "m:" + ((decimal)a).ToString(inv);
+            if (a is DateTime) return RefTyped + "t:" + ((DateTime)a).Ticks.ToString(inv) + ":" + (int)((DateTime)a).Kind;
+            return Convert.ToString(a, inv);
+        }
+
+        private static object DecodeArg(string enc)
+        {
+            var inv = CultureInfo.InvariantCulture;
+            string v = enc.Length > 3 ? enc.Substring(3) : "";
+            switch (enc.Length > 1 ? enc[1] : ' ')
+            {
+                case 'l': long l; return long.TryParse(v, NumberStyles.Integer, inv, out l) ? (object)l : v;
+                case 'u': ulong u; return ulong.TryParse(v, NumberStyles.Integer, inv, out u) ? (object)u : v;
+                case 'd': double d; return double.TryParse(v, NumberStyles.Float, inv, out d) ? (object)d : v;
+                case 'm': decimal m; return decimal.TryParse(v, NumberStyles.Number, inv, out m) ? (object)m : v;
+                case 't':
+                    string[] p = v.Split(':');
+                    long ticks; int kind;
+                    if (p.Length == 2 && long.TryParse(p[0], NumberStyles.Integer, inv, out ticks) && int.TryParse(p[1], out kind))
+                        return new DateTime(ticks, (DateTimeKind)kind);
+                    return v;
+                default: return v;
+            }
+        }
+
+        private static CultureInfo CultureOf(AppLang lang)
+        {
+            int i = (int)lang;
+            return CultureInfo.GetCultureInfo(i >= 0 && i < Cultures.Length ? Cultures[i] : "en-US");
         }
 
         /// <summary>
@@ -313,6 +444,9 @@ namespace WinCrashDoctor
         /// </summary>
         public static string T(string fr, string en)
         {
+            // Deferred engine texts carry the same reference in both fields: render it in the display language.
+            if (IsRef(en)) return Render(en);
+            if (IsRef(fr)) return Render(fr);
             if (Current == AppLang.FR) return fr ?? en;
             if (Current == AppLang.EN || en == null) return en ?? fr;
             return I18nTable.Translate(en, Current) ?? en;

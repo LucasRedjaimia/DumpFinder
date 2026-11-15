@@ -225,11 +225,12 @@ namespace WinCrashDoctor
                 .Take(6).ToList();
 
             // Plain explanation: the stop code first, then what we know about the culprit driver.
-            string codeFr = bc != null && bc.ExplanationFr != null ? bc.ExplanationFr : "Arrêt " + name + ".";
-            string codeEn = bc != null && bc.ExplanationEn != null ? bc.ExplanationEn : "Stop " + name + ".";
+            string codeFr = bc != null && bc.ExplanationFr != null ? bc.ExplanationFr : Localizer.Ref("engine.minidump_analyzer.stop_name", name);
+            string codeEn = bc != null && bc.ExplanationEn != null ? bc.ExplanationEn : codeFr;
             string modFr, modEn;
             ExplainCulprit(k.Culprit, bugHex, "System", out modFr, out modEn);
-            bool genericModuleText = modFr.StartsWith("Module identifié", StringComparison.Ordinal);
+            // The generic "identified module" sentence adds nothing to the stop-code explanation (test the key, not the wording).
+            bool genericModuleText = modFr.IndexOf(GenericModuleKey, StringComparison.Ordinal) >= 0;
 
             return new MinidumpReportItem
             {
@@ -496,53 +497,55 @@ namespace WinCrashDoctor
             return mods.FirstOrDefault() ?? "ntoskrnl.exe";
         }
 
+        private const string GenericModuleKey = "engine.minidump_analyzer.identified_module_process_code";
+
         private static void ExplainCulprit(string culprit, string code, string proc, out string fr, out string en)
         {
             string c = (culprit ?? "").ToLowerInvariant();
             if (c.Contains("nvlddmkm") || c.Contains("nvwgf2") || c.Contains("nvoglv"))
             {
-                fr = "Pilote graphique NVIDIA (nvlddmkm.sys). Causes fréquentes : délai TDR trop court, Multiplane Overlay (MPO), Skia Graphite dans Chrome, ou undervolt GPU trop agressif (vers 750–850 mV).";
-                en = "NVIDIA graphics driver (nvlddmkm.sys). Common causes: TDR timeout too short, Windows MPO, Chrome Skia Graphite, or an overly aggressive GPU undervolt (around 750–850 mV).";
+                fr = Localizer.Ref("engine.minidump_analyzer.nvidia_graphics_driver_nvlddmkm_sys_comm");
+                en = fr;
             }
             else if (c.Contains("amdkmdag") || c.Contains("amdwddmg") || c.Contains("amdxc") || c.Contains("atikmpag"))
             {
-                fr = "Pilote graphique AMD Radeon. Causes fréquentes : veille profonde ULPS, pilote remplacé en silence par Windows Update, ou Multiplane Overlay (MPO).";
-                en = "AMD Radeon graphics driver. Common causes: ULPS deep sleep, Windows Update silently replacing Adrenalin, or Windows MPO.";
+                fr = Localizer.Ref("engine.minidump_analyzer.amd_radeon_graphics_driver_common_causes");
+                en = fr;
             }
             else if (c.Contains("igdkmd") || c.Contains("igd10") || c.Contains("igd12"))
             {
-                fr = "Pilote graphique Intel Arc / Iris Xe (" + culprit + "). Causes fréquentes : économie d'énergie PCIe ASPM L1 en sortie de veille, délai TDR trop court, ou Resizable BAR désactivé.";
-                en = "Intel Arc / Iris Xe graphics driver (" + culprit + "). Common causes: PCIe ASPM L1 power saving on wake, TDR timeout too short, or Resizable BAR disabled.";
+                fr = Localizer.Ref("engine.minidump_analyzer.intel_arc_iris_xe_graphics_driver", culprit);
+                en = fr;
             }
             else if (c.Contains("rt25cx") || c.Contains("rtcx21") || c.Contains("rt640") || c.Contains("rtwlane") || c.Contains("mtkwl") || c.Contains("mtkbt"))
             {
-                fr = "Pilote réseau / Wi-Fi / Bluetooth (" + culprit + "). Causes fréquentes : économie d'énergie EEE / Green Ethernet (Realtek 2.5GbE) ou veille PCIe / Démarrage rapide (MediaTek RZ616) ; le correctif Réseau Anti-Freeze couvre ces deux pistes.";
-                en = "Network / Wi-Fi / Bluetooth driver (" + culprit + "). Common causes: EEE / Green Ethernet power saving (Realtek 2.5GbE) or PCIe sleep / Fast Startup (MediaTek RZ616); the Network Anti-Freeze fix covers both.";
+                fr = Localizer.Ref("engine.minidump_analyzer.network_wi_fi_bluetooth_driver_common", culprit);
+                en = fr;
             }
             else if (c.Contains("graphite") || c.Contains("chrome_elf") || c.Contains("libgles"))
             {
-                fr = "Moteur GPU de Chromium (GraphiteDawnD3D11). Souvent lié à un blocage de Direct3D 11 pendant le décodage vidéo matériel : désactiver Skia Graphite et MPO dans Correctifs aide en général.";
-                en = "Chromium GPU backend (GraphiteDawnD3D11). Often tied to a Direct3D 11 hang during hardware video decoding: turning off Skia Graphite and MPO in Fixes usually helps.";
+                fr = Localizer.Ref("engine.minidump_analyzer.chromium_gpu_backend_graphitedawnd3d11_o");
+                en = fr;
             }
             else if (c.Contains("stornvme") || c.Contains("nvme"))
             {
-                fr = "Pilote SSD NVMe de Microsoft (stornvme.sys). Causes fréquentes : délai dépassé côté contrôleur du SSD, ou allocation HMB sur les SSD sans DRAM sous Windows 11 ; le correctif NVMe HMB couvre cette seconde piste.";
-                en = "Microsoft NVMe SSD driver (stornvme.sys). Common causes: an SSD controller timeout, or HMB allocation on DRAM-less SSDs under Windows 11; the NVMe HMB fix covers the latter.";
+                fr = Localizer.Ref("engine.minidump_analyzer.microsoft_nvme_ssd_driver_stornvme_sys");
+                en = fr;
             }
             else if (c.Contains("vgk") || c.Contains("easyanticheat") || c.Contains("bedaisy") || c.Contains("randgrid"))
             {
-                fr = "Pilote Anti-Cheat Ring-0 (" + culprit + ") : conflit fréquent sous Win11 24H2 avec la Protection de la pile en mode noyau (Shadow Stacks), Auto HDR, un BIOS ancien ou un driver RGB.";
-                en = "Ring-0 Anti-Cheat driver (" + culprit + "): frequent conflict on Win11 24H2 with Kernel-mode Hardware-enforced Stack Protection, Auto HDR, outdated BIOS, or legacy RGB drivers.";
+                fr = Localizer.Ref("engine.minidump_analyzer.ring_0_anti_cheat_driver_frequent", culprit);
+                en = fr;
             }
             else if (c.Contains("ene.sys") || c.Contains("winring0") || c.Contains("inpout") || c.Contains("gdrv"))
             {
-                fr = "Pilote matériel bas niveau / RGB (" + culprit + "). Ce type de pilote est une cause connue de corruptions de la mémoire du noyau et d'écrans bleus aléatoires.";
-                en = "Low-level RGB / hardware monitoring driver (" + culprit + "). This kind of driver is a known cause of kernel memory corruption and random blue screens.";
+                fr = Localizer.Ref("engine.minidump_analyzer.low_level_rgb_hardware_monitoring_driver", culprit);
+                en = fr;
             }
             else
             {
-                fr = "Module identifié : " + culprit + " (Processus : " + proc + ", Code : " + code + ").";
-                en = "Identified module: " + culprit + " (Process: " + proc + ", Code: " + code + ").";
+                fr = Localizer.Ref(GenericModuleKey, culprit, proc, code);
+                en = fr;
             }
         }
     }

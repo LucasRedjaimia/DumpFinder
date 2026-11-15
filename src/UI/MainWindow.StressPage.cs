@@ -455,7 +455,7 @@ namespace WinCrashDoctor
                 RefreshStressLast();
                 var bad = rec.Stages.LastOrDefault();
                 if (bad != null && bad.Outcome == StressOutcome.Interrupted)
-                    SetToast(string.Format(Localizer.S("stress.the_last_stability_test_did_not"), bad.Name), "DangerFg");
+                    SetToast(string.Format(Localizer.S("stress.the_last_stability_test_did_not"), StressText.StageName(bad.Kind)), "DangerFg");
             }
             else
             {
@@ -720,7 +720,7 @@ namespace WinCrashDoctor
             var col = new StackPanel();
             Grid.SetColumn(col, 1);
             var title = new TextBlock { FontSize = 13, TextWrapping = TextWrapping.Wrap };
-            var name = new System.Windows.Documents.Run(r.Name ?? StressText.StageName(r.Kind)) { FontWeight = FontWeights.SemiBold };
+            var name = new System.Windows.Documents.Run(StressText.StageName(r.Kind)) /* always in the display language */ { FontWeight = FontWeights.SemiBold };
             name.SetResourceReference(System.Windows.Documents.TextElement.ForegroundProperty, "TextPrimary");
             var state = new System.Windows.Documents.Run("  ·  " + OutcomeLabel(r.Outcome) + (r.DurationSec > 0 ? "  ·  " + FormatStressDuration(r.DurationSec) : ""));
             state.SetResourceReference(System.Windows.Documents.TextElement.ForegroundProperty, fg);
@@ -728,11 +728,11 @@ namespace WinCrashDoctor
             title.Inlines.Add(state);
             col.Children.Add(title);
             if (!string.IsNullOrEmpty(r.Summary))
-                col.Children.Add(ResFg(new TextBlock { Text = r.Summary, FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) }, "TextSecondary"));
+                col.Children.Add(ResFg(new TextBlock { Text = Localizer.Render(r.Summary), FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) }, "TextSecondary"));
             if (!string.IsNullOrEmpty(r.Advice))
             {
                 var box = ResBg(new Border { CornerRadius = new CornerRadius(8), Padding = new Thickness(10, 7, 10, 8), Margin = new Thickness(0, 6, 0, 0) }, bg);
-                box.Child = ResFg(new TextBlock { Text = r.Advice, FontSize = 12, TextWrapping = TextWrapping.Wrap, LineHeight = 17 }, "TextPrimary");
+                box.Child = ResFg(new TextBlock { Text = Localizer.Render(r.Advice), FontSize = 12, TextWrapping = TextWrapping.Wrap, LineHeight = 17 }, "TextPrimary");
                 col.Children.Add(box);
             }
             if (r.FixIds != null && r.FixIds.Count > 0)

@@ -227,8 +227,8 @@ namespace WinCrashDoctor.Detection
             using (var bk = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
             using (var k = bk.CreateSubKey(CrashControl))
                 k.SetValue("CrashDumpEnabled", 7, RegistryValueKind.DWord);
-            messageFr = "✓ Enregistrement des écrans bleus réactivé (vidage mémoire automatique).";
-            messageEn = "✓ Blue screen recording turned back on (automatic memory dump).";
+            messageFr = Localizer.Ref("engine.detection_checks.blue_screen_recording_turned_back_on");
+            messageEn = messageFr;
             return true;
         }
 

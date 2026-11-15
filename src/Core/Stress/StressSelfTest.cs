@@ -35,7 +35,7 @@ namespace WinCrashDoctor.Stress
                 if (!ok) failures++;
                 sb.AppendLine();
                 sb.AppendLine((ok ? "[OK]   " : "[FAIL] ") + label + " → " + r.Outcome + " (attendu " + expected + ") en " + r.DurationSec + " s");
-                sb.AppendLine("       " + r.Summary);
+                sb.AppendLine("       " + Localizer.Render(r.Summary));
                 StressSample last;
                 lock (samples) last = samples.LastOrDefault(x => x.Tiles != null);
                 if (last != null)

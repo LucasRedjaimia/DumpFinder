@@ -49,12 +49,12 @@ namespace WinCrashDoctor
             var crashes = Recent(d).ToList();
             StabilityLevel lv = Stability.LevelOf(d.Score);
             string lvColor = lv == StabilityLevel.Stable ? "#0E8A57" : lv == StabilityLevel.Fragile ? "#A86400" : "#D33A33";
-            string lvText = lv == StabilityLevel.Stable ? T("Stable", "Stable") : lv == StabilityLevel.Fragile ? T("Fragile", "Fragile") : T("Instable", "Unstable");
+            string lvText = lv == StabilityLevel.Stable ? Localizer.S("engine.report_builder.stable") : lv == StabilityLevel.Fragile ? Localizer.S("engine.report_builder.fragile") : Localizer.S("engine.report_builder.unstable");
 
             var sb = new StringBuilder();
             sb.Append("<!doctype html><html lang=\"").Append(Localizer.Current.ToString().ToLowerInvariant()).Append("\"><head><meta charset=\"utf-8\">");
             sb.Append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
-            sb.Append("<title>Dump Finder — ").Append(H(T("Rapport de diagnostic", "Diagnostic report"))).Append(" — ").Append(DateTime.Now.ToString("yyyy-MM-dd")).Append("</title>");
+            sb.Append("<title>Dump Finder — ").Append(H(Localizer.S("engine.report_builder.diagnostic_report"))).Append(" — ").Append(DateTime.Now.ToString("yyyy-MM-dd")).Append("</title>");
             sb.Append("<style>")
               .Append(":root{--ink:#14121F;--muted:#6F6B85;--line:#E5E2EF;--soft:#F6F5FB;--brand:#5B47F5;--bad:#D33A33;--warn:#A86400;--ok:#0E8A57}")
               .Append("*{box-sizing:border-box}body{margin:0;background:#fff;color:var(--ink);font:14px/1.55 'Segoe UI Variable Text','Segoe UI',system-ui,sans-serif}")
@@ -82,31 +82,31 @@ namespace WinCrashDoctor
               .Append("<path d=\"M134 224H262L250 240L266 256L252 272L262 288H134a22 22 0 0 1-22-22V246a22 22 0 0 1 22-22Z\" fill=\"url(#i)\"/>")
               .Append("<path d=\"M292 214H414a22 22 0 0 1 22 22v20a22 22 0 0 1-22 22H292L282 262L296 246L280 230Z\" fill=\"url(#f)\"/>")
               .Append("<rect x=\"112\" y=\"316\" width=\"288\" height=\"64\" rx=\"22\" fill=\"url(#i)\" opacity=\".85\"/></svg>");
-            sb.Append("<div><h1>").Append(H(T("Rapport de diagnostic", "Diagnostic report"))).Append("</h1><p>Dump Finder ").Append(Version).Append(" · ")
+            sb.Append("<div><h1>").Append(H(Localizer.S("engine.report_builder.diagnostic_report"))).Append("</h1><p>Dump Finder ").Append(Version).Append(" · ")
               .Append(H(DateTime.Now.ToString("f", CultureInfo.CurrentUICulture))).Append("</p></div></header>");
 
             // Summary
-            sb.Append("<section class=\"hero\"><div class=\"score\" style=\"color:").Append(lvColor).Append("\">").Append(d.Score).Append("<small>/ 100 ").Append(H(T("stabilité", "stability"))).Append("</small></div><div>")
+            sb.Append("<section class=\"hero\"><div class=\"score\" style=\"color:").Append(lvColor).Append("\">").Append(d.Score).Append("<small>/ 100 ").Append(H(Localizer.S("engine.report_builder.stability"))).Append("</small></div><div>")
               .Append("<span class=\"pill\" style=\"color:").Append(lvColor).Append("\">").Append(H(lvText)).Append("</span> ");
-            if (d.WindowsIndex.HasValue) sb.Append("<span class=\"pill\">").Append(H(T("Indice Windows ", "Windows index "))).Append(d.WindowsIndex.Value.ToString("0.0")).Append("/10</span>");
+            if (d.WindowsIndex.HasValue) sb.Append("<span class=\"pill\">").Append(H(Localizer.S("engine.report_builder.windows_index"))).Append(d.WindowsIndex.Value.ToString("0.0")).Append("/10</span>");
             sb.Append("<h2 style=\"margin:10px 0 4px\">").Append(H(res.DiagnosisTitle)).Append("</h2><div class=\"muted\">").Append(H(res.DiagnosisBody)).Append("</div>")
-              .Append("<div class=\"muted\" style=\"margin-top:8px\">").Append(crashes.Count).Append(H(T(" crash(s) sur 30 jours, dont ", " crash(es) in 30 days, "))).Append(crashes.Count(c => Stability.IsSevere(c.Category)))
-              .Append(H(T(" grave(s).", " severe."))).Append("</div></div></section>");
+              .Append("<div class=\"muted\" style=\"margin-top:8px\">").Append(crashes.Count).Append(H(Localizer.S("engine.report_builder.crash_es_in_30_days"))).Append(crashes.Count(c => Stability.IsSevere(c.Category)))
+              .Append(H(Localizer.S("engine.report_builder.severe"))).Append("</div></div></section>");
 
             // System
-            sb.Append("<h2>").Append(H(T("Système", "System"))).Append("</h2><dl>");
-            Dl(sb, "CPU", hw.CpuName); Dl(sb, "GPU", hw.GpuName + " — " + T("pilote ", "driver ") + hw.GpuDriver);
-            Dl(sb, T("Carte mère", "Motherboard"), hw.BoardName); Dl(sb, "Windows", hw.OsVersion);
-            Dl(sb, T("Dernier démarrage", "Last boot"), hw.LastBoot.ToString("g", CultureInfo.CurrentUICulture));
+            sb.Append("<h2>").Append(H(Localizer.S("engine.report_builder.system"))).Append("</h2><dl>");
+            Dl(sb, "CPU", hw.CpuName); Dl(sb, "GPU", hw.GpuName + " — " + Localizer.S("engine.report_builder.driver") + hw.GpuDriver);
+            Dl(sb, Localizer.S("engine.report_builder.motherboard"), hw.BoardName); Dl(sb, "Windows", hw.OsVersion);
+            Dl(sb, Localizer.S("engine.report_builder.last_boot"), hw.LastBoot.ToString("g", CultureInfo.CurrentUICulture));
             sb.Append("</dl>");
 
             // Crash timeline
-            sb.Append("<h2>").Append(H(T("Crashs des 30 derniers jours", "Crashes in the last 30 days"))).Append("</h2>");
-            if (crashes.Count == 0) sb.Append("<p class=\"ok\">").Append(H(T("Aucun crash enregistré.", "No crash recorded."))).Append("</p>");
+            sb.Append("<h2>").Append(H(Localizer.S("engine.report_builder.crashes_in_the_last_30_days"))).Append("</h2>");
+            if (crashes.Count == 0) sb.Append("<p class=\"ok\">").Append(H(Localizer.S("engine.report_builder.no_crash_recorded"))).Append("</p>");
             else
             {
-                sb.Append("<table><tr><th>").Append(H(T("Date", "Date"))).Append("</th><th>").Append(H(T("Type", "Type"))).Append("</th><th>")
-                  .Append(H(T("Description", "Description"))).Append("</th><th>").Append(H(T("Code · module", "Code · module"))).Append("</th></tr>");
+                sb.Append("<table><tr><th>").Append(H(Localizer.S("engine.report_builder.date"))).Append("</th><th>").Append(H(Localizer.S("engine.report_builder.type"))).Append("</th><th>")
+                  .Append(H(Localizer.S("engine.report_builder.description"))).Append("</th><th>").Append(H(Localizer.S("engine.report_builder.code_module"))).Append("</th></tr>");
                 foreach (var c in crashes.Take(80))
                 {
                     string cls = Stability.IsSevere(c.Category) ? "bad" : (c.Category == CrashCategory.AppCrash ? "muted" : "warn");
@@ -120,19 +120,19 @@ namespace WinCrashDoctor
             var dumps = crashes.Where(c => c.Dump != null && CrashCatalog.IsKernel(c.Dump)).ToList();
             if (dumps.Count > 0)
             {
-                sb.Append("<h2>").Append(H(T("Écrans bleus décodés", "Decoded blue screens"))).Append("</h2>");
+                sb.Append("<h2>").Append(H(Localizer.S("engine.report_builder.decoded_blue_screens"))).Append("</h2>");
                 foreach (var c in dumps)
                 {
                     var m = c.Dump;
                     sb.Append("<div class=\"card\"><strong>").Append(H(m.BugCheckOrException)).Append("</strong> <span class=\"muted\">· ").Append(H(c.Time.ToString("g", CultureInfo.CurrentUICulture))).Append("</span>");
                     sb.Append("<p>").Append(H(CrashCatalog.PlainExplanation(c))).Append("</p><dl>");
-                    Dl(sb, T("Module fautif", "Faulting module"), m.PrimaryCulpritModule);
-                    Dl(sb, T("Preuve", "Evidence"), T(m.CulpritEvidenceFr, m.CulpritEvidenceEn));
-                    if (m.StackModules != null && m.StackModules.Count > 0) Dl(sb, T("Pilotes sur la pile", "Drivers on the stack"), string.Join(" → ", m.StackModules));
-                    if (m.BugCheckParameters != null) Dl(sb, T("Paramètres", "Parameters"), string.Join(", ", m.BugCheckParameters));
-                    Dl(sb, T("Fichier", "File"), m.FileName);
+                    Dl(sb, Localizer.S("engine.report_builder.faulting_module"), m.PrimaryCulpritModule);
+                    Dl(sb, Localizer.S("engine.report_builder.evidence"), T(m.CulpritEvidenceFr, m.CulpritEvidenceEn));
+                    if (m.StackModules != null && m.StackModules.Count > 0) Dl(sb, Localizer.S("engine.report_builder.drivers_on_the_stack"), string.Join(" → ", m.StackModules));
+                    if (m.BugCheckParameters != null) Dl(sb, Localizer.S("engine.report_builder.parameters"), string.Join(", ", m.BugCheckParameters));
+                    Dl(sb, Localizer.S("engine.report_builder.file"), m.FileName);
                     var drv = DriverInventory.FindByImage(res.Drivers, m.PrimaryCulpritModule);
-                    if (drv != null) Dl(sb, T("Pilote installé", "Installed driver"), drv.DeviceName + " — " + drv.Provider + " " + drv.Version);
+                    if (drv != null) Dl(sb, Localizer.S("engine.report_builder.installed_driver"), drv.DeviceName + " — " + drv.Provider + " " + drv.Version);
                     sb.Append("</dl>");
                     var deep = DeepAnalyzer.TryLoadCached(!string.IsNullOrEmpty(m.LocalCopyPath) ? m.LocalCopyPath : m.FullPath);
                     if (deep != null && deep.Ok)
@@ -146,13 +146,13 @@ namespace WinCrashDoctor
 
             // Fixes
             var fixes = (res.Fixes ?? new List<RegistryFixItem>()).Where(f => f.IsApplicableTo(hw)).ToList();
-            sb.Append("<h2>").Append(H(T("Protections", "Protections"))).Append("</h2><table><tr><th>").Append(H(T("Correctif", "Fix"))).Append("</th><th>")
-              .Append(H(T("État", "Status"))).Append("</th><th>").Append(H(T("Valeur actuelle", "Current value"))).Append("</th></tr>");
+            sb.Append("<h2>").Append(H(Localizer.S("engine.report_builder.protections"))).Append("</h2><table><tr><th>").Append(H(Localizer.S("engine.report_builder.fix"))).Append("</th><th>")
+              .Append(H(Localizer.S("engine.report_builder.status"))).Append("</th><th>").Append(H(Localizer.S("engine.report_builder.current_value"))).Append("</th></tr>");
             foreach (var f in fixes)
             {
-                string st = f.Status == FixStatus.Applied ? "<span class=\"ok\">" + H(T("Actif", "Active")) + "</span>"
-                          : f.Status == FixStatus.Recommended ? "<span class=\"warn\">" + H(T("Recommandé", "Recommended")) + "</span>"
-                          : "<span class=\"muted\">" + H(T("Optionnel", "Optional")) + "</span>";
+                string st = f.Status == FixStatus.Applied ? "<span class=\"ok\">" + H(Localizer.S("engine.report_builder.active")) + "</span>"
+                          : f.Status == FixStatus.Recommended ? "<span class=\"warn\">" + H(Localizer.S("engine.report_builder.recommended")) + "</span>"
+                          : "<span class=\"muted\">" + H(Localizer.S("engine.report_builder.optional")) + "</span>";
                 sb.Append("<tr><td>").Append(H(f.Title)).Append("</td><td>").Append(st).Append("</td><td class=\"mono\">").Append(H(f.CurrentValue)).Append("</td></tr>");
             }
             sb.Append("</table>");
@@ -163,8 +163,8 @@ namespace WinCrashDoctor
                 .ToList();
             if (drivers.Count > 0)
             {
-                sb.Append("<h2>").Append(H(T("Pilotes à surveiller", "Drivers worth a look"))).Append("</h2><table><tr><th>").Append(H(T("Périphérique", "Device"))).Append("</th><th>")
-                  .Append(H(T("Éditeur · version", "Provider · version"))).Append("</th><th>").Append(H(T("Date", "Date"))).Append("</th></tr>");
+                sb.Append("<h2>").Append(H(Localizer.S("engine.report_builder.drivers_worth_a_look"))).Append("</h2><table><tr><th>").Append(H(Localizer.S("engine.report_builder.device"))).Append("</th><th>")
+                  .Append(H(Localizer.S("engine.report_builder.provider_version"))).Append("</th><th>").Append(H(Localizer.S("engine.report_builder.date"))).Append("</th></tr>");
                 foreach (var x in drivers)
                     sb.Append("<tr><td>").Append(H(x.DeviceName)).Append("</td><td class=\"mono\">").Append(H(x.Provider + " " + x.Version)).Append("</td><td class=\"")
                       .Append(x.IsOld ? "warn" : "").Append("\">").Append(x.Date.HasValue ? H(x.Date.Value.ToString("d", Localizer.Culture)) : "").Append("</td></tr>");
@@ -175,15 +175,15 @@ namespace WinCrashDoctor
             var journal = (d.Journal ?? new List<JournalEntry>()).Take(20).ToList();
             if (journal.Count > 0)
             {
-                sb.Append("<h2>").Append(H(T("Modifications faites par Dump Finder", "Changes made by Dump Finder"))).Append("</h2><table>");
+                sb.Append("<h2>").Append(H(Localizer.S("engine.report_builder.changes_made_by_dump_finder"))).Append("</h2><table>");
                 foreach (var j in journal)
                     sb.Append("<tr><td class=\"mono\">").Append(H(j.Time.ToString("yyyy-MM-dd HH:mm"))).Append("</td><td>").Append(H(j.Title)).Append("</td><td class=\"")
                       .Append(j.Ok ? (j.RevertedAt.HasValue ? "muted" : "ok") : "bad").Append("\">")
-                      .Append(H(!j.Ok ? T("Échec", "Failed") : j.RevertedAt.HasValue ? T("Annulé", "Undone") : T("Appliqué", "Applied"))).Append("</td></tr>");
+                      .Append(H(!j.Ok ? Localizer.S("engine.report_builder.failed") : j.RevertedAt.HasValue ? Localizer.S("engine.report_builder.undone") : Localizer.S("engine.report_builder.applied"))).Append("</td></tr>");
                 sb.Append("</table>");
             }
 
-            sb.Append("<footer>").Append(H(T("Généré localement par Dump Finder. Aucune donnée n'a été envoyée.", "Generated locally by Dump Finder. No data was sent anywhere."))).Append("</footer>");
+            sb.Append("<footer>").Append(H(Localizer.S("engine.report_builder.generated_locally_by_dump_finder_no"))).Append("</footer>");
             sb.Append("</main></body></html>");
             return sb.ToString();
         }
@@ -231,14 +231,14 @@ namespace WinCrashDoctor
             {
                 { "time", c.Time.ToString("o") }, { "category", c.Category.ToString() }, { "title", c.Title }, { "code", c.TechLine }
             };
-            if (c.Event != null) o["event"] = new Dictionary<string, object> { { "source", c.Event.Source }, { "id", c.Event.CodeOrId }, { "details", Privacy.Redact(c.Event.DetailsEn) } };
+            if (c.Event != null) o["event"] = new Dictionary<string, object> { { "source", c.Event.Source }, { "id", c.Event.CodeOrId }, { "details", Privacy.Redact(Localizer.RenderEn(c.Event.DetailsEn)) } };
             if (c.Dump != null)
             {
                 var m = c.Dump;
                 var dump = new Dictionary<string, object>
                 {
                     { "file", m.FileName }, { "type", m.DumpType }, { "code", m.BugCheckOrException }, { "culprit", m.PrimaryCulpritModule },
-                    { "evidence", m.CulpritEvidenceEn }, { "parameters", m.BugCheckParameters }, { "stackModules", m.StackModules }, { "structured", m.StructuredParse }
+                    { "evidence", Localizer.RenderEn(m.CulpritEvidenceEn) }, { "parameters", m.BugCheckParameters }, { "stackModules", m.StackModules }, { "structured", m.StructuredParse }
                 };
                 var deep = DeepAnalyzer.TryLoadCached(!string.IsNullOrEmpty(m.LocalCopyPath) ? m.LocalCopyPath : m.FullPath);
                 if (deep != null && deep.Ok)
@@ -283,26 +283,26 @@ namespace WinCrashDoctor
             var hw = res.Hardware;
             var crashes = Recent(d).ToList();
             var sb = new StringBuilder();
-            sb.AppendLine("## " + T("Diagnostic de mon PC", "My PC diagnosis") + " — Dump Finder " + Version);
+            sb.AppendLine("## " + Localizer.S("engine.report_builder.my_pc_diagnosis") + " — Dump Finder " + Version);
             sb.AppendLine();
             sb.AppendLine("**" + res.DiagnosisTitle + "**  ");
-            sb.AppendLine(T("Score de stabilité", "Stability score") + T(" : **", ": **") + d.Score + "/100**" + (d.WindowsIndex.HasValue ? " · " + T("indice Windows", "Windows index") + " " + d.WindowsIndex.Value.ToString("0.0") + "/10" : ""));
+            sb.AppendLine(Localizer.S("engine.report_builder.stability_score") + Localizer.S("engine.report_builder.text") + d.Score + "/100**" + (d.WindowsIndex.HasValue ? " · " + Localizer.S("engine.report_builder.windows_index_2") + " " + d.WindowsIndex.Value.ToString("0.0") + "/10" : ""));
             sb.AppendLine();
             sb.AppendLine("| | |");
             sb.AppendLine("|---|---|");
             sb.AppendLine("| CPU | " + hw.CpuName + " |");
-            sb.AppendLine("| GPU | " + hw.GpuName + " (" + T("pilote", "driver") + " " + hw.GpuDriver + ") |");
-            if (!string.IsNullOrEmpty(hw.BoardName)) sb.AppendLine("| " + T("Carte mère", "Motherboard") + " | " + hw.BoardName + " |");
+            sb.AppendLine("| GPU | " + hw.GpuName + " (" + Localizer.S("engine.report_builder.driver_2") + " " + hw.GpuDriver + ") |");
+            if (!string.IsNullOrEmpty(hw.BoardName)) sb.AppendLine("| " + Localizer.S("engine.report_builder.motherboard") + " | " + hw.BoardName + " |");
             if (!string.IsNullOrEmpty(hw.OsVersion)) sb.AppendLine("| Windows | " + hw.OsVersion + " |");
             sb.AppendLine();
-            sb.AppendLine("### " + T("Crashs (30 jours)", "Crashes (30 days)") + " — " + crashes.Count);
+            sb.AppendLine("### " + Localizer.S("engine.report_builder.crashes_30_days") + " — " + crashes.Count);
             sb.AppendLine();
-            sb.AppendLine("| " + T("Date", "Date") + " | " + T("Type", "Type") + " | " + T("Code · module", "Code · module") + " |");
+            sb.AppendLine("| " + Localizer.S("engine.report_builder.date") + " | " + Localizer.S("engine.report_builder.type") + " | " + Localizer.S("engine.report_builder.code_module") + " |");
             sb.AppendLine("|---|---|---|");
             foreach (var c in crashes.Where(c => c.Category != CrashCategory.AppCrash).Take(15))
                 sb.AppendLine("| " + c.Time.ToString("yyyy-MM-dd HH:mm") + " | " + Localizer.CategoryName(c.Category) + " | `" + c.TechLine + "` |");
             int apps = crashes.Count(c => c.Category == CrashCategory.AppCrash);
-            if (apps > 0) sb.AppendLine().AppendLine("_+ " + apps + " " + T("crash(s) d'applications", "application crash(es)") + "_");
+            if (apps > 0) sb.AppendLine().AppendLine("_+ " + apps + " " + Localizer.S("engine.report_builder.application_crash_es") + "_");
 
             var suspects = crashes.Where(c => c.Dump != null && !string.IsNullOrEmpty(c.Dump.PrimaryCulpritModule))
                 .GroupBy(c => c.Dump.PrimaryCulpritModule, StringComparer.OrdinalIgnoreCase)
@@ -310,11 +310,11 @@ namespace WinCrashDoctor
             if (suspects.Count > 0)
             {
                 sb.AppendLine();
-                sb.AppendLine("### " + T("Modules mis en cause", "Implicated modules"));
+                sb.AppendLine("### " + Localizer.S("engine.report_builder.implicated_modules"));
                 foreach (var g in suspects) sb.AppendLine("- `" + g.Key + "` × " + g.Count());
             }
             sb.AppendLine();
-            sb.AppendLine("_" + T("Généré par Dump Finder", "Generated by Dump Finder") + "_");
+            sb.AppendLine("_" + Localizer.S("engine.report_builder.generated_by_dump_finder") + "_");
             return sb.ToString();
         }
     }

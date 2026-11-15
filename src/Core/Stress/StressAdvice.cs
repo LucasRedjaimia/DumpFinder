@@ -31,7 +31,7 @@ namespace WinCrashDoctor.Stress
         {
             get
             {
-                return Localizer.S("stress_advice.usual_causes_overly_aggressive_overclock");
+                return Localizer.Ref("stress_advice.usual_causes_overly_aggressive_overclock");
             }
         }
 
@@ -39,7 +39,7 @@ namespace WinCrashDoctor.Stress
         {
             get
             {
-                return Localizer.S("stress_advice.a_core_that_miscalculates_under_light");
+                return Localizer.Ref("stress_advice.a_core_that_miscalculates_under_light");
             }
         }
 
@@ -47,7 +47,7 @@ namespace WinCrashDoctor.Stress
         {
             get
             {
-                return Localizer.S("stress_advice.a_sign_of_gpu_instability_overly");
+                return Localizer.Ref("stress_advice.a_sign_of_gpu_instability_overly");
             }
         }
 
@@ -55,7 +55,7 @@ namespace WinCrashDoctor.Stress
         {
             get
             {
-                return Localizer.S("stress_advice.sudden_load_spikes_expose_a_marginal");
+                return Localizer.Ref("stress_advice.sudden_load_spikes_expose_a_marginal");
             }
         }
 
@@ -63,7 +63,7 @@ namespace WinCrashDoctor.Stress
         {
             get
             {
-                return Localizer.S("stress_advice.disable_the_expo_xmp_profile_or");
+                return Localizer.Ref("stress_advice.disable_the_expo_xmp_profile_or");
             }
         }
 
@@ -71,7 +71,7 @@ namespace WinCrashDoctor.Stress
         {
             get
             {
-                return Localizer.S("stress_advice.this_is_serious_the_ssd_its");
+                return Localizer.Ref("stress_advice.this_is_serious_the_ssd_its");
             }
         }
 
@@ -79,7 +79,7 @@ namespace WinCrashDoctor.Stress
         {
             get
             {
-                return Localizer.S("stress_advice.error_on_a_pcie_link_often");
+                return Localizer.Ref("stress_advice.error_on_a_pcie_link_often");
             }
         }
 
@@ -87,7 +87,7 @@ namespace WinCrashDoctor.Stress
         {
             get
             {
-                return Localizer.S("stress_advice.under_load_the_graphics_driver_stopped");
+                return Localizer.Ref("stress_advice.under_load_the_graphics_driver_stopped");
             }
         }
 
@@ -119,17 +119,17 @@ namespace WinCrashDoctor.Stress
         public static StressStageResult CpuFailed(StageContext ctx, int cpu, string work)
         {
             string where = cpu >= 0
-                ? string.Format(Localizer.S("stress_advice.logical_processor_load"), cpu, work)
+                ? Localizer.Ref("stress_advice.logical_processor_load", cpu, work)
                 : (string.IsNullOrEmpty(work) ? "" : " (" + work + ")");
             return R(ctx, StressOutcome.Failed,
-                Localizer.S("stress_advice.the_processor_returned_a_wrong_result") + where + ".",
+                Localizer.Ref("stress_advice.the_processor_returned_a_wrong_result") + where + ".",
                 CpuAdvice);
         }
 
         public static StressStageResult CoresFailed(StageContext ctx, List<int> bad, int total)
         {
             return R(ctx, StressOutcome.Failed,
-                string.Format(Localizer.S("stress_advice.wrong_result_on_of_core_s"),
+                Localizer.Ref("stress_advice.wrong_result_on_of_core_s", 
                               bad.Count, total, string.Join(", ", bad)),
                 CoreAdvice);
         }
@@ -137,35 +137,35 @@ namespace WinCrashDoctor.Stress
         public static StressStageResult GpuUnavailable(StageContext ctx, string reason)
         {
             return R(ctx, StressOutcome.Skipped,
-                Localizer.S("stress_advice.gpu_not_tested") + reason, null);
+                Localizer.Ref("stress_advice.gpu_not_tested") + reason, null);
         }
 
         public static StressStageResult GpuComputeFailed(StageContext ctx, string detail)
         {
             return R(ctx, StressOutcome.Failed,
-                Localizer.S("stress_advice.the_graphics_card_returned_a_different") + " (" + detail + ").",
+                Localizer.Ref("stress_advice.the_graphics_card_returned_a_different") + " (" + detail + ").",
                 ctx.Stage.Kind == StressStageKind.Transient ? GpuAdvice + " " + PsuAdvice : GpuAdvice);
         }
 
         public static StressStageResult GpuDriverReset(StageContext ctx, string detail)
         {
             return R(ctx, StressOutcome.Failed,
-                Localizer.S("stress_advice.the_graphics_driver_dropped_out_during") + " (" + detail + ").",
+                Localizer.Ref("stress_advice.the_graphics_driver_dropped_out_during") + " (" + detail + ").",
                 ctx.Stage.Kind == StressStageKind.Transient ? DriverResetAdvice + " " + PsuAdvice : DriverResetAdvice, "tdr");
         }
 
         public static StressStageResult VramFailed(StageContext ctx, double offsetBytes, int bits, long errors)
         {
             return R(ctx, StressOutcome.Failed,
-                string.Format(Localizer.S("stress_advice.video_memory_returned_corrupted_data_err"),
+                Localizer.Ref("stress_advice.video_memory_returned_corrupted_data_err", 
                               errors, StressText.Size(offsetBytes), bits),
-                Localizer.S("stress_advice.remove_any_gpu_memory_overclock_afterbur"));
+                Localizer.Ref("stress_advice.remove_any_gpu_memory_overclock_afterbur"));
         }
 
         public static StressStageResult RamFailed(StageContext ctx, double offsetBytes, int bits, string pattern)
         {
             return R(ctx, StressOutcome.Failed,
-                string.Format(Localizer.S("stress_advice.memory_error_at_bit_s_differ"),
+                Localizer.Ref("stress_advice.memory_error_at_bit_s_differ", 
                               StressText.Size(offsetBytes), bits, pattern),
                 RamAdvice);
         }
@@ -173,7 +173,7 @@ namespace WinCrashDoctor.Stress
         public static StressStageResult DiskDataFailed(StageContext ctx, double offsetBytes)
         {
             return R(ctx, StressOutcome.Failed,
-                string.Format(Localizer.S("stress_advice.data_read_back_does_not_match"),
+                Localizer.Ref("stress_advice.data_read_back_does_not_match", 
                               StressText.Size(offsetBytes)),
                 DiskAdvice);
         }
@@ -181,7 +181,7 @@ namespace WinCrashDoctor.Stress
         public static StressStageResult DiskIoFailed(StageContext ctx, int win32)
         {
             return R(ctx, StressOutcome.Failed,
-                string.Format(Localizer.S("stress_advice.the_drive_returned_an_i_o"),
+                Localizer.Ref("stress_advice.the_drive_returned_an_i_o", 
                               win32, new System.ComponentModel.Win32Exception(win32).Message),
                 DiskAdvice, "nvme_hmb", "pcie_aspm");
         }
@@ -189,15 +189,15 @@ namespace WinCrashDoctor.Stress
         public static StressStageResult DiskSlow(StageContext ctx, string summary, int spikes)
         {
             return R(ctx, StressOutcome.Warning,
-                summary + " " + string.Format(Localizer.S("stress_advice.but_stall_s_longer_than_2"), spikes),
-                Localizer.S("stress_advice.multi_second_stalls_freeze_windows_storn"),
+                summary + " " + Localizer.Ref("stress_advice.but_stall_s_longer_than_2", spikes),
+                Localizer.Ref("stress_advice.multi_second_stalls_freeze_windows_storn"),
                 "nvme_hmb", "pcie_aspm");
         }
 
         public static StressStageResult InternalError(StageContext ctx, Exception ex)
         {
             return R(ctx, StressOutcome.Warning,
-                Localizer.S("stress_advice.stage_interrupted_by_an_internal_error") + ex.Message,
+                Localizer.Ref("stress_advice.stage_interrupted_by_an_internal_error") + ex.Message,
                 null);
         }
 
@@ -221,12 +221,12 @@ namespace WinCrashDoctor.Stress
             if (whea.Count > 0)
             {
                 string wheaList = string.Join(", ", whea.Select(e => e.ToString()).Distinct().Take(4));
-                string summary = string.Format(Localizer.S("stress_advice.windows_logged_uncorrected_whea_hardware"), whea.Count, wheaList);
+                string summary = Localizer.Ref("stress_advice.windows_logged_uncorrected_whea_hardware", whea.Count, wheaList);
                 return R(ctx, StressOutcome.Failed, summary, pcieStage ? PcieAdvice : AdviceFor(k), pcieStage ? new[] { "pcie_aspm" } : new string[0]);
             }
             if (disk.Count > 0 && k == StressStageKind.Disk)
                 return R(ctx, StressOutcome.Failed,
-                    Localizer.S("stress_advice.the_storage_controller_reported_errors_o")
+                    Localizer.Ref("stress_advice.the_storage_controller_reported_errors_o")
                     + string.Join(", ", disk.Select(e => e.ToString()).Distinct().Take(4)) + ").",
                     DiskAdvice, "nvme_hmb", "pcie_aspm");
 
@@ -237,7 +237,7 @@ namespace WinCrashDoctor.Stress
             var fixes = new List<string>();
             if (wheaCorrected.Count > 0)
             {
-                notes.Add(string.Format(Localizer.S("stress_advice.windows_logged_corrected_whea_hardware_e"),
+                notes.Add(Localizer.Ref("stress_advice.windows_logged_corrected_whea_hardware_e", 
                                         wheaCorrected.Count, string.Join(", ", wheaCorrected.Select(e => e.ToString()).Distinct().Take(4))));
                 advice = pcieStage ? PcieAdvice : AdviceFor(k);
                 if (pcieStage) fixes.Add("pcie_aspm");
@@ -245,7 +245,7 @@ namespace WinCrashDoctor.Stress
             var others = events.Where(e => !(e.Kind == LiveEventKind.Whea && e.WarningOnly)).ToList();
             if (others.Count > 0)
             {
-                notes.Add(Localizer.S("stress_advice.windows_did_report")
+                notes.Add(Localizer.Ref("stress_advice.windows_did_report")
                           + string.Join(", ", others.Select(e => e.ToString()).Distinct().Take(4)) + ".");
                 if (advice == null) advice = gpu.Count > 0 ? DriverResetAdvice : DiskAdvice;
             }
@@ -256,26 +256,26 @@ namespace WinCrashDoctor.Stress
         public static StressStageResult Interrupted(StressStageKind k)
         {
             return R(k, StressOutcome.Interrupted,
-                Localizer.S("stress_advice.the_pc_crashed_or_rebooted_during"),
-                AdviceFor(k) + " " + Localizer.S("stress_advice.the_matching_blue_screen_is_probably"),
+                Localizer.Ref("stress_advice.the_pc_crashed_or_rebooted_during"),
+                AdviceFor(k) + " " + Localizer.Ref("stress_advice.the_matching_blue_screen_is_probably"),
                 k == StressStageKind.GpuCompute || k == StressStageKind.Vram || k == StressStageKind.Transient ? new[] { "tdr" } : new string[0]);
         }
 
         public static StressStageResult Abandoned(StressStageKind k)
         {
             return R(k, StressOutcome.Stopped,
-                Localizer.S("stress_advice.test_interrupted_before_the_end_pc"), null);
+                Localizer.Ref("stress_advice.test_interrupted_before_the_end_pc"), null);
         }
 
         public static StressStageResult NotRun(StressStageKind k)
         {
-            return R(k, StressOutcome.Skipped, Localizer.S("stress_advice.not_run_test_stopped"), null);
+            return R(k, StressOutcome.Skipped, Localizer.Ref("stress_advice.not_run_test_stopped"), null);
         }
 
         public static StressStageResult SkippedAfterDriverReset(StressStageKind k)
         {
             return R(k, StressOutcome.Skipped,
-                Localizer.S("stress_advice.skipped_the_graphics_driver_already_drop"), null);
+                Localizer.Ref("stress_advice.skipped_the_graphics_driver_already_drop"), null);
         }
     }
 }

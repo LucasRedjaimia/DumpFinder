@@ -127,11 +127,11 @@ namespace WinCrashDoctor.Optimize
             string dir = PathOf(id);
             if (dir == null && id == "usertemp")
             {
-                messageFr = "Nettoyage ignoré : la variable TEMP ne pointe pas vers le dossier temporaire habituel de ton compte.";
-                messageEn = "Cleanup skipped: the TEMP variable does not point to your account's usual temporary folder.";
+                messageFr = Localizer.Ref("engine.opt_cleanup.cleanup_skipped_the_temp_variable_does");
+                messageEn = messageFr;
                 return false;
             }
-            if (dir == null) { messageFr = "Élément inconnu."; messageEn = "Unknown item."; return false; }
+            if (dir == null) { messageFr = Localizer.Ref("engine.opt_cleanup.unknown_item"); messageEn = messageFr; return false; }
 
             long freed = 0; int deleted = 0, skipped = 0;
             if (id == "docache")
@@ -146,8 +146,8 @@ namespace WinCrashDoctor.Optimize
                 string rootFinal = SafeDelete.FinalPath(dir);
                 if (rootFinal == null)
                 {
-                    messageFr = "Dossier illisible, rien n'a été supprimé.";
-                    messageEn = "Folder not readable, nothing was deleted.";
+                    messageFr = Localizer.Ref("engine.opt_cleanup.folder_not_readable_nothing_was_deleted");
+                    messageEn = messageFr;
                     return false;
                 }
                 DateTime cutoff = DateTime.Now.AddHours(-24);
@@ -171,9 +171,11 @@ namespace WinCrashDoctor.Optimize
                 }
             }
 
-            string gb = (freed / (1024.0 * 1024 * 1024)).ToString("0.00");
-            messageFr = "✓ " + gb + " Go libérés" + (skipped > 0 ? " (" + skipped + " fichier(s) en cours d'utilisation laissés en place)" : "") + ".";
-            messageEn = "✓ " + gb + " GB freed" + (skipped > 0 ? " (" + skipped + " file(s) in use left alone)" : "") + ".";
+            double gb = freed / (1024.0 * 1024 * 1024);
+            messageFr = Localizer.Ref("engine.opt_cleanup.freed_gb", gb)
+                        + (skipped > 0 ? Localizer.Ref("engine.opt_cleanup.files_in_use_left", skipped) : "")
+                        + Localizer.Ref("common.sentence_end");
+            messageEn = messageFr;
             return true;
         }
 

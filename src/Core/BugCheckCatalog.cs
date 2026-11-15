@@ -48,144 +48,142 @@ namespace WinCrashDoctor
             var i = Get(code);
             if (i != null && i.ExplanationFr != null) return Localizer.T(i.ExplanationFr, i.ExplanationEn);
             string name = i != null ? i.Name : string.Format("0x{0:X8}", code);
-            return Localizer.T(
-                "Arrêt " + name + " : Windows s'est arrêté pour éviter d'endommager vos données. Le pilote indiqué dans l'analyse du dump est la meilleure piste.",
-                "Stop " + name + ": Windows halted to avoid damaging your data. The driver named in the dump analysis is the best lead.");
+            return Localizer.F("engine.bug_check_catalog.stop_windows_halted_to_avoid_damaging", name);
         }
 
         static BugCheckCatalog()
         {
             // ---- Curated (most frequent on desktop PCs)
             Add(0x0A, "IRQL_NOT_LESS_OR_EQUAL", 4, false, new[] { "sfc_repair" },
-                "Un pilote a lu une adresse mémoire interdite à un moment où il n'en avait pas le droit. Presque toujours un pilote tiers (réseau, audio, RGB, antivirus) ; plus rarement une RAM instable.",
-                "A driver touched a memory address it was not allowed to at that moment. Almost always a third-party driver (network, audio, RGB, antivirus); less often unstable RAM.");
+                Localizer.Ref("engine.bug_check_catalog.a_driver_touched_a_memory_address"),
+                Localizer.Ref("engine.bug_check_catalog.a_driver_touched_a_memory_address"));
             Add(0x19, "BAD_POOL_HEADER", 0, false, new[] { "sfc_repair" },
-                "Une zone de mémoire du noyau a été corrompue. Cause typique : pilote tiers défectueux (antivirus, VPN, RGB) ou RAM instable (profil XMP/EXPO).",
-                "A kernel memory block was corrupted. Typical causes: a faulty third-party driver (antivirus, VPN, RGB) or unstable RAM (XMP/EXPO profile).");
+                Localizer.Ref("engine.bug_check_catalog.a_kernel_memory_block_was_corrupted"),
+                Localizer.Ref("engine.bug_check_catalog.a_kernel_memory_block_was_corrupted"));
             Add(0x1A, "MEMORY_MANAGEMENT", 0, true, new[] { "pagefile_auto", "sfc_repair" },
-                "Le gestionnaire de mémoire de Windows a trouvé une incohérence grave. Très souvent la RAM (profil XMP/EXPO trop agressif, barrette défaillante), parfois un pilote.",
-                "Windows' memory manager found a serious inconsistency. Very often RAM (aggressive XMP/EXPO profile, failing stick), sometimes a driver.");
+                Localizer.Ref("engine.bug_check_catalog.windows_memory_manager_found_a_serious"),
+                Localizer.Ref("engine.bug_check_catalog.windows_memory_manager_found_a_serious"));
             Add(0x1E, "KMODE_EXCEPTION_NOT_HANDLED", 2, false, new[] { "sfc_repair" },
-                "Un programme du noyau (pilote) a provoqué une erreur qu'il n'a pas su gérer. Le paramètre 2 pointe directement dans le pilote fautif.",
-                "A kernel component (driver) raised an error it did not handle. Parameter 2 points straight into the faulting driver.");
+                Localizer.Ref("engine.bug_check_catalog.a_kernel_component_driver_raised_an"),
+                Localizer.Ref("engine.bug_check_catalog.a_kernel_component_driver_raised_an"));
             Add(0x24, "NTFS_FILE_SYSTEM", 0, true, new[] { "sfc_repair" },
-                "Le système de fichiers NTFS a rencontré une erreur : disque en fin de vie, câble SATA défaillant ou corruption du volume. Lancez chkdsk et vérifiez le SMART.",
-                "The NTFS file system hit an error: failing disk, faulty SATA cable or volume corruption. Run chkdsk and check SMART.");
+                Localizer.Ref("engine.bug_check_catalog.the_ntfs_file_system_hit_an"),
+                Localizer.Ref("engine.bug_check_catalog.the_ntfs_file_system_hit_an"));
             Add(0x3B, "SYSTEM_SERVICE_EXCEPTION", 2, false, new[] { "sfc_repair" },
-                "Une erreur s'est produite pendant un appel système. Le paramètre 2 donne l'adresse de l'instruction fautive, souvent dans un pilote graphique, un anti-cheat ou un antivirus.",
-                "An error occurred during a system call. Parameter 2 is the faulting instruction, often in a graphics driver, anti-cheat or antivirus.");
+                Localizer.Ref("engine.bug_check_catalog.an_error_occurred_during_a_system"),
+                Localizer.Ref("engine.bug_check_catalog.an_error_occurred_during_a_system"));
             Add(0x4E, "PFN_LIST_CORRUPT", 0, true, new[] { "sfc_repair" },
-                "La table des pages mémoire est corrompue. Cause la plus fréquente : RAM instable ou défaillante ; plus rarement un pilote qui libère deux fois la même mémoire.",
-                "The page frame database is corrupted. Most often unstable or failing RAM; more rarely a driver freeing the same memory twice.");
+                Localizer.Ref("engine.bug_check_catalog.the_page_frame_database_is_corrupted"),
+                Localizer.Ref("engine.bug_check_catalog.the_page_frame_database_is_corrupted"));
             Add(0x50, "PAGE_FAULT_IN_NONPAGED_AREA", 3, false, new[] { "pagefile_auto", "sfc_repair" },
-                "Le noyau a accédé à une mémoire qui n'existe pas. Le paramètre 3 pointe vers l'instruction fautive. Causes : pilote bogué, antivirus, ou RAM instable.",
-                "The kernel accessed memory that does not exist. Parameter 3 points to the faulting instruction. Causes: buggy driver, antivirus, or unstable RAM.");
+                Localizer.Ref("engine.bug_check_catalog.the_kernel_accessed_memory_that_does"),
+                Localizer.Ref("engine.bug_check_catalog.the_kernel_accessed_memory_that_does"));
             Add(0x7A, "KERNEL_DATA_INPAGE_ERROR", 0, true, new[] { "nvme_hmb", "pcie_aspm" },
-                "Windows n'a pas pu relire depuis le disque une page de mémoire du noyau. Signe d'un SSD/disque défaillant, d'un câble ou d'un contrôleur instable.",
-                "Windows could not read back a kernel memory page from disk. Sign of a failing SSD/disk, cable or unstable controller.");
+                Localizer.Ref("engine.bug_check_catalog.windows_could_not_read_back_a"),
+                Localizer.Ref("engine.bug_check_catalog.windows_could_not_read_back_a"));
             Add(0x7B, "INACCESSIBLE_BOOT_DEVICE", 0, true, null,
-                "Windows ne trouve plus son disque de démarrage : mode SATA/RAID changé dans le BIOS, mise à jour du pilote de stockage ratée ou disque défaillant.",
-                "Windows cannot reach its boot disk: SATA/RAID mode changed in BIOS, failed storage driver update or failing disk.");
+                Localizer.Ref("engine.bug_check_catalog.windows_cannot_reach_its_boot_disk"),
+                Localizer.Ref("engine.bug_check_catalog.windows_cannot_reach_its_boot_disk"));
             Add(0x7E, "SYSTEM_THREAD_EXCEPTION_NOT_HANDLED", 2, false, new[] { "sfc_repair" },
-                "Un thread système a planté sans être rattrapé. Le paramètre 2 pointe dans le pilote responsable (souvent graphique, Wi-Fi ou un pilote récemment installé).",
-                "A system thread crashed and was not caught. Parameter 2 points into the responsible driver (often graphics, Wi-Fi or a recently installed driver).");
+                Localizer.Ref("engine.bug_check_catalog.a_system_thread_crashed_and_was"),
+                Localizer.Ref("engine.bug_check_catalog.a_system_thread_crashed_and_was"));
             Add(0x7F, "UNEXPECTED_KERNEL_MODE_TRAP", 0, true, null,
-                "Le processeur a signalé une erreur que le noyau ne pouvait pas gérer (souvent un débordement de pile). Pistes : overclocking/undervolt CPU, RAM, pilote très bas niveau.",
-                "The CPU raised a trap the kernel could not handle (often a stack overflow). Leads: CPU overclock/undervolt, RAM, very low-level driver.");
+                Localizer.Ref("engine.bug_check_catalog.the_cpu_raised_a_trap_the"),
+                Localizer.Ref("engine.bug_check_catalog.the_cpu_raised_a_trap_the"));
             Add(0x8E, "KERNEL_MODE_EXCEPTION_NOT_HANDLED", 2, false, new[] { "sfc_repair" },
-                "Une exception non gérée dans le noyau. Le paramètre 2 indique l'adresse fautive. Pilote tiers ou RAM instable.",
-                "An unhandled exception in kernel mode. Parameter 2 is the faulting address. Third-party driver or unstable RAM.");
+                Localizer.Ref("engine.bug_check_catalog.an_unhandled_exception_in_kernel_mode"),
+                Localizer.Ref("engine.bug_check_catalog.an_unhandled_exception_in_kernel_mode"));
             Add(0x9C, "MACHINE_CHECK_EXCEPTION", 0, true, null,
-                "Le processeur a détecté une erreur matérielle fatale (ancien équivalent de WHEA). Overclocking, tension, température ou carte mère.",
-                "The CPU detected a fatal hardware error (older equivalent of WHEA). Overclock, voltage, temperature or motherboard.");
+                Localizer.Ref("engine.bug_check_catalog.the_cpu_detected_a_fatal_hardware"),
+                Localizer.Ref("engine.bug_check_catalog.the_cpu_detected_a_fatal_hardware"));
             Add(0x9F, "DRIVER_POWER_STATE_FAILURE", 0, false, new[] { "fast_startup", "usb_suspend", "pcie_aspm", "nic_powersave" },
-                "Un pilote n'a pas répondu lors d'une mise en veille ou d'un réveil. Très fréquent avec les cartes Wi-Fi, USB et les pilotes graphiques ; le Démarrage rapide aggrave souvent le problème.",
-                "A driver did not respond during sleep or wake. Very common with Wi-Fi, USB and graphics drivers; Fast Startup often makes it worse.");
+                Localizer.Ref("engine.bug_check_catalog.a_driver_did_not_respond_during"),
+                Localizer.Ref("engine.bug_check_catalog.a_driver_did_not_respond_during"));
             Add(0xA0, "INTERNAL_POWER_ERROR", 0, false, new[] { "fast_startup" },
-                "Erreur interne de gestion de l'alimentation, souvent liée à l'hibernation ou au Démarrage rapide.",
-                "Internal power-management error, often tied to hibernation or Fast Startup.");
+                Localizer.Ref("engine.bug_check_catalog.internal_power_management_error_often_ti"),
+                Localizer.Ref("engine.bug_check_catalog.internal_power_management_error_often_ti"));
             Add(0xBE, "ATTEMPTED_WRITE_TO_READONLY_MEMORY", 0, false, null,
-                "Un pilote a tenté d'écrire dans une mémoire protégée en lecture seule : pilote bogué ou malveillant.",
-                "A driver tried to write to read-only memory: buggy or malicious driver.");
+                Localizer.Ref("engine.bug_check_catalog.a_driver_tried_to_write_to"),
+                Localizer.Ref("engine.bug_check_catalog.a_driver_tried_to_write_to"));
             Add(0xC2, "BAD_POOL_CALLER", 0, false, null,
-                "Un pilote a mal utilisé la mémoire du noyau (libération en double, mauvaise taille). Presque toujours logiciel.",
-                "A driver misused kernel memory (double free, bad size). Almost always software.");
+                Localizer.Ref("engine.bug_check_catalog.a_driver_misused_kernel_memory_double"),
+                Localizer.Ref("engine.bug_check_catalog.a_driver_misused_kernel_memory_double"));
             Add(0xC4, "DRIVER_VERIFIER_DETECTED_VIOLATION", 0, false, null,
-                "Le Vérificateur de pilotes de Windows a pris un pilote en faute. Si vous l'avez activé, désactivez-le (verifier /reset) après avoir noté le pilote incriminé.",
-                "Windows Driver Verifier caught a driver misbehaving. If you enabled it, turn it off (verifier /reset) after noting the culprit.");
+                Localizer.Ref("engine.bug_check_catalog.windows_driver_verifier_caught_a_driver"),
+                Localizer.Ref("engine.bug_check_catalog.windows_driver_verifier_caught_a_driver"));
             Add(0xC5, "DRIVER_CORRUPTED_EXPOOL", 4, false, null,
-                "Un pilote a corrompu la mémoire du noyau. Le paramètre 4 pointe dans le pilote qui l'a touchée.",
-                "A driver corrupted kernel memory. Parameter 4 points into the driver that touched it.");
+                Localizer.Ref("engine.bug_check_catalog.a_driver_corrupted_kernel_memory_paramet"),
+                Localizer.Ref("engine.bug_check_catalog.a_driver_corrupted_kernel_memory_paramet"));
             Add(0xD1, "DRIVER_IRQL_NOT_LESS_OR_EQUAL", 4, false, new[] { "nic_powersave", "sfc_repair" },
-                "Un pilote a accédé à une mémoire invalide à un moment critique. Le paramètre 4 pointe dans ce pilote : réseau (Realtek, Killer, Intel), audio ou USB le plus souvent.",
-                "A driver accessed invalid memory at a critical moment. Parameter 4 points into that driver: network (Realtek, Killer, Intel), audio or USB most often.");
+                Localizer.Ref("engine.bug_check_catalog.a_driver_accessed_invalid_memory_at"),
+                Localizer.Ref("engine.bug_check_catalog.a_driver_accessed_invalid_memory_at"));
             Add(0xEA, "THREAD_STUCK_IN_DEVICE_DRIVER", 0, false, new[] { "tdr", "mpo" },
-                "Le pilote graphique est resté bloqué en attendant la carte. Ancêtre du TDR : pilote GPU, alimentation ou surchauffe.",
-                "The graphics driver got stuck waiting for the card. Predecessor of TDR: GPU driver, power or overheating.");
+                Localizer.Ref("engine.bug_check_catalog.the_graphics_driver_got_stuck_waiting"),
+                Localizer.Ref("engine.bug_check_catalog.the_graphics_driver_got_stuck_waiting"));
             Add(0xEF, "CRITICAL_PROCESS_DIED", 0, false, new[] { "sfc_repair", "nvme_hmb" },
-                "Un processus indispensable à Windows s'est arrêté. Fichiers système corrompus, SSD qui décroche (NVMe) ou antivirus trop agressif.",
-                "A process Windows cannot live without stopped. Corrupted system files, SSD dropping out (NVMe) or overzealous antivirus.");
+                Localizer.Ref("engine.bug_check_catalog.a_process_windows_cannot_live_without"),
+                Localizer.Ref("engine.bug_check_catalog.a_process_windows_cannot_live_without"));
             Add(0xF4, "CRITICAL_OBJECT_TERMINATION", 0, true, new[] { "nvme_hmb", "pcie_aspm" },
-                "Un processus critique a été tué, souvent parce que le disque système a cessé de répondre (SSD, câble, contrôleur).",
-                "A critical process was terminated, often because the system disk stopped responding (SSD, cable, controller).");
+                Localizer.Ref("engine.bug_check_catalog.a_critical_process_was_terminated_often"),
+                Localizer.Ref("engine.bug_check_catalog.a_critical_process_was_terminated_often"));
             Add(0xFC, "ATTEMPTED_EXECUTE_OF_NOEXECUTE_MEMORY", 0, false, null,
-                "Un pilote a tenté d'exécuter du code depuis une mémoire non exécutable : pilote bogué ou corruption mémoire.",
-                "A driver tried to execute code from non-executable memory: buggy driver or memory corruption.");
+                Localizer.Ref("engine.bug_check_catalog.a_driver_tried_to_execute_code"),
+                Localizer.Ref("engine.bug_check_catalog.a_driver_tried_to_execute_code"));
             Add(0xFE, "BUGCODE_USB_DRIVER", 0, false, new[] { "usb_suspend" },
-                "Erreur fatale dans la pile USB : périphérique USB défaillant, hub, ou pilote de contrôleur USB.",
-                "Fatal error in the USB stack: faulty USB device, hub or USB controller driver.");
+                Localizer.Ref("engine.bug_check_catalog.fatal_error_in_the_usb_stack"),
+                Localizer.Ref("engine.bug_check_catalog.fatal_error_in_the_usb_stack"));
             Add(0x101, "CLOCK_WATCHDOG_TIMEOUT", 0, true, null,
-                "Un cœur du processeur a cessé de répondre. Presque toujours matériel : overclocking/undervolt CPU, tension, BIOS ancien, CPU défaillant.",
-                "A CPU core stopped responding. Almost always hardware: CPU overclock/undervolt, voltage, old BIOS, failing CPU.");
+                Localizer.Ref("engine.bug_check_catalog.a_cpu_core_stopped_responding_almost"),
+                Localizer.Ref("engine.bug_check_catalog.a_cpu_core_stopped_responding_almost"));
             Add(0x109, "CRITICAL_STRUCTURE_CORRUPTION", 0, false, null,
-                "Le noyau a détecté une modification interdite de ses structures (PatchGuard) : pilote de triche, de monitoring bas niveau, ou RAM défaillante.",
-                "The kernel detected forbidden changes to its structures (PatchGuard): cheat or low-level monitoring driver, or failing RAM.");
+                Localizer.Ref("engine.bug_check_catalog.the_kernel_detected_forbidden_changes_to"),
+                Localizer.Ref("engine.bug_check_catalog.the_kernel_detected_forbidden_changes_to"));
             Add(0x10E, "VIDEO_MEMORY_MANAGEMENT_INTERNAL", 0, false, new[] { "tdr", "hags", "shader_cache" },
-                "Erreur interne de la gestion de la mémoire vidéo : pilote graphique, VRAM instable (overclock mémoire GPU) ou HAGS.",
-                "Internal video memory management error: graphics driver, unstable VRAM (GPU memory overclock) or HAGS.");
+                Localizer.Ref("engine.bug_check_catalog.internal_video_memory_management_error_g"),
+                Localizer.Ref("engine.bug_check_catalog.internal_video_memory_management_error_g"));
             Add(0x113, "VIDEO_DXGKRNL_FATAL_ERROR", 0, false, new[] { "mpo", "wu_driver_lock" },
-                "Le noyau graphique de Windows (DirectX) a rencontré une erreur fatale, souvent après une mise à jour ratée du pilote GPU.",
-                "Windows' graphics kernel (DirectX) hit a fatal error, often after a botched GPU driver update.");
+                Localizer.Ref("engine.bug_check_catalog.windows_graphics_kernel_directx_hit_a"),
+                Localizer.Ref("engine.bug_check_catalog.windows_graphics_kernel_directx_hit_a"));
             Add(0x116, "VIDEO_TDR_FAILURE", 2, false, new[] { "mpo", "tdr", "wu_driver_lock", "hags", "amd_ulps" },
-                "La carte graphique a cessé de répondre et Windows n'a pas réussi à relancer son pilote. Pilote GPU, MPO, undervolt/overclock trop agressif, alimentation ou câble PCIe. Le paramètre 2 pointe dans le pilote graphique.",
-                "The graphics card stopped responding and Windows could not restart its driver. GPU driver, MPO, aggressive undervolt/overclock, power supply or PCIe cable. Parameter 2 points into the graphics driver.");
+                Localizer.Ref("engine.bug_check_catalog.the_graphics_card_stopped_responding_and"),
+                Localizer.Ref("engine.bug_check_catalog.the_graphics_card_stopped_responding_and"));
             Add(0x117, "VIDEO_TDR_TIMEOUT_DETECTED", 2, false, new[] { "tdr", "mpo" },
-                "La carte graphique n'a pas répondu à temps ; Windows a relancé le pilote avec succès cette fois. Mêmes causes qu'un 0x116, en moins grave.",
-                "The graphics card did not respond in time; Windows restarted the driver successfully this time. Same causes as 0x116, less severe.");
+                Localizer.Ref("engine.bug_check_catalog.the_graphics_card_did_not_respond"),
+                Localizer.Ref("engine.bug_check_catalog.the_graphics_card_did_not_respond"));
             Add(0x119, "VIDEO_SCHEDULER_INTERNAL_ERROR", 0, false, new[] { "hags", "mpo", "tdr" },
-                "Le planificateur graphique a détecté une incohérence : pilote GPU, HAGS ou overclock de la carte.",
-                "The graphics scheduler detected an inconsistency: GPU driver, HAGS or card overclock.");
+                Localizer.Ref("engine.bug_check_catalog.the_graphics_scheduler_detected_an_incon"),
+                Localizer.Ref("engine.bug_check_catalog.the_graphics_scheduler_detected_an_incon"));
             Add(0x124, "WHEA_UNCORRECTABLE_ERROR", 0, true, new[] { "pcie_aspm" },
-                "Le matériel a signalé une erreur impossible à corriger : processeur (overclock, undervolt, Curve Optimizer), RAM, lien PCIe ou alimentation. Ce n'est pas un problème de pilote.",
-                "The hardware reported an uncorrectable error: CPU (overclock, undervolt, Curve Optimizer), RAM, PCIe link or power supply. Not a driver problem.");
+                Localizer.Ref("engine.bug_check_catalog.the_hardware_reported_an_uncorrectable_e"),
+                Localizer.Ref("engine.bug_check_catalog.the_hardware_reported_an_uncorrectable_e"));
             Add(0x12B, "FAULTY_HARDWARE_CORRUPTED_PAGE", 0, true, null,
-                "Une page mémoire a été corrompue par le matériel : RAM défaillante ou instable.",
-                "A memory page was corrupted by hardware: failing or unstable RAM.");
+                Localizer.Ref("engine.bug_check_catalog.a_memory_page_was_corrupted_by"),
+                Localizer.Ref("engine.bug_check_catalog.a_memory_page_was_corrupted_by"));
             Add(0x133, "DPC_WATCHDOG_VIOLATION", 0, false, new[] { "nvme_hmb", "pcie_aspm", "sfc_repair" },
-                "Un pilote a monopolisé le processeur trop longtemps. Classiques : firmware de SSD NVMe ancien, pilote de stockage/SATA, pilote audio ou réseau.",
-                "A driver hogged the CPU for too long. Classics: old NVMe SSD firmware, storage/SATA driver, audio or network driver.");
+                Localizer.Ref("engine.bug_check_catalog.a_driver_hogged_the_cpu_for"),
+                Localizer.Ref("engine.bug_check_catalog.a_driver_hogged_the_cpu_for"));
             Add(0x139, "KERNEL_SECURITY_CHECK_FAILURE", 0, false, new[] { "sfc_repair" },
-                "Le noyau a détecté une corruption de ses structures de données (débordement de tampon). Pilote tiers, anti-cheat ou RAM instable.",
-                "The kernel detected corruption of its data structures (buffer overrun). Third-party driver, anti-cheat or unstable RAM.");
+                Localizer.Ref("engine.bug_check_catalog.the_kernel_detected_corruption_of_its"),
+                Localizer.Ref("engine.bug_check_catalog.the_kernel_detected_corruption_of_its"));
             Add(0x13A, "KERNEL_MODE_HEAP_CORRUPTION", 0, false, null,
-                "Le tas mémoire du noyau a été corrompu par un pilote. Souvent pilote graphique, audio ou de périphérique RGB.",
-                "The kernel heap was corrupted by a driver. Often a graphics, audio or RGB device driver.");
+                Localizer.Ref("engine.bug_check_catalog.the_kernel_heap_was_corrupted_by"),
+                Localizer.Ref("engine.bug_check_catalog.the_kernel_heap_was_corrupted_by"));
             Add(0x144, "BUGCODE_USB3_DRIVER", 0, false, new[] { "usb_suspend" },
-                "Erreur fatale du pilote USB 3 : périphérique, hub, câble ou économie d'énergie USB.",
-                "Fatal USB 3 driver error: device, hub, cable or USB power saving.");
+                Localizer.Ref("engine.bug_check_catalog.fatal_usb_3_driver_error_device"),
+                Localizer.Ref("engine.bug_check_catalog.fatal_usb_3_driver_error_device"));
             Add(0x154, "UNEXPECTED_STORE_EXCEPTION", 0, true, new[] { "nvme_hmb", "fast_startup" },
-                "Le magasin de mémoire compressée a rencontré une erreur, souvent à cause du disque (SSD qui décroche, secteurs défectueux) ou d'un antivirus.",
-                "The compressed memory store hit an error, often because of the disk (SSD dropping out, bad sectors) or an antivirus.");
+                Localizer.Ref("engine.bug_check_catalog.the_compressed_memory_store_hit_an"),
+                Localizer.Ref("engine.bug_check_catalog.the_compressed_memory_store_hit_an"));
             Add(0x1C8, "MANUALLY_INITIATED_POWER_BUTTON_HOLD", 0, false, null,
-                "Le bouton d'alimentation a été maintenu enfoncé : Windows a créé ce dump pour diagnostiquer un PC figé.",
-                "The power button was held down: Windows wrote this dump to diagnose a frozen PC.");
+                Localizer.Ref("engine.bug_check_catalog.the_power_button_was_held_down"),
+                Localizer.Ref("engine.bug_check_catalog.the_power_button_was_held_down"));
             Add(0xE2, "MANUALLY_INITIATED_CRASH", 0, false, null,
-                "Crash déclenché volontairement (clavier ou outil de diagnostic).",
-                "Intentionally triggered crash (keyboard shortcut or diagnostic tool).");
+                Localizer.Ref("engine.bug_check_catalog.intentionally_triggered_crash_keyboard_s"),
+                Localizer.Ref("engine.bug_check_catalog.intentionally_triggered_crash_keyboard_s"));
 
             Add(0x18B, "SECURE_KERNEL_ERROR", 0, false, null,
-                "Le noyau sécurisé (sécurité basée sur la virtualisation, intégrité de la mémoire) a détecté une erreur. Déjà provoqué par une mise à jour de Windows (avril 2025) et par des pilotes incompatibles avec l'intégrité de la mémoire : installe les dernières mises à jour et mets à jour les pilotes signalés dans Sécurité Windows.",
-                "The secure kernel (virtualization-based security, Memory Integrity) detected an error. Already caused by a Windows update (April 2025) and by drivers incompatible with Memory Integrity: install the latest updates and update the drivers flagged in Windows Security.");
+                Localizer.Ref("engine.bug_check_catalog.the_secure_kernel_virtualization_based_s"),
+                Localizer.Ref("engine.bug_check_catalog.the_secure_kernel_virtualization_based_s"));
 
             // ---- Names only (official stop code names)
             Names(
