@@ -60,6 +60,8 @@
   "risky_drivers.disable_the_driver": "Wyłącz sterownik {0} ({1})",
   "risky_drivers.disable": "Wyłącz",
   "risky_drivers.re_enable": "Włącz ponownie",
+  "risky_drivers.driver_with_a_known_record": "Sterownik jądra ze znanymi problemami: {0} ({1})",
+  "risky_drivers.update_or_uninstall_the_software": "Dump Finder sam nie wyłącza tego sterownika: zaktualizuj lub odinstaluj oprogramowanie, które go instaluje.",
   "windows_release.home": "Home",
   "diagnostics_engine.since": "od {0}",
   "diagnostics_engine.across_all_history": "w całej historii",

@@ -12,53 +12,19 @@ namespace WinCrashDoctor.Detection
     /// Kernel drivers with a documented record of crashes or abuse (vulnerable-driver blocklist, Defender
     /// detections, Microsoft known issues). Found by the file their service loads, whatever the service is named.
     /// Disabling = service Start = 4, recorded by ChangeRecorder so the journal can put the exact value back.
+    ///
+    /// The catalog (file, owner, explanation, "recommend when loaded") lives in data/detection.json. Only drivers of
+    /// the copy EMBEDDED in the exe can be disabled or reverted; a driver added by a downloaded copy is reported as a
+    /// warning (Hardware › Conflicts) and nothing else, so downloaded data can never widen what is acted on.
     /// </summary>
     public static class RiskyDrivers
     {
-
-        internal sealed class Def
+        /// <summary>True only for a driver file of the embedded catalog (never one added by a download).</summary>
+        public static bool IsDisableableFile(string file)
         {
-            public string File;
-            public Func<string> Owner;
-            public Func<string> Why;
-            /// <summary>Recommended (not just optional) when the driver is actually loaded.</summary>
-            public bool RecommendWhenLoaded;
+            return !string.IsNullOrEmpty(file)
+                && DetectionData.Embedded.RiskyDrivers.Any(d => d.File.Equals(file, StringComparison.OrdinalIgnoreCase));
         }
-
-        private static readonly Def[] Catalog =
-        {
-            new Def
-            {
-                File = "inpoutx64.sys",
-                RecommendWhenLoaded = true,
-                Owner = () => Localizer.S("risky_drivers.rgb_and_monitoring_software"),
-                Why = () => Localizer.S("risky_drivers.microsoft_identified_it_in_august_2026")
-            },
-            new Def
-            {
-                File = "WinRing0x64.sys",
-                Owner = () => Localizer.S("risky_drivers.older_fan_control_rgb_or_monitoring"),
-                Why = () => Localizer.S("risky_drivers.vulnerable_driver_cve_2020_14979_flagged")
-            },
-            new Def
-            {
-                File = "RTCore64.sys",
-                Owner = () => Localizer.S("risky_drivers.msi_afterburner_rivatuner"),
-                Why = () => Localizer.S("risky_drivers.vulnerable_driver_cve_2019_16098_on")
-            },
-            new Def
-            {
-                File = "gdrv.sys",
-                Owner = () => Localizer.S("risky_drivers.older_gigabyte_utilities_app_center_easy"),
-                Why = () => Localizer.S("risky_drivers.vulnerable_driver_cve_2018_19320_on")
-            },
-            new Def
-            {
-                File = "ene.sys",
-                Owner = () => Localizer.S("risky_drivers.ene_rgb_software_memory_sticks_motherboa"),
-                Why = () => Localizer.S("risky_drivers.rgb_driver_that_windows_reports_as")
-            }
-        };
 
         public sealed class Found
         {
@@ -66,16 +32,21 @@ namespace WinCrashDoctor.Detection
             public string File;
             public int Start;
             public bool Running;
-            internal Def Def;
+            internal DetectionData.Driver Def;
+            /// <summary>Set from the embedded catalog at scan time: false for drivers only the downloaded data knows.</summary>
+            public bool CanDisable;
             public bool Disabled { get { return Start == 4; } }
+            public string Owner { get { return Localizer.S(Def.OwnerKey); } }
+            public string Why { get { return Localizer.S(Def.WhyKey); } }
         }
 
         private const string ServicesKey = @"SYSTEM\CurrentControlSet\Services";
 
-        /// <summary>Services whose ImagePath points at a catalog driver.</summary>
+        /// <summary>Services whose ImagePath points at a catalog driver (embedded or downloaded; see Found.CanDisable).</summary>
         public static List<Found> Scan()
         {
             var list = new List<Found>();
+            IReadOnlyList<DetectionData.Driver> catalog = DetectionData.Current.RiskyDrivers;
             try
             {
                 using (var bk = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
@@ -96,10 +67,14 @@ namespace WinCrashDoctor.Detection
                             string path = sys > 0 ? img.Substring(0, sys + 4).TrimStart('"')
                                         : (img.StartsWith("\"") ? img.Substring(1).Split('"')[0] : img.Split(' ')[0]);
                             string file = path.Substring(path.LastIndexOf('\\') + 1); // not Path.GetFileName: it rejects "\??\" prefixes
-                            Def def = Catalog.FirstOrDefault(d => d.File.Equals(file, StringComparison.OrdinalIgnoreCase));
+                            DetectionData.Driver def = catalog.FirstOrDefault(d => d.File.Equals(file, StringComparison.OrdinalIgnoreCase));
                             if (def == null) continue;
                             object start = k.GetValue("Start");
-                            list.Add(new Found { Service = name, File = def.File, Start = start is int ? (int)start : 3, Running = IsRunning(name), Def = def });
+                            list.Add(new Found
+                            {
+                                Service = name, File = def.File, Start = start is int ? (int)start : 3, Running = IsRunning(name), Def = def,
+                                CanDisable = IsDisableableFile(def.File)
+                            });
                         }
                         }
                         catch (Exception) { } // unreadable key, or an ImagePath with quotes/arguments Path.GetFileName rejects
@@ -127,21 +102,18 @@ namespace WinCrashDoctor.Detection
         {
             foreach (Found f in Scan())
             {
-                string state = f.Disabled
-                    ? Localizer.S("risky_drivers.disabled")
-                    : f.Running
-                        ? Localizer.S("risky_drivers.currently_loaded")
-                        : Localizer.S("risky_drivers.installed_not_loaded_windows_may_already");
+                if (!f.CanDisable) continue; // downloaded-only drivers: warning in Hardware › Conflicts, no fix
+                string state = StateText(f);
                 yield return new RegistryFixItem
                 {
                     Id = IdPrefix + f.Service,
                     Group = FixGroup.SystemMaint,
                     VendorTag = Localizer.S("risky_drivers.kernel_driver"),
                     HardwareTarget = "ALL",
-                    Title = string.Format(Localizer.S("risky_drivers.disable_the_driver"), f.File, f.Def.Owner()),
+                    Title = string.Format(Localizer.S("risky_drivers.disable_the_driver"), f.File, f.Owner),
                     RegPathDisplay = @"HKLM\SYSTEM\CurrentControlSet\Services\" + f.Service + "  •  Start = 4",
                     CurrentValue = state,
-                    Explanation = f.Def.Why(),
+                    Explanation = f.Why,
                     ApplyBtn = Localizer.S("risky_drivers.disable"),
                     RestoreBtn = Localizer.S("risky_drivers.re_enable"),
                     Status = f.Disabled ? FixStatus.Applied : (f.Running && f.Def.RecommendWhenLoaded ? FixStatus.Recommended : FixStatus.Optional),
@@ -152,17 +124,53 @@ namespace WinCrashDoctor.Detection
             }
         }
 
+        private static string StateText(Found f)
+        {
+            return f.Disabled
+                ? Localizer.S("risky_drivers.disabled")
+                : f.Running
+                    ? Localizer.S("risky_drivers.currently_loaded")
+                    : Localizer.S("risky_drivers.installed_not_loaded_windows_may_already");
+        }
+
+        /// <summary>
+        /// Drivers found on this PC that only the downloaded data knows: shown under Hardware › Conflicts as a
+        /// read-only warning (no fix button, no op), since Dump Finder only disables drivers of its embedded catalog.
+        /// </summary>
+        public static IEnumerable<ConflictCheckItem> WarningItems()
+        {
+            foreach (Found f in Scan())
+            {
+                if (f.CanDisable) continue;
+                yield return new ConflictCheckItem
+                {
+                    Tag = Localizer.S("risky_drivers.kernel_driver"),
+                    Title = Localizer.F("risky_drivers.driver_with_a_known_record", f.File, f.Owner),
+                    StatusText = f.Service + " · " + StateText(f),
+                    Explanation = f.Why + " " + Localizer.S("risky_drivers.update_or_uninstall_the_software"),
+                    Level = f.Disabled ? HealthLevel.Info : HealthLevel.Warning
+                };
+            }
+        }
+
+        /// <summary>The scanned driver an op or an undo may act on: embedded catalog only (CanDisable), never a downloaded one.</summary>
+        internal static Found FindDisableable(IEnumerable<Found> found, string service)
+        {
+            return found.FirstOrDefault(x => x.CanDisable && IsDisableableFile(x.File) && x.Service.Equals(service, StringComparison.OrdinalIgnoreCase));
+        }
+
         public static bool IsOp(string op) { return op != null && op.StartsWith(IdPrefix, StringComparison.Ordinal) && (op.EndsWith("_apply", StringComparison.Ordinal) || op.EndsWith("_restore", StringComparison.Ordinal)); }
 
         /// <summary>
-        /// drv_&lt;service&gt;_apply / _restore. Only services that currently point at a catalog driver are accepted,
-        /// so an op string (e.g. from an MCP client) can never disable an arbitrary service.
+        /// drv_&lt;service&gt;_apply / _restore. Only services that currently point at a driver of the EMBEDDED catalog
+        /// are accepted, so neither an op string (e.g. from an MCP client) nor downloaded data can disable an
+        /// arbitrary service.
         /// </summary>
         public static bool Execute(string op, out string messageFr, out string messageEn)
         {
             bool apply = op.EndsWith("_apply", StringComparison.Ordinal);
             string service = op.Substring(IdPrefix.Length, op.Length - IdPrefix.Length - (apply ? 6 : 8));
-            Found f = Scan().FirstOrDefault(x => x.Service.Equals(service, StringComparison.OrdinalIgnoreCase));
+            Found f = FindDisableable(Scan(), service);
             if (f == null)
             {
                 messageFr = "Pilote inconnu ou absent : " + service;
@@ -221,14 +229,19 @@ namespace WinCrashDoctor.Detection
             return 3;
         }
 
-        /// <summary>Lets ChangeRecorder undo a change to a catalog driver's service key (and nothing else).</summary>
+        /// <summary>Lets ChangeRecorder undo a change to an embedded-catalog driver's service key (and nothing else).</summary>
         public static bool IsRevertableKey(string keyPath)
+        {
+            return IsRevertableKey(keyPath, Scan());
+        }
+
+        internal static bool IsRevertableKey(string keyPath, IEnumerable<Found> found)
         {
             const string prefix = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\";
             if (keyPath == null || !keyPath.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) return false;
             string service = keyPath.Substring(prefix.Length);
             if (service.Length == 0 || service.Contains("\\")) return false;
-            return Scan().Any(x => x.Service.Equals(service, StringComparison.OrdinalIgnoreCase));
+            return FindDisableable(found, service) != null;
         }
     }
 }

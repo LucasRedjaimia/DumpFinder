@@ -60,6 +60,8 @@
   "risky_drivers.disable_the_driver": "{0} ドライバー（{1}）を無効にする",
   "risky_drivers.disable": "無効にする",
   "risky_drivers.re_enable": "再度有効にする",
+  "risky_drivers.driver_with_a_known_record": "既知の問題があるカーネル ドライバー: {0} ({1})",
+  "risky_drivers.update_or_uninstall_the_software": "Dump Finder はこのドライバーを自動では無効にしません。インストールしたソフトウェアを更新またはアンインストールしてください。",
   "windows_release.home": "Home",
   "diagnostics_engine.since": "{0} 以降",
   "diagnostics_engine.across_all_history": "全履歴",

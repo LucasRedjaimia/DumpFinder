@@ -60,6 +60,8 @@
   "risky_drivers.disable_the_driver": "Treiber {0} deaktivieren ({1})",
   "risky_drivers.disable": "Deaktivieren",
   "risky_drivers.re_enable": "Aktivieren",
+  "risky_drivers.driver_with_a_known_record": "Kerneltreiber mit bekannten Problemen: {0} ({1})",
+  "risky_drivers.update_or_uninstall_the_software": "Dump Finder deaktiviert diesen Treiber nicht selbst: Aktualisiere oder deinstalliere die Software, die ihn installiert.",
   "windows_release.home": "Home",
   "diagnostics_engine.since": "seit {0}",
   "diagnostics_engine.across_all_history": "im gesamten Verlauf",

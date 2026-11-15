@@ -60,6 +60,8 @@
   "risky_drivers.disable_the_driver": "Disable the {0} driver ({1})",
   "risky_drivers.disable": "Disable",
   "risky_drivers.re_enable": "Re-enable",
+  "risky_drivers.driver_with_a_known_record": "Kernel driver with a known record: {0} ({1})",
+  "risky_drivers.update_or_uninstall_the_software": "Dump Finder does not disable this driver itself: update or uninstall the software that installs it.",
   "windows_release.home": "Home",
   "diagnostics_engine.since": "since {0}",
   "diagnostics_engine.across_all_history": "across all history",

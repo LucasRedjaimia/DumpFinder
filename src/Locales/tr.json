@@ -60,6 +60,8 @@
   "risky_drivers.disable_the_driver": "{0} sürücüsünü devre dışı bırak ({1})",
   "risky_drivers.disable": "Devre dışı bırak",
   "risky_drivers.re_enable": "Yeniden etkinleştir",
+  "risky_drivers.driver_with_a_known_record": "Bilinen sorunları olan çekirdek sürücüsü: {0} ({1})",
+  "risky_drivers.update_or_uninstall_the_software": "Dump Finder bu sürücüyü kendisi devre dışı bırakmaz: onu yükleyen yazılımı güncelleyin veya kaldırın.",
   "windows_release.home": "Home",
   "diagnostics_engine.since": "{0} tarihinden beri",
   "diagnostics_engine.across_all_history": "tüm geçmiş boyunca",

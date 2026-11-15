@@ -60,6 +60,8 @@
   "risky_drivers.disable_the_driver": "Desactivar el controlador {0} ({1})",
   "risky_drivers.disable": "Desactivar",
   "risky_drivers.re_enable": "Reactivar",
+  "risky_drivers.driver_with_a_known_record": "Controlador de kernel con antecedentes conocidos: {0} ({1})",
+  "risky_drivers.update_or_uninstall_the_software": "Dump Finder no desactiva este controlador por sí mismo: actualiza o desinstala el software que lo instala.",
   "windows_release.home": "Home",
   "diagnostics_engine.since": "desde el {0}",
   "diagnostics_engine.across_all_history": "en todo el historial",

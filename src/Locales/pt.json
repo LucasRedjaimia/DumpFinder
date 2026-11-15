@@ -60,6 +60,8 @@
   "risky_drivers.disable_the_driver": "Desativar o driver {0} ({1})",
   "risky_drivers.disable": "Desativar",
   "risky_drivers.re_enable": "Reativar",
+  "risky_drivers.driver_with_a_known_record": "Driver de kernel com histórico conhecido: {0} ({1})",
+  "risky_drivers.update_or_uninstall_the_software": "O Dump Finder não desativa este driver por conta própria: atualize ou desinstale o software que o instala.",
   "windows_release.home": "Home",
   "diagnostics_engine.since": "desde {0}",
   "diagnostics_engine.across_all_history": "em todo o histórico",

@@ -1,0 +1,44 @@
+{
+  "schema": 1,
+  "version": 1,
+  "updated": "2026-11-15",
+
+  "nvidia": {
+    "problemVersions": [
+      { "version": "595.59", "reason": "detection_checks.release_pulled_by_nvidia_in_february" },
+      { "version": "621.01", "reason": "detection_checks.release_causing_video_freezes_and_black" }
+    ],
+    "minimumVersions": [
+      {
+        "gpuNames": [ "RTX 5050", "RTX 5060", "RTX 5070", "RTX 5080", "RTX 5090" ],
+        "minVersion": "572.83",
+        "reason": "detection_checks.driver_older_than_the_rtx_50"
+      }
+    ]
+  },
+
+  "nvme": {
+    "hmbIssueBuild": 26100,
+    "dramLessModels": [ "P3", "SN770", "SN580", "SN570", "NM790", "NM710", "MP44", "MP33", "NV2", "NV3" ]
+  },
+
+  "windows": {
+    "olderBuildsEnd": "2025-10-14",
+    "releases": [
+      { "build": 19045, "name": "Windows 10 22H2", "consumer": "2025-10-14", "enterprise": "2025-10-14", "consumerEsu": "2026-10-13" },
+      { "build": 22000, "name": "Windows 11 21H2", "consumer": "2023-10-10", "enterprise": "2024-10-08" },
+      { "build": 22621, "name": "Windows 11 22H2", "consumer": "2024-10-08", "enterprise": "2025-10-14" },
+      { "build": 22631, "name": "Windows 11 23H2", "consumer": "2025-11-11", "enterprise": "2026-11-10" },
+      { "build": 26100, "name": "Windows 11 24H2", "consumer": "2026-10-13", "enterprise": "2027-10-12" },
+      { "build": 26200, "name": "Windows 11 25H2", "consumer": "2027-10-12", "enterprise": "2028-10-10" }
+    ]
+  },
+
+  "riskyDrivers": [
+    { "file": "inpoutx64.sys", "owner": "risky_drivers.rgb_and_monitoring_software", "why": "risky_drivers.microsoft_identified_it_in_august_2026", "recommendWhenLoaded": true },
+    { "file": "WinRing0x64.sys", "owner": "risky_drivers.older_fan_control_rgb_or_monitoring", "why": "risky_drivers.vulnerable_driver_cve_2020_14979_flagged" },
+    { "file": "RTCore64.sys", "owner": "risky_drivers.msi_afterburner_rivatuner", "why": "risky_drivers.vulnerable_driver_cve_2019_16098_on" },
+    { "file": "gdrv.sys", "owner": "risky_drivers.older_gigabyte_utilities_app_center_easy", "why": "risky_drivers.vulnerable_driver_cve_2018_19320_on" },
+    { "file": "ene.sys", "owner": "risky_drivers.ene_rgb_software_memory_sticks_motherboa", "why": "risky_drivers.rgb_driver_that_windows_reports_as" }
+  ]
+}

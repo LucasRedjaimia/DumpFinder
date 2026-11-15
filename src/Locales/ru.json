@@ -60,6 +60,8 @@
   "risky_drivers.disable_the_driver": "Отключить драйвер {0} ({1})",
   "risky_drivers.disable": "Отключить",
   "risky_drivers.re_enable": "Включить",
+  "risky_drivers.driver_with_a_known_record": "Драйвер ядра с известными проблемами: {0} ({1})",
+  "risky_drivers.update_or_uninstall_the_software": "Dump Finder не отключает этот драйвер сам: обновите или удалите программу, которая его устанавливает.",
   "windows_release.home": "Домашняя",
   "diagnostics_engine.since": "с {0}",
   "diagnostics_engine.across_all_history": "за всю историю",

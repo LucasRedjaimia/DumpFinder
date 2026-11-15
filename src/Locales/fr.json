@@ -60,6 +60,8 @@
   "risky_drivers.disable_the_driver": "Désactiver le pilote {0} ({1})",
   "risky_drivers.disable": "Désactiver",
   "risky_drivers.re_enable": "Réactiver",
+  "risky_drivers.driver_with_a_known_record": "Pilote noyau à risque connu : {0} ({1})",
+  "risky_drivers.update_or_uninstall_the_software": "Dump Finder ne désactive pas ce pilote lui-même : mets à jour ou désinstalle le logiciel qui l'installe.",
   "windows_release.home": "Famille",
   "diagnostics_engine.since": "depuis le {0}",
   "diagnostics_engine.across_all_history": "sur tout l'historique",

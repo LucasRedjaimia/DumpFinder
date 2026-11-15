@@ -60,6 +60,8 @@
   "risky_drivers.disable_the_driver": "Disattiva il driver {0} ({1})",
   "risky_drivers.disable": "Disattiva",
   "risky_drivers.re_enable": "Riattiva",
+  "risky_drivers.driver_with_a_known_record": "Driver kernel con problemi noti: {0} ({1})",
+  "risky_drivers.update_or_uninstall_the_software": "Dump Finder non disattiva questo driver da solo: aggiorna o disinstalla il software che lo installa.",
   "windows_release.home": "Home",
   "diagnostics_engine.since": "dal {0}",
   "diagnostics_engine.across_all_history": "in tutta la cronologia",
