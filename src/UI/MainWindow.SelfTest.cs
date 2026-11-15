@@ -38,7 +38,7 @@ namespace WinCrashDoctor
                 var sb = new StringBuilder();
                 try
                 {
-                    await Task.Delay(3200); // first scan
+                    await Task.Delay(500);
                     failures = await win.UiChecks(sb);
                 }
                 catch (Exception ex)
@@ -58,6 +58,23 @@ namespace WinCrashDoctor
         {
             int bad = 0;
             Action<string, bool> expect = (label, ok) => { if (!ok) bad++; sb.AppendLine((ok ? "[OK]   " : "[FAIL] ") + label); };
+
+            // ---- First scan: the result-dependent buttons stay hidden until it ends (slow PCs, CI runners)
+            if (_lastResult == null)
+            {
+                expect("Pendant la 1re analyse : boutons du résumé masqués", _heroButtons.Visibility != Visibility.Visible);
+                var early = new List<string>();
+                UpdateLayout();
+                CollectNameless(this, early, "accueil-analyse", new int[1]);
+                expect("Pendant la 1re analyse : aucun contrôle sans nom" + (early.Count > 0 ? " : " + string.Join(", ", early.Distinct()) : ""), early.Count == 0);
+            }
+            else
+                sb.AppendLine("[SKIP] analyse déjà finie au démarrage du test : état « pendant l'analyse » non vérifié");
+            var waited = System.Diagnostics.Stopwatch.StartNew();
+            while ((_lastResult == null || _scanInProgress) && waited.Elapsed.TotalSeconds < 120) await Task.Delay(250);
+            expect("1re analyse terminée (" + (int)waited.Elapsed.TotalSeconds + " s)", _lastResult != null && !_scanInProgress);
+            expect("Après l'analyse : boutons du résumé affichés", _heroButtons.Visibility == Visibility.Visible);
+            await Settle();
 
             // ---- Contrast (WCAG 2.1 AA: 4.5:1 for text)
             AppThemeMode keep = ThemeManager.CurrentMode;
