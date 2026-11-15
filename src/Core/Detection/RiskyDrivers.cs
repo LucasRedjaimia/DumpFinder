@@ -15,7 +15,6 @@ namespace WinCrashDoctor.Detection
     /// </summary>
     public static class RiskyDrivers
     {
-        private static string L(string fr, string en, string es, string de, string it, string pt) { return Localizer.L(fr, en, es, de, it, pt); }
 
         internal sealed class Def
         {
@@ -32,57 +31,32 @@ namespace WinCrashDoctor.Detection
             {
                 File = "inpoutx64.sys",
                 RecommendWhenLoaded = true,
-                Owner = () => L("logiciels RGB et de monitoring", "RGB and monitoring software", "software RGB y de monitorización", "RGB- und Monitoring-Software", "software RGB e di monitoraggio", "softwares RGB e de monitoramento"),
-                Why = () => L("Microsoft l'a identifié en août 2026 comme la cause de gels, fermetures et redémarrages en jeu après la mise à jour KB5121003 (ARC Raiders, The Finals…). Le contournement officiel est de désactiver ce service ; le contrôle RGB peut cesser de fonctionner.",
-                              "Microsoft identified it in August 2026 as the cause of in-game freezes, closures and restarts after update KB5121003 (ARC Raiders, The Finals…). The official workaround is to disable this service; RGB control may stop working.",
-                              "Microsoft lo identificó en agosto de 2026 como causa de bloqueos, cierres y reinicios en juegos tras KB5121003. La solución oficial es desactivar el servicio; el control RGB puede dejar de funcionar.",
-                              "Microsoft hat ihn im August 2026 als Ursache für Einfrieren, Schließen und Neustarts in Spielen nach KB5121003 benannt. Offizielle Umgehung: Dienst deaktivieren; die RGB-Steuerung kann ausfallen.",
-                              "Microsoft lo ha indicato ad agosto 2026 come causa di blocchi, chiusure e riavvii nei giochi dopo KB5121003. La soluzione ufficiale è disattivare il servizio; il controllo RGB può smettere di funzionare.",
-                              "A Microsoft o identificou em agosto de 2026 como causa de travamentos, fechamentos e reinícios em jogos após a KB5121003. A solução oficial é desativar o serviço; o controle RGB pode parar.")
+                Owner = () => Localizer.S("risky_drivers.rgb_and_monitoring_software"),
+                Why = () => Localizer.S("risky_drivers.microsoft_identified_it_in_august_2026")
             },
             new Def
             {
                 File = "WinRing0x64.sys",
-                Owner = () => L("anciens outils de ventilation, RGB ou monitoring", "older fan-control, RGB or monitoring tools", "herramientas antiguas de ventiladores, RGB o monitorización", "ältere Lüfter-, RGB- oder Monitoring-Tools", "vecchi strumenti per ventole, RGB o monitoraggio", "ferramentas antigas de ventoinhas, RGB ou monitoramento"),
-                Why = () => L("Pilote vulnérable (CVE-2020-14979) signalé par Microsoft Defender depuis 2025. Les versions récentes de ces outils utilisent PawnIO à la place : mets-les à jour, puis désactive ce pilote.",
-                              "Vulnerable driver (CVE-2020-14979) flagged by Microsoft Defender since 2025. Recent versions of these tools use PawnIO instead: update them, then disable this driver.",
-                              "Controlador vulnerable (CVE-2020-14979) marcado por Microsoft Defender desde 2025. Las versiones recientes usan PawnIO: actualízalas y desactiva este controlador.",
-                              "Anfälliger Treiber (CVE-2020-14979), seit 2025 von Microsoft Defender gemeldet. Neuere Versionen nutzen PawnIO: aktualisieren, dann diesen Treiber deaktivieren.",
-                              "Driver vulnerabile (CVE-2020-14979) segnalato da Microsoft Defender dal 2025. Le versioni recenti usano PawnIO: aggiornale, poi disattiva questo driver.",
-                              "Driver vulnerável (CVE-2020-14979) sinalizado pelo Microsoft Defender desde 2025. Versões recentes usam PawnIO: atualize-as e desative este driver.")
+                Owner = () => Localizer.S("risky_drivers.older_fan_control_rgb_or_monitoring"),
+                Why = () => Localizer.S("risky_drivers.vulnerable_driver_cve_2020_14979_flagged")
             },
             new Def
             {
                 File = "RTCore64.sys",
-                Owner = () => L("MSI Afterburner / RivaTuner", "MSI Afterburner / RivaTuner", "MSI Afterburner / RivaTuner", "MSI Afterburner / RivaTuner", "MSI Afterburner / RivaTuner", "MSI Afterburner / RivaTuner"),
-                Why = () => L("Pilote vulnérable (CVE-2019-16098) inscrit sur la liste de blocage des pilotes vulnérables de Microsoft. Afterburner en a besoin pour l'overclocking : garde-le seulement si tu t'en sers, et à jour.",
-                              "Vulnerable driver (CVE-2019-16098) on Microsoft's vulnerable driver blocklist. Afterburner needs it for overclocking: keep it only if you use that, and keep it updated.",
-                              "Controlador vulnerable (CVE-2019-16098) en la lista de bloqueo de Microsoft. Afterburner lo necesita para overclock: consérvalo solo si lo usas y actualizado.",
-                              "Anfälliger Treiber (CVE-2019-16098) auf Microsofts Sperrliste. Afterburner braucht ihn zum Übertakten: nur behalten, wenn genutzt, und aktuell halten.",
-                              "Driver vulnerabile (CVE-2019-16098) nella blocklist di Microsoft. Afterburner ne ha bisogno per l'overclock: tienilo solo se lo usi, e aggiornato.",
-                              "Driver vulnerável (CVE-2019-16098) na lista de bloqueio da Microsoft. O Afterburner precisa dele para overclock: mantenha só se usar, e atualizado.")
+                Owner = () => Localizer.S("risky_drivers.msi_afterburner_rivatuner"),
+                Why = () => Localizer.S("risky_drivers.vulnerable_driver_cve_2019_16098_on")
             },
             new Def
             {
                 File = "gdrv.sys",
-                Owner = () => L("anciens utilitaires Gigabyte (App Center, EasyTune)", "older Gigabyte utilities (App Center, EasyTune)", "utilidades antiguas de Gigabyte (App Center, EasyTune)", "ältere Gigabyte-Tools (App Center, EasyTune)", "vecchie utility Gigabyte (App Center, EasyTune)", "utilitários antigos da Gigabyte (App Center, EasyTune)"),
-                Why = () => L("Pilote vulnérable (CVE-2018-19320) inscrit sur la liste de blocage de Microsoft ; il n'est plus nécessaire avec les outils Gigabyte récents.",
-                              "Vulnerable driver (CVE-2018-19320) on Microsoft's blocklist; recent Gigabyte tools no longer need it.",
-                              "Controlador vulnerable (CVE-2018-19320) en la lista de bloqueo de Microsoft; las herramientas recientes de Gigabyte ya no lo necesitan.",
-                              "Anfälliger Treiber (CVE-2018-19320) auf Microsofts Sperrliste; aktuelle Gigabyte-Tools brauchen ihn nicht mehr.",
-                              "Driver vulnerabile (CVE-2018-19320) nella blocklist di Microsoft; i tool Gigabyte recenti non ne hanno più bisogno.",
-                              "Driver vulnerável (CVE-2018-19320) na lista de bloqueio da Microsoft; ferramentas recentes da Gigabyte não precisam mais dele.")
+                Owner = () => Localizer.S("risky_drivers.older_gigabyte_utilities_app_center_easy"),
+                Why = () => Localizer.S("risky_drivers.vulnerable_driver_cve_2018_19320_on")
             },
             new Def
             {
                 File = "ene.sys",
-                Owner = () => L("logiciels RGB ENE (barrettes mémoire, cartes mères)", "ENE RGB software (memory sticks, motherboards)", "software RGB ENE (memorias, placas base)", "ENE-RGB-Software (Speichermodule, Mainboards)", "software RGB ENE (memorie, schede madri)", "softwares RGB ENE (memórias, placas-mãe)"),
-                Why = () => L("Pilote RGB que Windows signale comme incompatible avec l'intégrité de la mémoire, et cause connue d'écrans bleus. Mets à jour ou désinstalle le logiciel RGB qui l'installe.",
-                              "RGB driver that Windows reports as incompatible with Memory Integrity, and a known cause of blue screens. Update or uninstall the RGB software that installs it.",
-                              "Controlador RGB que Windows marca como incompatible con la integridad de memoria y causa conocida de pantallas azules. Actualiza o desinstala el software RGB.",
-                              "RGB-Treiber, den Windows als inkompatibel mit der Speicherintegrität meldet, bekannte Bluescreen-Ursache. RGB-Software aktualisieren oder deinstallieren.",
-                              "Driver RGB che Windows segnala come incompatibile con l'integrità della memoria, causa nota di schermate blu. Aggiorna o disinstalla il software RGB.",
-                              "Driver RGB que o Windows aponta como incompatível com a integridade de memória e causa conhecida de telas azuis. Atualize ou desinstale o software RGB.")
+                Owner = () => Localizer.S("risky_drivers.ene_rgb_software_memory_sticks_motherboa"),
+                Why = () => Localizer.S("risky_drivers.rgb_driver_that_windows_reports_as")
             }
         };
 
@@ -154,22 +128,22 @@ namespace WinCrashDoctor.Detection
             foreach (Found f in Scan())
             {
                 string state = f.Disabled
-                    ? L("Désactivé", "Disabled", "Desactivado", "Deaktiviert", "Disattivato", "Desativado")
+                    ? Localizer.S("risky_drivers.disabled")
                     : f.Running
-                        ? L("Chargé en ce moment", "Currently loaded", "Cargado ahora", "Derzeit geladen", "Caricato ora", "Carregado agora")
-                        : L("Installé, non chargé (Windows le bloque peut-être déjà)", "Installed, not loaded (Windows may already block it)", "Instalado, no cargado (Windows quizá ya lo bloquea)", "Installiert, nicht geladen (Windows blockiert ihn evtl. schon)", "Installato, non caricato (Windows potrebbe già bloccarlo)", "Instalado, não carregado (o Windows talvez já o bloqueie)");
+                        ? Localizer.S("risky_drivers.currently_loaded")
+                        : Localizer.S("risky_drivers.installed_not_loaded_windows_may_already");
                 yield return new RegistryFixItem
                 {
                     Id = IdPrefix + f.Service,
                     Group = FixGroup.SystemMaint,
-                    VendorTag = L("PILOTE NOYAU", "KERNEL DRIVER", "CONTROLADOR", "KERNELTREIBER", "DRIVER KERNEL", "DRIVER DE KERNEL"),
+                    VendorTag = Localizer.S("risky_drivers.kernel_driver"),
                     HardwareTarget = "ALL",
-                    Title = string.Format(L("Désactiver le pilote {0} ({1})", "Disable the {0} driver ({1})", "Desactivar el controlador {0} ({1})", "Treiber {0} deaktivieren ({1})", "Disattiva il driver {0} ({1})", "Desativar o driver {0} ({1})"), f.File, f.Def.Owner()),
+                    Title = string.Format(Localizer.S("risky_drivers.disable_the_driver"), f.File, f.Def.Owner()),
                     RegPathDisplay = @"HKLM\SYSTEM\CurrentControlSet\Services\" + f.Service + "  •  Start = 4",
                     CurrentValue = state,
                     Explanation = f.Def.Why(),
-                    ApplyBtn = L("Désactiver", "Disable", "Desactivar", "Deaktivieren", "Disattiva", "Desativar"),
-                    RestoreBtn = L("Réactiver", "Re-enable", "Reactivar", "Aktivieren", "Riattiva", "Reativar"),
+                    ApplyBtn = Localizer.S("risky_drivers.disable"),
+                    RestoreBtn = Localizer.S("risky_drivers.re_enable"),
                     Status = f.Disabled ? FixStatus.Applied : (f.Running && f.Def.RecommendWhenLoaded ? FixStatus.Recommended : FixStatus.Optional),
                     RequiresAdmin = true,
                     CanRestore = f.Disabled,

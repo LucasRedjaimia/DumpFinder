@@ -22,7 +22,6 @@ namespace WinCrashDoctor.Stress
         private const double SpikeMs = 2000;
         private const string FilePrefix = "dumpfinder_stress_";
 
-        private static string L(string fr, string en, string es, string de, string it, string pt) { return Localizer.L(fr, en, es, de, it, pt); }
 
         /// <summary>
         /// Deletes test files (%TEMP%\dumpfinder_stress_&lt;pid&gt;.bin) left behind by a run that ended in a crash or
@@ -89,12 +88,7 @@ namespace WinCrashDoctor.Stress
             long span = Math.Min(ctx.Stage.DiskSpanBytes, StressPlanner.DiskSpanFor(ctx.Stage.DiskSpanBytes));
             span -= span % Block;
             if (span < 1L << 30)
-                return StressAdvice.Skipped(ctx, string.Format(L("Pas assez d'espace libre sur {0} pour un test fiable (il faut au moins {1} de libre).",
-                                                                  "Not enough free space on {0} for a meaningful test (at least {1} free needed).",
-                                                                  "No hay espacio libre suficiente en {0} (se necesitan al menos {1} libres).",
-                                                                  "Zu wenig freier Speicher auf {0} (mindestens {1} frei nötig).",
-                                                                  "Spazio libero insufficiente su {0} (servono almeno {1} liberi).",
-                                                                  "Espaço livre insuficiente em {0} (são necessários pelo menos {1} livres)."), drive, StressText.Gb(reserve + (1L << 30))));
+                return StressAdvice.Skipped(ctx, string.Format(Localizer.S("disk_stress.not_enough_free_space_on_for"), drive, StressText.Gb(reserve + (1L << 30))));
 
             long writeCap = StressPlanner.DiskWriteCap(span);
             bool capped = false;
@@ -133,24 +127,13 @@ namespace WinCrashDoctor.Stress
                 try { if (File.Exists(path)) File.Delete(path); } catch { }
             }
 
-            string summary = string.Format(L(
-                "{0} écrits puis relus directement sur {1} et vérifiés, aucune donnée corrompue. Écriture : {2} en moyenne, {3} au plus bas ; latence max {4:N0} ms.",
-                "{0} written then read back from {1} and verified, no corrupted data. Writes: {2} average, {3} at the lowest; peak latency {4:N0} ms.",
-                "{0} escritos y releídos de {1} y verificados, sin datos corruptos. Escritura: {2} de media, {3} como mínimo; latencia máx. {4:N0} ms.",
-                "{0} auf {1} geschrieben, direkt zurückgelesen und geprüft, keine beschädigten Daten. Schreiben: {2} im Mittel, {3} minimal; max. Latenz {4:N0} ms.",
-                "{0} scritti e riletti da {1} e verificati, nessun dato corrotto. Scrittura: {2} in media, {3} al minimo; latenza max {4:N0} ms.",
-                "{0} gravados e relidos de {1} e verificados, nenhum dado corrompido. Gravação: {2} em média, {3} no mínimo; latência máx. {4:N0} ms."),
+            string summary = string.Format(Localizer.S("disk_stress.written_then_read_back_from_and"),
                 StressText.Gb(st.Verified), drive,
                 st.WriteMs > 0 ? StressText.MbPerSec(st.Written / (st.WriteMs / 1000.0) / (1024.0 * 1024)) : "—",
                 double.IsNaN(st.MinWriteMbps) ? "—" : StressText.MbPerSec(st.MinWriteMbps),
                 st.MaxLatencyMs);
             if (capped)
-                summary += " " + string.Format(L("Limite d'écriture de {0} atteinte : étape terminée en avance pour ménager le SSD.",
-                                                 "Write limit of {0} reached: stage ended early to spare the SSD.",
-                                                 "Límite de escritura de {0} alcanzado: etapa terminada antes para no desgastar el SSD.",
-                                                 "Schreibgrenze von {0} erreicht: Schritt vorzeitig beendet, um die SSD zu schonen.",
-                                                 "Limite di scrittura di {0} raggiunto: fase terminata in anticipo per preservare l'SSD.",
-                                                 "Limite de gravação de {0} atingido: etapa encerrada antes para poupar o SSD."), StressText.Gb(writeCap));
+                summary += " " + string.Format(Localizer.S("disk_stress.write_limit_of_reached_stage_ended"), StressText.Gb(writeCap));
             if (st.Spikes > 0 && !ctx.UserStopped) return StressAdvice.DiskSlow(ctx, summary, st.Spikes);
             return StressAdvice.Passed(ctx, summary);
         }
@@ -185,7 +168,7 @@ namespace WinCrashDoctor.Stress
                     double mbps = secBytes / sec.Elapsed.TotalSeconds / (1024.0 * 1024);
                     if (written > (2L << 30)) // ignore the first GB or two (cache warm-up)
                         st.MinWriteMbps = double.IsNaN(st.MinWriteMbps) ? mbps : Math.Min(st.MinWriteMbps, mbps);
-                    Publish(ctx, L("Écriture ", "Writing ", "Escritura ", "Schreiben ", "Scrittura ", "Gravação ") + StressText.Gb(written) + " / " + StressText.Gb(span), mbps, secMax, st);
+                    Publish(ctx, Localizer.S("disk_stress.writing") + StressText.Gb(written) + " / " + StressText.Gb(span), mbps, secMax, st);
                     sec.Restart(); secBytes = 0; secMax = 0;
                     if (FreeBytes(root) < minFree) break; // something else is filling the drive: stop growing the file
                 }
@@ -216,7 +199,7 @@ namespace WinCrashDoctor.Stress
                 if (sec.ElapsedMilliseconds >= 1000)
                 {
                     double mbps = secBytes / sec.Elapsed.TotalSeconds / (1024.0 * 1024);
-                    Publish(ctx, L("Relecture et vérification ", "Reading back and verifying ", "Relectura y verificación ", "Rücklesen und Prüfen ", "Rilettura e verifica ", "Releitura e verificação ") + StressText.Gb(pos) + " / " + StressText.Gb(written), mbps, secMax, st);
+                    Publish(ctx, Localizer.S("disk_stress.reading_back_and_verifying") + StressText.Gb(pos) + " / " + StressText.Gb(written), mbps, secMax, st);
                     sec.Restart(); secBytes = 0; secMax = 0;
                 }
             }
@@ -248,7 +231,7 @@ namespace WinCrashDoctor.Stress
                 if (sec.ElapsedMilliseconds >= 1000)
                 {
                     double iops = ops / sec.Elapsed.TotalSeconds;
-                    Publish(ctx, string.Format(L("Lectures aléatoires 4K vérifiées · {0:N0} IOPS", "Verified random 4K reads · {0:N0} IOPS", "Lecturas aleatorias 4K verificadas · {0:N0} IOPS", "Geprüfte zufällige 4K-Lesezugriffe · {0:N0} IOPS", "Letture casuali 4K verificate · {0:N0} IOPS", "Leituras aleatórias 4K verificadas · {0:N0} IOPS"), iops),
+                    Publish(ctx, string.Format(Localizer.S("disk_stress.verified_random_4k_reads_0_n0"), iops),
                         iops * Page / (1024.0 * 1024), secMax, st);
                     sec.Restart(); ops = 0; secMax = 0;
                 }
@@ -269,12 +252,10 @@ namespace WinCrashDoctor.Stress
             {
                 StressTile.Make(StressText.Throughput, StressText.MbPerSec(mbps), StressPlanner.TestDrive),
                 StressTile.Make(StressText.Latency, latMs.ToString("N0") + " ms", StressText.Max + " " + st.MaxLatencyMs.ToString("N0") + " ms", st.Spikes > 0 ? 2 : 0),
-                StressTile.Make(L("Vérifié", "Verified", "Verificado", "Geprüft", "Verificato", "Verificado"), StressText.Gb(st.Verified), L("écrit : ", "written: ", "escrito: ", "geschrieben: ", "scritto: ", "gravado: ") + StressText.Gb(st.Written)),
+                StressTile.Make(Localizer.S("disk_stress.verified"), StressText.Gb(st.Verified), Localizer.S("disk_stress.written") + StressText.Gb(st.Written)),
                 ctx.ErrorTile(0)
             }, mbps, latMs,
-            L("Violet : débit (Mo/s)   •   Ambre : latence la plus longue de la seconde (ms)", "Violet: throughput (MB/s)   •   Amber: slowest I/O of the second (ms)",
-              "Violeta: velocidad (MB/s)   •   Ámbar: E/S más lenta del segundo (ms)", "Violett: Durchsatz (MB/s)   •   Gelb: langsamster Zugriff der Sekunde (ms)",
-              "Viola: velocità (MB/s)   •   Ambra: I/O più lento del secondo (ms)", "Violeta: taxa (MB/s)   •   Âmbar: E/S mais lenta do segundo (ms)"));
+            Localizer.S("disk_stress.violet_throughput_mb_s_amber_slowest"));
         }
 
         /// <summary>Each 4 KB page holds a pseudo-random stream seeded by its own index, so any page can be checked alone.</summary>

@@ -25,7 +25,6 @@ namespace WinCrashDoctor.Optimize
     /// </summary>
     public static class OptApps
     {
-        private static string L(string fr, string en, string es, string de, string it, string pt) { return Localizer.L(fr, en, es, de, it, pt); }
 
         private sealed class Def
         {
@@ -42,34 +41,34 @@ namespace WinCrashDoctor.Optimize
         private static readonly Def[] Catalog =
         {
             // Checked by default: ads, demos, abandoned apps
-            D("Clipchamp.Clipchamp", true, () => "Clipchamp", () => L("éditeur vidéo en ligne", "online video editor", "editor de vídeo en línea", "Online-Videoeditor", "editor video online", "editor de vídeo online")),
-            D("Microsoft.BingNews", true, () => L("Actualités (Microsoft Start)", "News (Microsoft Start)", "Noticias", "Nachrichten", "Notizie", "Notícias")),
-            D("Microsoft.BingSearch", true, () => L("Recherche Bing", "Bing Search", "Búsqueda de Bing", "Bing-Suche", "Ricerca Bing", "Pesquisa Bing")),
-            D("Microsoft.MicrosoftSolitaireCollection", true, () => "Microsoft Solitaire Collection", () => L("avec publicités", "with ads", "con anuncios", "mit Werbung", "con pubblicità", "com anúncios")),
-            D("Microsoft.Getstarted", true, () => L("Astuces", "Tips", "Consejos", "Tipps", "Suggerimenti", "Dicas")),
-            D("Microsoft.MicrosoftOfficeHub", true, () => "Microsoft 365 (Office)", () => L("raccourci promotionnel, pas Office lui-même", "promotional shortcut, not Office itself", "acceso promocional, no Office", "Werbeverknüpfung, nicht Office selbst", "collegamento promozionale, non Office", "atalho promocional, não o Office")),
-            D("Microsoft.WindowsFeedbackHub", true, () => L("Hub de commentaires", "Feedback Hub", "Centro de opiniones", "Feedback-Hub", "Hub di Feedback", "Hub de Comentários")),
-            D("Microsoft.549981C3F5F10", true, () => "Cortana", () => L("abandonnée par Microsoft", "discontinued by Microsoft", "abandonada por Microsoft", "von Microsoft eingestellt", "abbandonata da Microsoft", "descontinuada pela Microsoft")),
-            D("Microsoft.Windows.DevHome", true, () => "Dev Home", () => L("abandonnée par Microsoft", "discontinued by Microsoft", "abandonada por Microsoft", "von Microsoft eingestellt", "abbandonata da Microsoft", "descontinuada pela Microsoft")),
-            D("Microsoft.MixedReality.Portal", true, () => L("Portail de réalité mixte", "Mixed Reality Portal", "Portal de realidad mixta", "Mixed-Reality-Portal", "Portale realtà mista", "Portal de Realidade Misturada")),
-            D("Microsoft.Microsoft3DViewer", true, () => L("Visionneuse 3D", "3D Viewer", "Visor 3D", "3D-Viewer", "Visualizzatore 3D", "Visualizador 3D")),
+            D("Clipchamp.Clipchamp", true, () => "Clipchamp", () => Localizer.S("opt_apps.online_video_editor")),
+            D("Microsoft.BingNews", true, () => Localizer.S("opt_apps.news_microsoft_start")),
+            D("Microsoft.BingSearch", true, () => Localizer.S("opt_apps.bing_search")),
+            D("Microsoft.MicrosoftSolitaireCollection", true, () => "Microsoft Solitaire Collection", () => Localizer.S("opt_apps.with_ads")),
+            D("Microsoft.Getstarted", true, () => Localizer.S("opt_apps.tips")),
+            D("Microsoft.MicrosoftOfficeHub", true, () => "Microsoft 365 (Office)", () => Localizer.S("opt_apps.promotional_shortcut_not_office_itself")),
+            D("Microsoft.WindowsFeedbackHub", true, () => Localizer.S("opt_apps.feedback_hub")),
+            D("Microsoft.549981C3F5F10", true, () => "Cortana", () => Localizer.S("opt_apps.discontinued_by_microsoft")),
+            D("Microsoft.Windows.DevHome", true, () => "Dev Home", () => Localizer.S("opt_apps.discontinued_by_microsoft")),
+            D("Microsoft.MixedReality.Portal", true, () => Localizer.S("opt_apps.mixed_reality_portal")),
+            D("Microsoft.Microsoft3DViewer", true, () => Localizer.S("opt_apps.3d_viewer")),
             D("7EE7776C.LinkedInforWindows", true, () => "LinkedIn"),
             D("BytedancePte.Ltd.TikTok", true, () => "TikTok"),
             D("king.com.CandyCrushSaga", true, () => "Candy Crush Saga"),
             D("king.com.CandyCrushSodaSaga", true, () => "Candy Crush Soda Saga"),
 
             // Offered, unchecked: useful to some people
-            D("Microsoft.BingWeather", false, () => L("Météo", "Weather", "El Tiempo", "Wetter", "Meteo", "Clima")),
+            D("Microsoft.BingWeather", false, () => Localizer.S("opt_apps.weather")),
             D("Microsoft.Todos", false, () => "Microsoft To Do"),
             D("Microsoft.PowerAutomateDesktop", false, () => "Power Automate"),
-            D("Microsoft.WindowsMaps", false, () => L("Cartes", "Maps", "Mapas", "Karten", "Mappe", "Mapas")),
-            D("Microsoft.OutlookForWindows", false, () => L("Nouvel Outlook", "New Outlook", "Nuevo Outlook", "Neues Outlook", "Nuovo Outlook", "Novo Outlook")),
-            D("MSTeams", false, () => L("Microsoft Teams (personnel)", "Microsoft Teams (personal)", "Microsoft Teams (personal)", "Microsoft Teams (privat)", "Microsoft Teams (personale)", "Microsoft Teams (pessoal)")),
+            D("Microsoft.WindowsMaps", false, () => Localizer.S("opt_apps.maps")),
+            D("Microsoft.OutlookForWindows", false, () => Localizer.S("opt_apps.new_outlook")),
+            D("MSTeams", false, () => Localizer.S("opt_apps.microsoft_teams_personal")),
             D("Microsoft.Copilot", false, () => "Copilot"),
-            D("Microsoft.YourPhone", false, () => L("Lien avec Windows (téléphone)", "Phone Link", "Vincular al teléfono", "Smartphone-Link", "Collegamento al telefono", "Vincular ao Celular")),
-            D("Microsoft.GamingApp", false, () => "Xbox", () => L("nécessaire pour le Game Pass PC", "needed for PC Game Pass", "necesaria para Game Pass", "für PC Game Pass nötig", "serve per Game Pass", "necessário para o Game Pass")),
-            D("Microsoft.XboxGamingOverlay", false, () => "Xbox Game Bar", () => L("Win+G, captures et compteur FPS", "Win+G, captures and FPS counter", "Win+G, capturas y FPS", "Win+G, Aufnahmen und FPS", "Win+G, catture e FPS", "Win+G, capturas e FPS")),
-            D("Microsoft.ZuneVideo", false, () => L("Films et TV", "Movies & TV", "Películas y TV", "Filme & TV", "Film e TV", "Filmes e TV")),
+            D("Microsoft.YourPhone", false, () => Localizer.S("opt_apps.phone_link")),
+            D("Microsoft.GamingApp", false, () => "Xbox", () => Localizer.S("opt_apps.needed_for_pc_game_pass")),
+            D("Microsoft.XboxGamingOverlay", false, () => "Xbox Game Bar", () => Localizer.S("opt_apps.win_g_captures_and_fps_counter")),
+            D("Microsoft.ZuneVideo", false, () => Localizer.S("opt_apps.movies_tv")),
             D("SpotifyAB.SpotifyMusic", false, () => "Spotify"),
             D("Disney.37853FC22B2CE", false, () => "Disney+"),
             D("AmazonVideo.PrimeVideo", false, () => "Prime Video")

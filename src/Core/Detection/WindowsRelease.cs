@@ -128,7 +128,7 @@ namespace WinCrashDoctor.Detection
                 {
                     case "core":
                     case "coresinglelanguage":
-                    case "corecountryspecific": return Localizer.L("Famille", "Home", "Home", "Home", "Home", "Home");
+                    case "corecountryspecific": return Localizer.S("windows_release.home");
                     case "professional":
                     case "professionalworkstation":
                     case "professionaleducation": return "Pro";

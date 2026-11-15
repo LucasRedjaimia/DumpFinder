@@ -37,7 +37,7 @@ namespace WinCrashDoctor
                 if (Event != null) return Localizer.T(Event.SummaryFr, Event.SummaryEn);
                 if (Dump == null) return "";
                 string who = !string.IsNullOrEmpty(Dump.ProcessName) ? Dump.ProcessName : Dump.FileName;
-                return Localizer.L("Fichier de crash : ", "Crash dump: ", "Volcado: ", "Absturzabbild: ", "Dump di crash: ", "Dump de falha: ") + who;
+                return Localizer.S("crash_catalog.crash_dump") + who;
             }
         }
 
@@ -256,13 +256,7 @@ namespace WinCrashDoctor
         public static string AiFocusQuestion(CrashEntry e)
         {
             var sb = new StringBuilder();
-            sb.Append(Localizer.L(
-                "Concentre-toi sur ce crash précis et explique en français simple la cause la plus probable, puis donne 3 actions concrètes classées par priorité. ",
-                "Focus on this specific crash: explain the most likely root cause in plain language, then give 3 concrete actions ranked by priority. ",
-                "Céntrate en este fallo: explica la causa más probable en lenguaje sencillo y da 3 acciones concretas por prioridad. ",
-                "Konzentriere dich auf diesen Absturz: erkläre die wahrscheinlichste Ursache einfach und nenne 3 konkrete Maßnahmen nach Priorität. ",
-                "Concentrati su questo crash: spiega la causa più probabile in modo semplice e indica 3 azioni concrete per priorità. ",
-                "Foque neste travamento: explique a causa mais provável em linguagem simples e dê 3 ações concretas por prioridade. "));
+            sb.Append(Localizer.S("crash_catalog.focus_on_this_specific_crash_explain"));
             sb.Append("Crash: ").Append(e.Title).Append(" @ ").Append(e.Time.ToString("yyyy-MM-dd HH:mm")).Append(". ");
             if (e.Event != null) sb.Append("Event ").Append(e.Event.Source).Append(" / ").Append(e.Event.CodeOrId).Append(". ").Append(e.Event.DetailsEn).Append(" ");
             if (e.Dump != null)

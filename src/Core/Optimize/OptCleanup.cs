@@ -24,7 +24,6 @@ namespace WinCrashDoctor.Optimize
     public static class OptCleanup
     {
         public const string Prefix = "optcl_";
-        private static string L(string fr, string en, string es, string de, string it, string pt) { return Localizer.L(fr, en, es, de, it, pt); }
 
         private static string WinDir { get { return Environment.GetFolderPath(Environment.SpecialFolder.Windows); } }
 
@@ -67,17 +66,17 @@ namespace WinCrashDoctor.Optimize
             var items = new List<CleanItem>
             {
                 new CleanItem { Id = "usertemp", Admin = false,
-                    Title = L("Fichiers temporaires de ton compte", "Your account's temporary files", "Archivos temporales de tu cuenta", "Temporäre Dateien deines Kontos", "File temporanei del tuo account", "Arquivos temporários da sua conta"),
-                    Explanation = L("Dossier %TEMP%. Les fichiers modifiés dans les dernières 24 h sont gardés (une application peut encore s'en servir).", "%TEMP% folder. Files changed in the last 24 h are kept (an app may still be using them).", "Carpeta %TEMP%. Se conservan los archivos de las últimas 24 h.", "Ordner %TEMP%. Dateien der letzten 24 Std. bleiben erhalten.", "Cartella %TEMP%. I file delle ultime 24 h vengono mantenuti.", "Pasta %TEMP%. Arquivos das últimas 24 h são mantidos.") },
+                    Title = Localizer.S("opt_cleanup.your_account_s_temporary_files"),
+                    Explanation = Localizer.S("opt_cleanup.temp_folder_files_changed_in_the") },
                 new CleanItem { Id = "wintemp", Admin = true,
-                    Title = L("Fichiers temporaires de Windows", "Windows temporary files", "Archivos temporales de Windows", "Temporäre Windows-Dateien", "File temporanei di Windows", "Arquivos temporários do Windows"),
-                    Explanation = L("Dossier C:\\Windows\\Temp, mêmes précautions (24 h).", "C:\\Windows\\Temp folder, same precaution (24 h).", "Carpeta C:\\Windows\\Temp, misma precaución (24 h).", "Ordner C:\\Windows\\Temp, gleiche Vorsicht (24 Std.).", "Cartella C:\\Windows\\Temp, stessa precauzione (24 h).", "Pasta C:\\Windows\\Temp, mesma precaução (24 h).") },
+                    Title = Localizer.S("opt_cleanup.windows_temporary_files"),
+                    Explanation = Localizer.S("opt_cleanup.c_windows_temp_folder_same_precaution") },
                 new CleanItem { Id = "wucache", Admin = true,
-                    Title = L("Mises à jour Windows déjà installées (téléchargements)", "Already-installed Windows updates (downloads)", "Actualizaciones ya instaladas (descargas)", "Bereits installierte Updates (Downloads)", "Aggiornamenti già installati (download)", "Atualizações já instaladas (downloads)"),
-                    Explanation = L("Dossier SoftwareDistribution\\Download : Windows Update retélécharge ce dont il a encore besoin.", "SoftwareDistribution\\Download folder: Windows Update downloads again whatever it still needs.", "Carpeta SoftwareDistribution\\Download: Windows Update vuelve a descargar lo que necesite.", "Ordner SoftwareDistribution\\Download: Windows Update lädt Benötigtes erneut.", "Cartella SoftwareDistribution\\Download: Windows Update riscarica ciò che serve.", "Pasta SoftwareDistribution\\Download: o Windows Update baixa de novo o que precisar.") },
+                    Title = Localizer.S("opt_cleanup.already_installed_windows_updates_downlo"),
+                    Explanation = Localizer.S("opt_cleanup.softwaredistribution_download_folder_win") },
                 new CleanItem { Id = "docache", Admin = true,
-                    Title = L("Cache d'optimisation de la distribution", "Delivery Optimization cache", "Caché de optimización de distribución", "Cache der Übermittlungsoptimierung", "Cache di ottimizzazione recapito", "Cache de otimização de entrega"),
-                    Explanation = L("Morceaux de mises à jour gardés pour être partagés ; vidé avec la commande officielle Delete-DeliveryOptimizationCache.", "Update pieces kept for sharing; emptied with the official Delete-DeliveryOptimizationCache command.", "Partes de actualizaciones para compartir; se vacía con el comando oficial.", "Update-Teile zum Teilen; wird mit dem offiziellen Befehl geleert.", "Parti di aggiornamenti da condividere; svuotata con il comando ufficiale.", "Partes de atualizações para compartilhar; esvaziado com o comando oficial.") }
+                    Title = Localizer.S("opt_cleanup.delivery_optimization_cache"),
+                    Explanation = Localizer.S("opt_cleanup.update_pieces_kept_for_sharing_emptied") }
             };
             foreach (CleanItem it in items) Measure(it);
             return items;
@@ -119,7 +118,7 @@ namespace WinCrashDoctor.Optimize
         {
             if (!IsOp(op)) return null;
             CleanItem it = new[] { "usertemp", "wintemp", "wucache", "docache" }.Contains(IdOf(op)) ? Scan().FirstOrDefault(x => x.Id == IdOf(op)) : null;
-            return it != null ? L("Nettoyage : ", "Cleanup: ", "Limpieza: ", "Bereinigung: ", "Pulizia: ", "Limpeza: ") + it.Title : null;
+            return it != null ? Localizer.S("opt_cleanup.cleanup") + it.Title : null;
         }
 
         public static bool Execute(string op, out string messageFr, out string messageEn)

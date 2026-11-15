@@ -58,11 +58,11 @@ namespace WinCrashDoctor
         public void RefreshMenuLocalization()
         {
             if (_miOpen == null) return;
-            _miOpen.Text = Localizer.L("Ouvrir Dump Finder", "Open Dump Finder", "Abrir Dump Finder", "Dump Finder öffnen", "Apri Dump Finder", "Abrir Dump Finder");
-            _miScan.Text = Localizer.L("Relancer l'analyse", "Rescan System", "Analizar sistema", "System prüfen", "Analizza sistema", "Analisar sistema");
-            _miExit.Text = Localizer.L("Quitter", "Quit", "Salir", "Beenden", "Esci", "Sair");
+            _miOpen.Text = Localizer.S("tray_sentinel.open_dump_finder");
+            _miScan.Text = Localizer.S("tray_sentinel.rescan_system");
+            _miExit.Text = Localizer.S("tray_sentinel.quit");
             if (_notifyIcon != null)
-                _notifyIcon.Text = "Dump Finder — " + Localizer.L("Sentinelle active", "Sentinel active", "Centinela activo", "Wächter aktiv", "Sentinella attiva", "Sentinela ativa");
+                _notifyIcon.Text = "Dump Finder — " + Localizer.S("tray_sentinel.sentinel_active");
         }
 
         /// <summary>
@@ -83,13 +83,7 @@ namespace WinCrashDoctor
             _notifyIcon.ShowBalloonTip(
                 2800,
                 "Dump Finder",
-                Localizer.L(
-                    "Sentinelle active en arrière-plan (0 % CPU). Vous serez alerté si un pilote ou composant décroche.",
-                    "Sentinel active in the background (0% CPU). You will be notified if any driver or hardware fault occurs.",
-                    "Centinela activo en segundo plano. Recibirá una alerta si falla algún controlador.",
-                    "Wächter im Hintergrund aktiv. Sie werden bei Treiber- oder Hardwarefehlern benachrichtigt.",
-                    "Sentinella attiva in background. Sarai avvisato in caso di errori driver o hardware.",
-                    "Sentinela ativa em segundo plano. Você será avisado se ocorrer alguma falha."),
+                Localizer.S("tray_sentinel.sentinel_active_in_the_background_0"),
                 ToolTipIcon.Info);
         }
 
@@ -188,23 +182,23 @@ namespace WinCrashDoctor
                     prov.IndexOf("amdkmdag", StringComparison.OrdinalIgnoreCase) >= 0 ||
                     (prov.Equals("Display", StringComparison.OrdinalIgnoreCase) && id == 4101))
                 {
-                    title = Localizer.L("Alerte GPU détectée (" + prov + ")", "GPU Fault Detected (" + prov + ")", "Fallo GPU detectado", "GPU-Fehler erkannt", "Errore GPU rilevato", "Falha GPU detectada");
-                    msg = Localizer.L("Le pilote graphique vient de subir un timeout (Event " + id + "). Cliquez pour ouvrir le diagnostic.", "Your graphics driver just experienced a timeout (Event " + id + "). Click to open diagnostics.", "El controlador gráfico sufrió un bloqueo. Haga clic para ver soluciones.", "Der Grafiktreiber hatte einen Timeout. Klicken Sie für Details.", "Il driver grafico ha subito un timeout. Clicca per i dettagli.", "O driver de vídeo sofreu um timeout. Clique para abrir.");
+                    title = Localizer.F("tray_sentinel.gpu_fault_detected", prov);
+                    msg = Localizer.F("tray_sentinel.your_graphics_driver_just_experienced_a", id);
                 }
                 else if (prov.IndexOf("WHEA", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
-                    title = Localizer.L("Erreur matérielle WHEA (ID " + id + ")", "WHEA Hardware Error (ID " + id + ")", "Error de hardware WHEA (ID " + id + ")", "WHEA-Hardwarefehler (ID " + id + ")", "Errore hardware WHEA (ID " + id + ")", "Erro de hardware WHEA (ID " + id + ")");
-                    msg = Localizer.L("Erreur matérielle CPU ou bus PCIe détectée en direct. Cliquez pour inspecter.", "Live CPU or PCIe hardware error detected. Click to inspect.", "Error de hardware CPU/PCIe detectado.", "CPU- oder PCIe-Hardwarefehler erkannt.", "Errore hardware CPU/PCIe rilevato.", "Erro de hardware CPU/PCIe detectado.");
+                    title = Localizer.F("tray_sentinel.whea_hardware_error_id", id);
+                    msg = Localizer.S("tray_sentinel.live_cpu_or_pcie_hardware_error");
                 }
                 else if (prov.IndexOf("stornvme", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
-                    title = Localizer.L("Délai dépassé sur le SSD NVMe (stornvme " + id + ")", "NVMe SSD Timeout (stornvme " + id + ")", "Tiempo de espera del SSD NVMe (stornvme " + id + ")", "NVMe-SSD-Timeout (stornvme " + id + ")", "Timeout dell'SSD NVMe (stornvme " + id + ")", "Tempo limite do SSD NVMe (stornvme " + id + ")");
-                    msg = Localizer.L("Le contrôleur SSD NVMe vient de se réinitialiser. Cliquez pour appliquer le correctif HMB.", "Your NVMe SSD controller just reset. Click to apply the HMB fix.", "El controlador SSD NVMe se reinició.", "Der NVMe-SSD-Controller wurde zurückgesetzt.", "Il controller SSD NVMe si è resettato.", "O controlador SSD NVMe reiniciou.");
+                    title = Localizer.F("tray_sentinel.nvme_ssd_timeout_stornvme", id);
+                    msg = Localizer.S("tray_sentinel.your_nvme_ssd_controller_just_reset");
                 }
                 else if (id == 2004)
                 {
-                    title = Localizer.L("Saturation mémoire virtuelle", "Virtual Memory Exhaustion", "Memoria virtual agotada", "Virtueller Speicher erschöpft", "Memoria virtuale esaurita", "Memória virtual esgotada");
-                    msg = Localizer.L("Windows manque de mémoire virtuelle (Pagefile). Cliquez pour vérifier la configuration.", "Windows ran low on commit memory (Pagefile). Click to check settings.", "Windows se quedó sin memoria virtual.", "Windows hat zu wenig Auslagerungsspeicher.", "Memoria virtuale Windows insufficiente.", "Memória virtual do Windows insuficiente.");
+                    title = Localizer.S("tray_sentinel.virtual_memory_exhaustion");
+                    msg = Localizer.S("tray_sentinel.windows_ran_low_on_commit_memory");
                 }
 
                 if (!string.IsNullOrEmpty(title))

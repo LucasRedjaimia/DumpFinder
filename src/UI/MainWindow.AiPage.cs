@@ -213,12 +213,12 @@ namespace WinCrashDoctor
             try
             {
                 Clipboard.SetText(text ?? "");
-                SetToast(Localizer.L("Copié : ", "Copied: ", "Copiado: ", "Kopiert: ", "Copiato: ", "Copiado: ") + text, "SuccessFg");
+                SetToast(Localizer.S("ai.copied") + text, "SuccessFg");
             }
             catch (Exception ex)
             {
                 Log.Warn(ex, "Clipboard");
-                SetToast(Localizer.L("Le presse-papiers est occupé, réessayez.", "Clipboard busy, try again.", "Portapapeles ocupado.", "Zwischenablage belegt.", "Appunti occupati.", "Área de transferência ocupada."), "WarnFg");
+                SetToast(Localizer.S("ai.clipboard_busy_try_again"), "WarnFg");
             }
         }
 
@@ -231,11 +231,11 @@ namespace WinCrashDoctor
             if (_cbClaudeModel != null) _cbClaudeModel.Visibility = _cbAiProvider.SelectedIndex == (int)AiProviderType.Claude ? Visibility.Visible : Visibility.Collapsed;
 
             if (isOllama)
-                _lblAiCredentialCaption.Text = Localizer.L("Modèle Ollama local", "Local Ollama model", "Modelo Ollama local", "Lokales Ollama-Modell", "Modello Ollama locale", "Modelo Ollama local");
+                _lblAiCredentialCaption.Text = Localizer.S("ai.local_ollama_model");
             else if (_cbAiProvider.SelectedIndex == (int)AiProviderType.Claude)
-                _lblAiCredentialCaption.Text = Localizer.L("Clé API Anthropic Claude (stockée localement)", "Anthropic Claude API Key (stored locally)", "Clave API Anthropic Claude", "Anthropic Claude API-Schlüssel", "Chiave API Anthropic Claude", "Chave API Anthropic Claude");
+                _lblAiCredentialCaption.Text = Localizer.S("ai.anthropic_claude_api_key_stored_locally");
             else
-                _lblAiCredentialCaption.Text = Localizer.L("Clé API Google Gemini (stockée localement)", "Google Gemini API Key (stored locally)", "Clave API Google Gemini", "Google Gemini API-Schlüssel", "Chiave API Google Gemini", "Chave API Google Gemini");
+                _lblAiCredentialCaption.Text = Localizer.S("ai.google_gemini_api_key_stored_locally");
         }
 
         private void SaveAiSettingsFromUi()
@@ -258,13 +258,7 @@ namespace WinCrashDoctor
             try
             {
                 Clipboard.SetText(AiAssistant.BuildStructuredPrompt(_lastResult, ""));
-                SetToast(Localizer.L(
-                    "Rapport IA copié : collez-le dans l'assistant de votre choix.",
-                    "AI report copied: paste it into the assistant of your choice.",
-                    "Informe IA copiado: péguelo en su asistente.",
-                    "KI-Bericht kopiert: in einen Assistenten Ihrer Wahl einfügen.",
-                    "Rapporto IA copiato: incollalo nell'assistente che preferisci.",
-                    "Relatório IA copiado: cole no assistente de sua escolha."), "SuccessFg");
+                SetToast(Localizer.S("ai.ai_report_copied_paste_it_into"), "SuccessFg");
             }
             catch (Exception ex)
             {
@@ -278,13 +272,7 @@ namespace WinCrashDoctor
             bool ok = McpServer.RegisterInAntigravity(out savedPath, out err);
             RefreshMcpRegistrationStatus();
             if (ok)
-                SetToast(Localizer.L(
-                    "Serveur MCP Dump Finder activé dans Antigravity (" + savedPath + ").",
-                    "Dump Finder MCP server enabled in Antigravity (" + savedPath + ").",
-                    "Servidor MCP activado en Antigravity (" + savedPath + ").",
-                    "Dump Finder MCP-Server in Antigravity aktiviert (" + savedPath + ").",
-                    "Server MCP attivato in Antigravity (" + savedPath + ").",
-                    "Servidor MCP ativado no Antigravity (" + savedPath + ")."), "SuccessFg");
+                SetToast(Localizer.F("ai.dump_finder_mcp_server_enabled_in", savedPath), "SuccessFg");
             else
                 SetToast("MCP : " + err, "DangerFg");
         }
@@ -295,7 +283,7 @@ namespace WinCrashDoctor
             bool ok = McpServer.RegisterInClaudeDesktop(out path, out err);
             RefreshMcpRegistrationStatus();
             SetToast(ok
-                ? Localizer.L("Dump Finder ajouté à Claude Desktop. Redémarrez Claude Desktop pour l'activer.", "Dump Finder added to Claude Desktop. Restart Claude Desktop to enable it.", "Dump Finder añadido a Claude Desktop. Reinicie Claude Desktop.", "Dump Finder zu Claude Desktop hinzugefügt. Claude Desktop neu starten.", "Dump Finder aggiunto a Claude Desktop. Riavvia Claude Desktop.", "Dump Finder adicionado ao Claude Desktop. Reinicie o Claude Desktop.")
+                ? Localizer.S("ai.dump_finder_added_to_claude_desktop")
                 : "MCP : " + err, ok ? "SuccessFg" : "DangerFg");
         }
 
@@ -307,8 +295,8 @@ namespace WinCrashDoctor
             _bdMcpStatusBadge.SetResourceReference(Border.BackgroundProperty, registered ? "SuccessSoftBg" : "BgSubtle");
             _lblMcpStatusBadge.SetResourceReference(TextBlock.ForegroundProperty, registered ? "SuccessFg" : "TextSecondary");
             _lblMcpStatusBadge.Text = registered
-                ? Localizer.L("● Connecté", "● Connected", "● Conectado", "● Verbunden", "● Connesso", "● Conectado") + (claudeDesktop ? " · Claude Desktop" : "") + (McpServer.IsRegisteredInAntigravity() ? " · Antigravity" : "")
-                : Localizer.L("○ Prêt à activer", "○ Ready to enable", "○ Listo para activar", "○ Bereit zur Aktivierung", "○ Pronto da attivare", "○ Pronto para ativar");
+                ? Localizer.S("ai.connected") + (claudeDesktop ? " · Claude Desktop" : "") + (McpServer.IsRegisteredInAntigravity() ? " · Antigravity" : "")
+                : Localizer.S("ai.ready_to_enable");
 
             string cfgPath = McpServer.GetAntigravityConfigPath();
             string exeEscaped = McpServer.GetExePath().Replace("\\", "\\\\");
@@ -321,28 +309,16 @@ namespace WinCrashDoctor
         private void RefreshAiPageLabels()
         {
             if (_lblAiProviderCaption == null) return;
-            _lblAiProviderCaption.Text = Localizer.L("Moteur IA", "AI Provider", "Proveedor IA", "KI-Anbieter", "Motore IA", "Provedor IA");
+            _lblAiProviderCaption.Text = Localizer.S("ai.ai_provider");
             UpdateAiCredentialVisibility();
-            _btnCopyAiPrompt.Content = Localizer.L("📋 Copier le prompt", "📋 Copy prompt", "📋 Copiar prompt", "📋 Prompt kopieren", "📋 Copia prompt", "📋 Copiar prompt");
+            _btnCopyAiPrompt.Content = Localizer.S("ai.copy_prompt");
 
-            _lblMcpCardTitle.Text = Localizer.L(
-                "Serveur MCP (Antigravity · Claude Code · Gemini CLI)",
-                "MCP server (Antigravity · Claude Code · Gemini CLI)",
-                "Servidor MCP (Antigravity · Claude Code · Gemini CLI)",
-                "MCP-Server (Antigravity · Claude Code · Gemini CLI)",
-                "Server MCP (Antigravity · Claude Code · Gemini CLI)",
-                "Servidor MCP (Antigravity · Claude Code · Gemini CLI)");
-            _lblMcpCardDesc.Text = Localizer.L(
-                "Dump Finder intègre un serveur Model Context Protocol. Une fois connecté, votre agent IA peut consulter vos crashs, vérifier votre matériel, décoder vos fichiers .dmp et appliquer un correctif avec votre accord.",
-                "Dump Finder embeds a Model Context Protocol server. Once connected, your AI agent can query your crashes, audit your hardware, decode .dmp files and apply a fix with your approval.",
-                "Dump Finder incluye un servidor MCP para que su agente IA consulte fallos, hardware y volcados .dmp.",
-                "Dump Finder enthält einen MCP-Server, über den KI-Agenten Abstürze, Hardware und .dmp-Dateien abfragen können.",
-                "Dump Finder include un server MCP: il tuo agente IA può consultare crash, hardware e file .dmp.",
-                "O Dump Finder inclui um servidor MCP para que seu agente IA consulte falhas, hardware e arquivos .dmp.");
-            _btnRegisterClaudeDesktop.Content = Localizer.L("Activer dans Claude Desktop", "Enable in Claude Desktop", "Activar en Claude Desktop", "In Claude Desktop aktivieren", "Attiva in Claude Desktop", "Ativar no Claude Desktop");
-            _btnRegisterAntigravity.Content = Localizer.L("Activer dans Antigravity", "Enable in Antigravity", "Activar en Antigravity", "In Antigravity aktivieren", "Attiva in Antigravity", "Ativar no Antigravity");
-            _btnCopyClaudeMcp.Content = Localizer.L("Copier la commande Claude Code", "Copy Claude Code command", "Copiar comando Claude Code", "Claude Code-Befehl kopieren", "Copia comando Claude Code", "Copiar comando Claude Code");
-            _btnCopyGeminiMcp.Content = Localizer.L("Copier la commande Gemini CLI", "Copy Gemini CLI command", "Copiar comando Gemini CLI", "Gemini CLI-Befehl kopieren", "Copia comando Gemini CLI", "Copiar comando Gemini CLI");
+            _lblMcpCardTitle.Text = Localizer.S("ai.mcp_server_antigravity_claude_code_gemin");
+            _lblMcpCardDesc.Text = Localizer.S("ai.dump_finder_embeds_a_model_context");
+            _btnRegisterClaudeDesktop.Content = Localizer.S("ai.enable_in_claude_desktop");
+            _btnRegisterAntigravity.Content = Localizer.S("ai.enable_in_antigravity");
+            _btnCopyClaudeMcp.Content = Localizer.S("ai.copy_claude_code_command");
+            _btnCopyGeminiMcp.Content = Localizer.S("ai.copy_gemini_cli_command");
             RefreshMcpRegistrationStatus();
         }
     }

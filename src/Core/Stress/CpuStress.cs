@@ -91,7 +91,7 @@ namespace WinCrashDoctor.Stress
         {
             get
             {
-                if (!Vector.IsHardwareAccelerated) return Localizer.L("sans SIMD", "no SIMD", "sin SIMD", "ohne SIMD", "senza SIMD", "sem SIMD");
+                if (!Vector.IsHardwareAccelerated) return Localizer.S("cpu_stress.no_simd");
                 int bits = Vector<byte>.Count * 8;
                 return (bits >= 256 ? "AVX2" : "SSE") + " (" + bits + " bits)";
             }
@@ -170,7 +170,7 @@ namespace WinCrashDoctor.Stress
                     if (Interlocked.CompareExchange(ref _firstErrorClaimed, 1, 0) == 0)
                     {
                         FirstErrorCpu = Native.GetCurrentProcessorNumber();
-                        FirstErrorWork = integer ? Localizer.L("entière", "integer", "entera", "Ganzzahl", "interi", "inteira") : CpuWork.SimdLabel;
+                        FirstErrorWork = integer ? Localizer.S("cpu_stress.integer") : CpuWork.SimdLabel;
                         Volatile.Write(ref _firstErrorWritten, 1);
                     }
                     else
@@ -208,19 +208,13 @@ namespace WinCrashDoctor.Stress
                     ctx.Sleep(1000);
                     int mhz = ctx.Cpu.TotalMhz();
                     if (mhz > peak) peak = mhz;
-                    ctx.Publish(Localizer.L("Tous les cœurs · entier + ", "All cores · integer + ", "Todos los núcleos · entero + ", "Alle Kerne · Ganzzahl + ", "Tutti i core · interi + ", "Todos os núcleos · inteiro + ") + CpuWork.SimdLabel + " · " + threads + " threads",
+                    ctx.Publish(Localizer.S("cpu_stress.all_cores_integer") + CpuWork.SimdLabel + " · " + threads + " threads",
                         CpuTiles(ctx, mhz, peak, Interlocked.Read(ref pool.Units), threads), mhz > 0 ? mhz : double.NaN, ctx.CpuTempValue,
-                        Localizer.L("Violet : fréquence effective moyenne (MHz)   •   Ambre : température CPU (°C)", "Violet: average effective clock (MHz)   •   Amber: CPU temperature (°C)", "Violeta: frecuencia efectiva media (MHz)   •   Ámbar: temperatura CPU (°C)", "Violett: mittlerer effektiver Takt (MHz)   •   Gelb: CPU-Temperatur (°C)", "Viola: frequenza effettiva media (MHz)   •   Ambra: temperatura CPU (°C)", "Violeta: frequência efetiva média (MHz)   •   Âmbar: temperatura da CPU (°C)"));
+                        Localizer.S("cpu_stress.violet_average_effective_clock_mhz_amber"));
                 }
                 if (pool.Errors > 0)
                     return StressAdvice.CpuFailed(ctx, pool.FirstErrorCpu, pool.FirstErrorWork);
-                return StressAdvice.Passed(ctx, string.Format(Localizer.L(
-                    "{0:N0} calculs vérifiés sur {1} threads, aucun écart. Fréquence max observée : {2}.",
-                    "{0:N0} verified computations on {1} threads, no mismatch. Peak clock seen: {2}.",
-                    "{0:N0} cálculos verificados en {1} hilos, sin diferencias. Frecuencia máx.: {2}.",
-                    "{0:N0} geprüfte Berechnungen auf {1} Threads, keine Abweichung. Max. Takt: {2}.",
-                    "{0:N0} calcoli verificati su {1} thread, nessuna discrepanza. Frequenza max: {2}.",
-                    "{0:N0} cálculos verificados em {1} threads, nenhuma divergência. Frequência máx.: {2}."),
+                return StressAdvice.Passed(ctx, string.Format(Localizer.S("cpu_stress.0_n0_verified_computations_on_threads"),
                     Interlocked.Read(ref pool.Units), threads, Mhz(peak)) + ctx.CpuTempSummary);
             }
         }
@@ -283,28 +277,22 @@ namespace WinCrashDoctor.Stress
                 {
                     int mhz = ctx.Cpu.LogicalMhz(logical);
                     if (mhz > peak) peak = mhz;
-                    string load = phase == "simd" ? CpuWork.SimdLabel : Localizer.L("charge légère (entier)", "light load (integer)", "carga ligera (entero)", "leichte Last (Ganzzahl)", "carico leggero (interi)", "carga leve (inteiro)");
-                    ctx.Publish(string.Format(Localizer.L("Cœur {0}/{1} · {2}", "Core {0}/{1} · {2}", "Núcleo {0}/{1} · {2}", "Kern {0}/{1} · {2}", "Core {0}/{1} · {2}", "Núcleo {0}/{1} · {2}"), coreNo + 1, cores.Count, load),
+                    string load = phase == "simd" ? CpuWork.SimdLabel : Localizer.S("cpu_stress.light_load_integer");
+                    ctx.Publish(string.Format(Localizer.S("cpu_stress.core"), coreNo + 1, cores.Count, load),
                         CoreTiles(ctx, mhz, peak, coreNo + 1, cores.Count, Interlocked.Read(ref units), bad.Count + (failed ? 1 : 0)),
                         mhz > 0 ? mhz : double.NaN, ctx.CpuTempValue,
-                        Localizer.L("Violet : fréquence du cœur testé (MHz)   •   Ambre : température CPU (°C)", "Violet: clock of the core under test (MHz)   •   Amber: CPU temperature (°C)", "Violeta: frecuencia del núcleo probado (MHz)   •   Ámbar: temperatura CPU (°C)", "Violett: Takt des getesteten Kerns (MHz)   •   Gelb: CPU-Temperatur (°C)", "Viola: frequenza del core testato (MHz)   •   Ambra: temperatura CPU (°C)", "Violeta: frequência do núcleo testado (MHz)   •   Âmbar: temperatura da CPU (°C)"));
+                        Localizer.S("cpu_stress.violet_clock_of_the_core_under"));
                 }
                 if (failed)
                 {
                     bad.Add(coreNo);
-                    ctx.Log(string.Format(Localizer.L("Cœur {0} : résultat faux ({1}).", "Core {0}: wrong result ({1}).", "Núcleo {0}: resultado erróneo ({1}).", "Kern {0}: falsches Ergebnis ({1}).", "Core {0}: risultato errato ({1}).", "Núcleo {0}: resultado errado ({1})."),
-                        coreNo, phase == "simd" ? CpuWork.SimdLabel : Localizer.L("charge légère", "light load", "carga ligera", "leichte Last", "carico leggero", "carga leve")));
+                    ctx.Log(string.Format(Localizer.S("cpu_stress.core_wrong_result"),
+                        coreNo, phase == "simd" ? CpuWork.SimdLabel : Localizer.S("cpu_stress.light_load")));
                 }
             }
 
             if (bad.Count > 0) return StressAdvice.CoresFailed(ctx, bad, cores.Count);
-            return StressAdvice.Passed(ctx, string.Format(Localizer.L(
-                "{0} cœurs testés un par un ({1} s chacun), {2:N0} calculs vérifiés, aucun écart.",
-                "{0} cores tested one by one ({1} s each), {2:N0} verified computations, no mismatch.",
-                "{0} núcleos probados uno a uno ({1} s cada uno), {2:N0} cálculos verificados, sin diferencias.",
-                "{0} Kerne einzeln getestet (je {1} s), {2:N0} geprüfte Berechnungen, keine Abweichung.",
-                "{0} core testati uno per uno ({1} s ciascuno), {2:N0} calcoli verificati, nessuna discrepanza.",
-                "{0} núcleos testados um a um ({1} s cada), {2:N0} cálculos verificados, nenhuma divergência."),
+            return StressAdvice.Passed(ctx, string.Format(Localizer.S("cpu_stress.cores_tested_one_by_one_s"),
                 cores.Count, perCore, units) + ctx.CpuTempSummary);
         }
 
@@ -325,7 +313,7 @@ namespace WinCrashDoctor.Stress
             {
                 StressTile.Make(StressText.CoreClock, Mhz(mhz), StressText.Max + " " + Mhz(peak)),
                 StressTile.Make(StressText.Core, core > 0 ? core + " / " + cores : "—", StressText.CpuTemp + " " + ctx.CpuTempText),
-                StressTile.Make(StressText.Verified, units.ToString("N0"), badCores == 0 ? StressText.NoMismatch : badCores + " " + Localizer.L("cœur(s) en erreur", "failing core(s)", "núcleo(s) con error", "fehlerhafte(r) Kern(e)", "core in errore", "núcleo(s) com erro"), badCores == 0 ? 0 : 2),
+                StressTile.Make(StressText.Verified, units.ToString("N0"), badCores == 0 ? StressText.NoMismatch : badCores + " " + Localizer.S("cpu_stress.failing_core_s"), badCores == 0 ? 0 : 2),
                 ctx.ErrorTile(badCores)
             };
         }

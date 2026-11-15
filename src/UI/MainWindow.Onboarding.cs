@@ -153,50 +153,32 @@ namespace WinCrashDoctor
             switch (i)
             {
                 case 0:
-                    _lblOnbKicker.Text = Localizer.L("BIENVENUE", "WELCOME", "BIENVENIDO", "WILLKOMMEN", "BENVENUTO", "BEM-VINDO");
-                    _lblOnbTitle.Text = Localizer.L("Comprendre pourquoi votre PC plante", "Understand why your PC crashes", "Entender por qué falla su PC", "Verstehen, warum Ihr PC abstürzt", "Capire perché il PC va in crash", "Entender por que seu PC trava");
-                    _lblOnbBody.Text = Localizer.L(
-                        "Quand Windows plante, il laisse des traces : des événements dans ses journaux et des fichiers .dmp. Dump Finder les lit pour vous et les traduit en langage clair.",
-                        "When Windows crashes it leaves traces: events in its logs and .dmp files. Dump Finder reads them for you and puts them in plain words.",
-                        "Cuando Windows falla deja rastros: eventos y archivos .dmp. Dump Finder los lee por usted y los explica con claridad.",
-                        "Wenn Windows abstürzt, hinterlässt es Spuren: Ereignisse und .dmp-Dateien. Dump Finder liest sie und erklärt sie verständlich.",
-                        "Quando Windows va in crash lascia tracce: eventi e file .dmp. Dump Finder li legge e li spiega in modo semplice.",
-                        "Quando o Windows trava, deixa rastros: eventos e arquivos .dmp. O Dump Finder os lê e explica de forma simples.");
+                    _lblOnbKicker.Text = Localizer.S("onboarding.welcome");
+                    _lblOnbTitle.Text = Localizer.S("onboarding.understand_why_your_pc_crashes");
+                    _lblOnbBody.Text = Localizer.S("onboarding.when_windows_crashes_it_leaves_traces");
                     _onbIllustration.Child = IllustrationLogo();
                     break;
                 case 1:
-                    _lblOnbKicker.Text = Localizer.L("ÉTAPE 2 SUR 3", "STEP 2 OF 3", "PASO 2 DE 3", "SCHRITT 2 VON 3", "PASSO 2 DI 3", "PASSO 2 DE 3");
-                    _lblOnbTitle.Text = Localizer.L("L'analyse est déjà lancée", "The scan is already running", "El análisis ya está en marcha", "Die Analyse läuft bereits", "L'analisi è già partita", "A análise já começou");
-                    _lblOnbBody.Text = Localizer.L(
-                        "Journaux des 30 derniers jours, fichiers .dmp, BIOS, mémoire, SSD : tout est lu en lecture seule. Rien n'est modifié sur votre PC sans votre accord, et chaque correctif s'annule en un clic.",
-                        "30 days of logs, .dmp files, BIOS, memory, SSD: everything is read-only. Nothing changes on your PC without your approval, and every fix can be undone in one click.",
-                        "30 días de registros, .dmp, BIOS, memoria, SSD: todo en solo lectura. Nada cambia sin su permiso y cada corrección se deshace en un clic.",
-                        "30 Tage Protokolle, .dmp, BIOS, Speicher, SSD: alles nur gelesen. Nichts ändert sich ohne Ihre Zustimmung, jede Korrektur ist umkehrbar.",
-                        "30 giorni di log, .dmp, BIOS, memoria, SSD: tutto in sola lettura. Nulla cambia senza il tuo consenso e ogni correzione si annulla in un clic.",
-                        "30 dias de logs, .dmp, BIOS, memória, SSD: tudo somente leitura. Nada muda sem sua permissão e cada correção se desfaz em um clique.");
+                    _lblOnbKicker.Text = Localizer.S("onboarding.step_2_of_3");
+                    _lblOnbTitle.Text = Localizer.S("onboarding.the_scan_is_already_running");
+                    _lblOnbBody.Text = Localizer.S("onboarding.30_days_of_logs_dmp_files");
                     _onbIllustration.Child = IllustrationIcons(new[] { Glyph.Document, Glyph.Diagnostic, Glyph.Component, Glyph.Shield });
                     break;
                 default:
-                    _lblOnbKicker.Text = Localizer.L("ÉTAPE 3 SUR 3", "STEP 3 OF 3", "PASO 3 DE 3", "SCHRITT 3 VON 3", "PASSO 3 DI 3", "PASSO 3 DE 3");
-                    _lblOnbTitle.Text = Localizer.L("Votre tableau de bord", "Your dashboard", "Su panel", "Ihr Dashboard", "La tua dashboard", "Seu painel");
-                    _lblOnbBody.Text = Localizer.L(
-                        "L'Accueil donne un score de stabilité sur 30 jours et les actions utiles. Chaque crash a sa fiche dans Crashs, avec l'explication, le fichier .dmp et les correctifs liés.",
-                        "Home shows a 30-day stability score and the actions that help. Every crash has its own page in Crashes, with the explanation, the .dmp file and related fixes.",
-                        "Inicio muestra una puntuación de estabilidad de 30 días y las acciones útiles. Cada fallo tiene su ficha en Fallos.",
-                        "Start zeigt einen 30-Tage-Stabilitätswert und hilfreiche Aktionen. Jeder Absturz hat seine Seite unter Abstürze.",
-                        "Home mostra un punteggio di stabilità a 30 giorni e le azioni utili. Ogni crash ha la sua scheda in Crash.",
-                        "Início mostra uma pontuação de estabilidade de 30 dias e as ações úteis. Cada falha tem sua ficha em Falhas.");
+                    _lblOnbKicker.Text = Localizer.S("onboarding.step_3_of_3");
+                    _lblOnbTitle.Text = Localizer.S("onboarding.your_dashboard");
+                    _lblOnbBody.Text = Localizer.S("onboarding.home_shows_a_30_day_stability");
                     _onbIllustration.Child = IllustrationScore();
                     break;
             }
 
-            _btnOnbSkip.Content = Localizer.L("Passer", "Skip", "Omitir", "Überspringen", "Salta", "Pular");
-            _btnOnbBack.Content = Localizer.L("Retour", "Back", "Atrás", "Zurück", "Indietro", "Voltar");
+            _btnOnbSkip.Content = Localizer.S("onboarding.skip");
+            _btnOnbBack.Content = Localizer.S("onboarding.back");
             _btnOnbBack.Visibility = i == 0 ? Visibility.Collapsed : Visibility.Visible;
             _btnOnbSkip.Visibility = i == OnboardingSteps - 1 ? Visibility.Collapsed : Visibility.Visible;
             _btnOnbNext.Content = i == OnboardingSteps - 1
-                ? Localizer.L("Commencer", "Get started", "Empezar", "Loslegen", "Inizia", "Começar")
-                : Localizer.L("Suivant", "Next", "Siguiente", "Weiter", "Avanti", "Próximo");
+                ? Localizer.S("onboarding.get_started")
+                : Localizer.S("onboarding.next");
 
             _onbDots.Children.Clear();
             for (int d = 0; d < OnboardingSteps; d++)
@@ -260,37 +242,13 @@ namespace WinCrashDoctor
             switch (tabIdx)
             {
                 case TabCrashes:
-                    return Localizer.L(
-                        "Astuce : cliquez sur un crash pour ouvrir sa fiche. « Copier pour forum » prépare un résumé prêt à poster.",
-                        "Tip: click a crash to open its details. \"Copy for forum\" prepares a summary ready to post.",
-                        "Consejo: haga clic en un fallo para ver su ficha.",
-                        "Tipp: Klicken Sie auf einen Absturz, um die Details zu öffnen.",
-                        "Suggerimento: clicca su un crash per aprire la scheda.",
-                        "Dica: clique em uma falha para abrir a ficha.");
+                    return Localizer.S("onboarding.tip_click_a_crash_to_open");
                 case TabHardware:
-                    return Localizer.L(
-                        "Astuce : le sous-onglet « Test de stabilité » vérifie le GPU, la RAM et le SSD sous charge après un correctif.",
-                        "Tip: the \"Stability test\" tab checks GPU, RAM and SSD under load after a fix.",
-                        "Consejo: la pestaña «Prueba de estabilidad» comprueba GPU, RAM y SSD bajo carga.",
-                        "Tipp: Der Reiter „Stabilitätstest“ prüft GPU, RAM und SSD unter Last.",
-                        "Suggerimento: la scheda «Test di stabilità» verifica GPU, RAM e SSD sotto carico.",
-                        "Dica: a aba «Teste de estabilidade» verifica GPU, RAM e SSD sob carga.");
+                    return Localizer.S("onboarding.tip_the_stability_test_tab_checks");
                 case TabFixes:
-                    return Localizer.L(
-                        "Astuce : le Registre est sauvegardé avant chaque correctif. « Annuler les modifications » revient à l'état d'origine.",
-                        "Tip: the Registry is backed up before every fix. \"Rollback fixes\" returns to the original state.",
-                        "Consejo: el Registro se guarda antes de cada corrección.",
-                        "Tipp: Die Registry wird vor jeder Korrektur gesichert.",
-                        "Suggerimento: il Registro viene salvato prima di ogni correzione.",
-                        "Dica: o Registro é salvo antes de cada correção.");
+                    return Localizer.S("onboarding.tip_the_registry_is_backed_up");
                 case TabTools:
-                    return Localizer.L(
-                        "Astuce : « Rapport & export » regroupe tout le diagnostic en un texte à joindre à un ticket de support.",
-                        "Tip: \"Report & export\" gathers the whole diagnosis into one text to attach to a support ticket.",
-                        "Consejo: «Informe y exportar» reúne todo el diagnóstico en un texto.",
-                        "Tipp: „Bericht & Export“ fasst die Diagnose in einem Text zusammen.",
-                        "Suggerimento: «Rapporto ed esporta» raccoglie tutta la diagnosi in un testo.",
-                        "Dica: «Relatório e exportar» reúne todo o diagnóstico em um texto.");
+                    return Localizer.S("onboarding.tip_report_export_gathers_the_whole");
                 default:
                     return null;
             }

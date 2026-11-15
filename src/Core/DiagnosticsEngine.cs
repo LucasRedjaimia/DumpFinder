@@ -723,8 +723,8 @@ namespace WinCrashDoctor
             DateTime? startTime = res.FilterStartTime;
             string pDate = startTime.HasValue ? startTime.Value.ToString("g", Localizer.Culture) : "";
             string period = startTime.HasValue
-                ? Localizer.L("depuis le " + pDate, "since " + pDate, "desde el " + pDate, "seit " + pDate, "dal " + pDate, "desde " + pDate)
-                : Localizer.L("sur tout l'historique", "across all history", "en todo el historial", "im gesamten Verlauf", "in tutta la cronologia", "em todo o histórico");
+                ? Localizer.F("diagnostics_engine.since", pDate)
+                : Localizer.S("diagnostics_engine.across_all_history");
 
             bool hasGpu = res.GpuTdrCount > 0 || res.Events.Any(e => e.Category == CrashCategory.BSOD && (e.CodeOrId.IndexOf("00000116", StringComparison.OrdinalIgnoreCase) >= 0 || e.CodeOrId.IndexOf("00000119", StringComparison.OrdinalIgnoreCase) >= 0));
             bool hasAmdTimeout = res.Events.Any(e => e.Category == CrashCategory.GpuDriver && e.Source.IndexOf("AMD", StringComparison.OrdinalIgnoreCase) >= 0);
@@ -737,139 +737,48 @@ namespace WinCrashDoctor
                 res.IsHealthy = true;
                 if (res.BrowserAndAppCount == 0)
                 {
-                    res.DiagnosisTitle = Localizer.L(
-                        "Système stable (" + period + ")",
-                        "System is stable (" + period + ")",
-                        "Sistema estable (" + period + ")",
-                        "System ist stabil (" + period + ")",
-                        "Sistema stabile (" + period + ")",
-                        "Sistema estável (" + period + ")");
-                    res.DiagnosisBody = Localizer.L(
-                        "Aucun écran bleu, aucun timeout de pilote GPU, aucune erreur SSD NVMe ou matérielle (WHEA) ni aucun crash navigateur détecté.",
-                        "No Blue Screens, GPU driver timeouts, NVMe stalls, WHEA hardware faults, or browser crashes were detected.",
-                        "No se detectaron pantallas azules, fallos de controlador GPU, bloqueos NVMe, errores WHEA ni cierres de navegador.",
-                        "Keine Bluescreens, GPU-Treiber-Timeouts, NVMe-Aussetzer, WHEA-Hardwarefehler oder Browser-Abstürze erkannt.",
-                        "Nessuna schermata blu, timeout driver GPU, blocco NVMe, errore hardware WHEA o crash del browser rilevato.",
-                        "Nenhuma tela azul, falha de driver GPU, travamento NVMe, erro WHEA ou falha de navegador detectada.");
+                    res.DiagnosisTitle = Localizer.F("diagnostics_engine.system_is_stable", period);
+                    res.DiagnosisBody = Localizer.S("diagnostics_engine.no_blue_screens_gpu_driver_timeouts");
                 }
                 else
                 {
-                    res.DiagnosisTitle = Localizer.L(
-                        "Noyau et matériel stables (" + period + ")",
-                        "Kernel & hardware stable (" + period + ")",
-                        "Núcleo y hardware estables (" + period + ")",
-                        "Kernel & Hardware stabil (" + period + ")",
-                        "Kernel e hardware stabili (" + period + ")",
-                        "Kernel e hardware estáveis (" + period + ")");
-                    res.DiagnosisBody = Localizer.L(
-                        "Aucun crash matériel ni écran bleu détecté. Seuls quelques événements logiciels isolés figurent dans l'historique.",
-                        "Zero hardware faults or BSODs detected. Only minor isolated application events were logged.",
-                        "Cero fallos de hardware o pantallas azules. Solo se registraron eventos aislados de aplicaciones.",
-                        "Keine Hardwarefehler oder Bluescreens. Lediglich einzelne Anwendungsereignisse wurden protokolliert.",
-                        "Zero errori hardware o BSOD. Sono presenti solo eventi applicativi isolati.",
-                        "Zero falhas de hardware ou telas azuis. Apenas eventos isolados de aplicativos foram registrados.");
+                    res.DiagnosisTitle = Localizer.F("diagnostics_engine.kernel_hardware_stable", period);
+                    res.DiagnosisBody = Localizer.S("diagnostics_engine.zero_hardware_faults_or_bsods_detected");
                 }
             }
             else if (hasAmdTimeout)
             {
                 res.IsHealthy = false;
                 res.DiagnosisTitle = res.Hardware.IsAmdRx7000
-                    ? Localizer.L(
-                        "Instabilité RDNA 3 détectée : Radeon RX 7000 (Écran gris / Driver Timeout)",
-                        "RDNA 3 Issue Detected: Radeon RX 7000 (Grey Screen / Driver Timeout)",
-                        "Problema RDNA 3 detectado: Radeon RX 7000 (Pantalla gris / Timeout)",
-                        "RDNA-3-Problem erkannt: Radeon RX 7000 (Grauer Bildschirm / Timeout)",
-                        "Problema RDNA 3 rilevato: Radeon RX 7000 (Schermo grigio / Timeout)",
-                        "Problema RDNA 3 detectado: Radeon RX 7000 (Tela cinza / Timeout)")
-                    : Localizer.L(
-                        "Instabilité détectée : AMD Radeon Driver Timeout (amdwddmg)",
-                        "Issue detected: AMD Radeon Driver Timeout (amdwddmg)",
-                        "Problema detectado: Tiempo agotado de controlador AMD Radeon",
-                        "Problem erkannt: AMD Radeon Treiber-Timeout (amdwddmg)",
-                        "Problema rilevato: Timeout del driver AMD Radeon",
-                        "Problema detectado: Tempo limite do driver AMD Radeon");
+                    ? Localizer.S("diagnostics_engine.rdna_3_issue_detected_radeon_rx")
+                    : Localizer.S("diagnostics_engine.issue_detected_amd_radeon_driver_timeout");
 
-                res.DiagnosisBody = Localizer.L(
-                    "1) Dans « Correctifs », désactivez le Démarrage Rapide (cause n°1 de l'écran gris au boot), ULPS, MPO, HAGS, Issue Detection et verrouillez Windows Update. " +
-                    "2) En jeu sous forte charge (RX 7800 XT / 7900), vérifiez que la carte est branchée avec 2 câbles PCIe 8-pins séparés (sans dédoubleur pigtail) et plafonnez la Fréquence Max vers 2450–2500 MHz dans Adrenalin.",
-                    "1) In 'Fixes', disable Fast Startup (#1 cause of boot grey screens), ULPS, MPO, HAGS, Issue Detection, and lock Windows Update. " +
-                    "2) Under heavy game load (RX 7800 XT / 7900), verify 2 separate 8-pin PCIe PSU cables are used (no daisy-chain pigtail) and cap Max Frequency to ~2450–2500 MHz in Adrenalin.",
-                    "1) En 'Correcciones', desactive Inicio Rápido (causa n.º 1 de pantalla gris al arrancar), ULPS, MPO, HAGS y bloquee Windows Update. 2) En carga (RX 7800 XT), use 2 cables PCIe de 8 pines separados y limite la frecuencia máx. a ~2500 MHz en Adrenalin.",
-                    "1) Unter 'Korrekturen': Schnellstart (Hauptursache für grauen Startbildschirm), ULPS, MPO, HAGS deaktivieren & Windows Update sperren. 2) Unter Last (RX 7800 XT): 2 separate 8-Pin-PCIe-Kabel nutzen und Max-Takt in Adrenalin auf ~2500 MHz begrenzen.",
-                    "1) In 'Correzioni', disattiva Avvio Rapido (causa n°1 di schermo grigio all'avvio), ULPS, MPO, HAGS e blocca Windows Update. 2) Sotto carico (RX 7800 XT), usa 2 cavi PCIe 8-pin separati e limita la frequenza max a ~2500 MHz in Adrenalin.",
-                    "1) Em 'Correções', desative Inicialização Rápida (causa nº 1 de tela cinza no boot), ULPS, MPO, HAGS e bloqueie o Windows Update. 2) Sob carga (RX 7800 XT), use 2 cabos PCIe 8-pin separados e limite o clock máx. a ~2500 MHz no Adrenalin.");
+                res.DiagnosisBody = Localizer.S("diagnostics_engine.1_in_fixes_disable_fast_startup");
             }
             else if (hasGpu)
             {
                 res.IsHealthy = false;
-                res.DiagnosisTitle = Localizer.L(
-                    "Instabilité détectée : Pilote graphique / Timeout TDR (0x116)",
-                    "Issue detected: Graphics Driver Timeout / TDR (0x116)",
-                    "Problema detectado: Fallo del controlador gráfico / TDR (0x116)",
-                    "Problem erkannt: Grafiktreiber-Timeout / TDR (0x116)",
-                    "Problema rilevato: Timeout driver grafico / TDR (0x116)",
-                    "Problema detectado: Falha do driver de vídeo / TDR (0x116)");
-                res.DiagnosisBody = Localizer.L(
-                    "Les crashs proviennent du pilote graphique (0 défaut CPU/RAM/Alim). " + (hasGraphite ? "Des crashs Skia Graphite ont aussi été détectés dans Chrome. " : "") + "Vérifiez vos protections dans « Correctifs ».",
-                    "Crashes originate from the graphics driver (0 CPU/RAM/PSU faults). " + (hasGraphite ? "Skia Graphite video crashes were also found in Chrome. " : "") + "Review protections in 'Fixes'.",
-                    "Los fallos provienen del controlador gráfico (0 errores de CPU/RAM). Revise las protecciones recomendadas en 'Correcciones'.",
-                    "Die Abstürze stammen vom Grafiktreiber (0 CPU/RAM-Fehler). Prüfen Sie die empfohlenen Schutzmaßnahmen unter 'Korrekturen'.",
-                    "I crash provengono dal driver grafico (0 errori CPU/RAM). Controlla le protezioni consigliate in 'Correzioni'.",
-                    "Os travamentos vêm do driver de vídeo (0 falhas de CPU/RAM). Verifique as proteções recomendadas em 'Correções'.");
+                res.DiagnosisTitle = Localizer.S("diagnostics_engine.issue_detected_graphics_driver_timeout_t");
+                res.DiagnosisBody = Localizer.F("diagnostics_engine.gpu_crashes_body",
+                    hasGraphite ? Localizer.S("diagnostics_engine.graphite_crashes_also_found") : "");
             }
             else if (hasNvme)
             {
                 res.IsHealthy = false;
-                res.DiagnosisTitle = Localizer.L(
-                    "Instabilité détectée : Décrochages contrôleur SSD NVMe (stornvme)",
-                    "Issue detected: NVMe SSD Controller Resets (stornvme)",
-                    "Problema detectado: Reinicios del controlador SSD NVMe (stornvme)",
-                    "Problem erkannt: NVMe-SSD-Controller-Aussetzer (stornvme)",
-                    "Problema rilevato: Reset del controller SSD NVMe (stornvme)",
-                    "Problema detectado: Reinícios do controlador SSD NVMe (stornvme)");
-                res.DiagnosisBody = Localizer.L(
-                    "Votre SSD NVMe a enregistré des timeouts. Appliquez « Stabilisation SSD NVMe HMB » et « Désactiver PCIe ASPM » dans l'onglet Correctifs.",
-                    "Your NVMe SSD logged controller timeouts. Apply 'NVMe HMB Stabilization' and 'Disable PCIe ASPM' in Fixes.",
-                    "Su SSD NVMe registró bloqueos. Aplique 'Estabilización NVMe HMB' y 'Desactivar PCIe ASPM' en Correcciones.",
-                    "Ihre NVMe-SSD meldete Timeouts. Aktivieren Sie 'NVMe-HMB-Stabilisierung' und deaktivieren Sie PCIe-ASPM.",
-                    "L'SSD NVMe ha registrato timeout. Applica 'Stabilizzazione NVMe HMB' e 'Disattiva PCIe ASPM' in Correzioni.",
-                    "Seu SSD NVMe registrou timeouts. Aplique 'Estabilização NVMe HMB' e 'Desativar PCIe ASPM' em Correções.");
+                res.DiagnosisTitle = Localizer.S("diagnostics_engine.issue_detected_nvme_ssd_controller_reset");
+                res.DiagnosisBody = Localizer.S("diagnostics_engine.your_nvme_ssd_logged_controller_timeouts");
             }
             else if (hasWhea)
             {
                 res.IsHealthy = false;
-                res.DiagnosisTitle = Localizer.L(
-                    "Instabilité détectée : Erreurs matérielles WHEA (CPU / PCIe)",
-                    "Issue detected: WHEA Hardware Faults (CPU / PCIe)",
-                    "Problema detectado: Errores de hardware WHEA (CPU / PCIe)",
-                    "Problem erkannt: WHEA-Hardwarefehler (CPU / PCIe)",
-                    "Problema rilevato: Errori hardware WHEA (CPU / PCIe)",
-                    "Problema detectado: Erros de hardware WHEA (CPU / PCIe)");
-                res.DiagnosisBody = Localizer.L(
-                    "Consultez les événements WHEA ci-dessous (WHEA 18 = Curve Optimizer Ryzen ; WHEA 17 = câble Riser PCIe) ainsi que le Guide des pannes.",
-                    "Inspect the WHEA events below (WHEA 18 = Ryzen Curve Optimizer; WHEA 17 = PCIe Riser cable) and check the Crash Guide.",
-                    "Revise los eventos WHEA abajo (WHEA 18 = Curve Optimizer Ryzen; WHEA 17 = cable Riser PCIe) y consulte la Guía.",
-                    "Prüfen Sie die WHEA-Ereignisse unten (WHEA 18 = Ryzen Curve Optimizer; WHEA 17 = PCIe-Riser) sowie den Ratgeber.",
-                    "Controlla gli eventi WHEA sotto (WHEA 18 = Curve Optimizer Ryzen; WHEA 17 = cavo Riser PCIe) e la Guida.",
-                    "Verifique os eventos WHEA abaixo (WHEA 18 = Curve Optimizer Ryzen; WHEA 17 = cabo Riser PCIe) e o Guia.");
+                res.DiagnosisTitle = Localizer.S("diagnostics_engine.issue_detected_whea_hardware_faults_cpu");
+                res.DiagnosisBody = Localizer.S("diagnostics_engine.inspect_the_whea_events_below_whea");
             }
             else
             {
                 res.IsHealthy = false;
-                res.DiagnosisTitle = Localizer.L(
-                    "Événements critiques détectés (" + period + ")",
-                    "Critical events detected (" + period + ")",
-                    "Eventos críticos detectados (" + period + ")",
-                    "Kritische Ereignisse erkannt (" + period + ")",
-                    "Eventi critici rilevati (" + period + ")",
-                    "Eventos críticos detectados (" + period + ")");
-                res.DiagnosisBody = Localizer.L(
-                    "Cliquez sur un événement de la liste pour afficher sa cause détaillée et consultez l'onglet Correctifs.",
-                    "Click any event in the list below to inspect its root cause and review available 1-click fixes.",
-                    "Haga clic en cualquier evento de la lista para ver su causa raíz y revise la pestaña Correcciones.",
-                    "Klicken Sie unten auf ein Ereignis, um die Ursache anzuzeigen, und prüfen Sie den Reiter Korrekturen.",
-                    "Clicca su un evento nella lista per vederne la causa e controlla la scheda Correzioni.",
-                    "Clique em qualquer evento da lista para ver sua causa e revise a aba Correções.");
+                res.DiagnosisTitle = Localizer.F("diagnostics_engine.critical_events_detected", period);
+                res.DiagnosisBody = Localizer.S("diagnostics_engine.click_any_event_in_the_list");
             }
         }
 
@@ -886,26 +795,14 @@ namespace WinCrashDoctor
                 Id = "mpo",
                 Group = FixGroup.Gpu,
                 VendorTag = "NVIDIA / AMD",
-                Title = Localizer.L(
-                    "Désactiver le Multiplane Overlay (MPO)",
-                    "Disable Windows Multiplane Overlay (MPO)",
-                    "Desactivar Multiplane Overlay (MPO)",
-                    "Windows Multiplane Overlay (MPO) deaktivieren",
-                    "Disattiva Multiplane Overlay (MPO)",
-                    "Desativar Multiplane Overlay (MPO)"),
+                Title = Localizer.S("diagnostics_engine.disable_windows_multiplane_overlay_mpo"),
                 RegPathDisplay = @"HKLM\SOFTWARE\Microsoft\Windows\Dwm  •  OverlayTestMode = 5",
                 CurrentValue = mpoFixed
-                    ? Localizer.L("MPO désactivé (OverlayTestMode = 5)", "MPO disabled (OverlayTestMode = 5)", "MPO desactivado (OverlayTestMode = 5)", "MPO deaktiviert (OverlayTestMode = 5)", "MPO disattivato (OverlayTestMode = 5)", "MPO desativado (OverlayTestMode = 5)")
-                    : Localizer.L("Par défaut (MPO actif)", "Default (MPO enabled)", "Por defecto (MPO activo)", "Standard (MPO aktiv)", "Predefinito (MPO attivo)", "Padrão (MPO ativo)"),
-                Explanation = Localizer.L(
-                    "Élimine la cause principale des écrans noirs, clignotements et crashs pilotes sur Chrome, YouTube et Discord, sans perte de FPS en jeu.",
-                    "Eliminates the primary cause of black screens, flickering, and driver timeouts in Chrome, YouTube, and Discord with zero FPS loss.",
-                    "Elimina la causa principal de pantallas negras y fallos de controlador en Chrome, YouTube y Discord sin perder FPS.",
-                    "Behebt die Hauptursache für schwarze Bildschirme und Treiber-Timeouts in Chrome, YouTube und Discord ohne FPS-Verlust.",
-                    "Elimina la causa principale di schermi neri e timeout driver su Chrome, YouTube e Discord senza perdita di FPS.",
-                    "Elimina a principal causa de telas pretas e falhas de driver no Chrome, YouTube e Discord sem perda de FPS."),
-                ApplyBtn = Localizer.L("Désactiver MPO", "Disable MPO", "Desactivar MPO", "MPO deaktivieren", "Disattiva MPO", "Desativar MPO"),
-                RestoreBtn = Localizer.L("Par défaut", "Restore", "Restaurar", "Standard", "Ripristina", "Restaurar"),
+                    ? Localizer.S("diagnostics_engine.mpo_disabled_overlaytestmode_5")
+                    : Localizer.S("diagnostics_engine.default_mpo_enabled"),
+                Explanation = Localizer.S("diagnostics_engine.eliminates_the_primary_cause_of_black"),
+                ApplyBtn = Localizer.S("diagnostics_engine.disable_mpo"),
+                RestoreBtn = Localizer.S("diagnostics_engine.restore"),
                 Status = mpoFixed ? FixStatus.Applied : FixStatus.Recommended,
                 RequiresAdmin = true,
                 CanRestore = mpoVal.HasValue,
@@ -920,26 +817,14 @@ namespace WinCrashDoctor
                 Id = "tdr",
                 Group = FixGroup.Gpu,
                 VendorTag = "NVIDIA / AMD",
-                Title = Localizer.L(
-                    "Étendre le délai de tolérance GPU (TdrDelay = 10s)",
-                    "Extend GPU Timeout Tolerance (TdrDelay = 10s)",
-                    "Ampliar tolerancia de espera GPU (TdrDelay = 10s)",
-                    "GPU-Timeout-Toleranz erhöhen (TdrDelay = 10s)",
-                    "Estendi tolleranza timeout GPU (TdrDelay = 10s)",
-                    "Aumentar tolerância de tempo da GPU (TdrDelay = 10s)"),
+                Title = Localizer.S("diagnostics_engine.extend_gpu_timeout_tolerance_tdrdelay_10"),
                 RegPathDisplay = @"HKLM\SYSTEM\CurrentControlSet\Control\GraphicsDrivers  •  TdrDelay = 10, TdrDdiDelay = 10",
                 CurrentValue = tdrFixed
-                    ? Localizer.L("Délai configuré à " + tdrVal.Value + " s", "Timeout set to " + tdrVal.Value + " s", "Tiempo configurado en " + tdrVal.Value + " s", "Timeout auf " + tdrVal.Value + " s gesetzt", "Timeout impostato a " + tdrVal.Value + " s", "Tempo definido em " + tdrVal.Value + " s")
-                    : Localizer.L("Par défaut (2 secondes seulement)", "Default (2 seconds only)", "Por defecto (solo 2 segundos)", "Standard (nur 2 Sekunden)", "Predefinito (solo 2 secondi)", "Padrão (apenas 2 segundos)"),
-                Explanation = Localizer.L(
-                    "Évite un écran noir fatal (0x116) lorsque la carte graphique met plus de 2 secondes à sortir de veille ou compiler un lourd shader.",
-                    "Prevents fatal black-screen crashes (0x116) when the GPU takes slightly over 2 seconds to wake or compile heavy shaders.",
-                    "Evita pantallazos negros fatales (0x116) cuando la GPU tarda más de 2 segundos en despertar o compilar shaders.",
-                    "Verhindert Abstürze (0x116), wenn die Grafikkarte beim Aufwachen oder Shader-Kompilieren länger als 2 Sekunden benötigt.",
-                    "Evita crash a schermo nero (0x116) quando la GPU impiega più di 2 secondi a risvegliarsi o compilare shader.",
-                    "Evita telas pretas fatais (0x116) quando a GPU leva mais de 2 segundos para despertar ou compilar shaders."),
-                ApplyBtn = Localizer.L("Passer à 10s", "Set to 10s", "Ajustar a 10s", "Auf 10s setzen", "Imposta 10s", "Definir 10s"),
-                RestoreBtn = Localizer.L("Remettre 2s", "Reset 2s", "Restaurar 2s", "Auf 2s", "Ripristina 2s", "Restaurar 2s"),
+                    ? Localizer.F("diagnostics_engine.timeout_set_to_s", tdrVal.Value)
+                    : Localizer.S("diagnostics_engine.default_2_seconds_only"),
+                Explanation = Localizer.S("diagnostics_engine.prevents_fatal_black_screen_crashes_0x11"),
+                ApplyBtn = Localizer.S("diagnostics_engine.set_to_10s"),
+                RestoreBtn = Localizer.S("diagnostics_engine.reset_2s"),
                 Status = tdrFixed ? FixStatus.Applied : FixStatus.Recommended,
                 RequiresAdmin = true,
                 CanRestore = tdrVal.HasValue || tdrDdiVal.HasValue,
@@ -955,28 +840,16 @@ namespace WinCrashDoctor
                 Group = FixGroup.Gpu,
                 VendorTag = "AMD RADEON",
                 HardwareTarget = "AMD_GPU",
-                Title = Localizer.L(
-                    "Désactiver la veille profonde AMD ULPS",
-                    "Disable AMD Ultra Low Power State (ULPS)",
-                    "Desactivar ahorro profundo AMD ULPS",
-                    "AMD Tiefschlafmodus (ULPS) deaktivieren",
-                    "Disattiva risparmio profondo AMD ULPS",
-                    "Desativar economia profunda AMD ULPS"),
+                Title = Localizer.S("diagnostics_engine.disable_amd_ultra_low_power_state"),
                 RegPathDisplay = @"HKLM\...\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\000x  •  EnableUlps = 0",
                 CurrentValue = ulpsFoundCount == 0
-                    ? Localizer.L("Aucune clé AMD détectée", "No AMD ULPS key present", "Sin clave AMD detectada", "Kein AMD-Schlüssel vorhanden", "Nessuna chiave AMD rilevata", "Nenhuma chave AMD detectada")
+                    ? Localizer.S("diagnostics_engine.no_amd_ulps_key_present")
                     : (ulpsDisabled
-                        ? Localizer.L("ULPS désactivé (EnableUlps = 0)", "ULPS disabled (EnableUlps = 0)", "ULPS desactivado", "ULPS deaktiviert", "ULPS disattivato", "ULPS desativado")
-                        : Localizer.L("ULPS actif (" + ulpsEnabledCount + " adaptateur)", "ULPS enabled (" + ulpsEnabledCount + " adapter)", "ULPS activo (" + ulpsEnabledCount + ")", "ULPS aktiv (" + ulpsEnabledCount + ")", "ULPS attivo (" + ulpsEnabledCount + ")", "ULPS ativo (" + ulpsEnabledCount + ")")),
-                Explanation = Localizer.L(
-                    "Sur GPU AMD Radeon (ex. RX 7800 XT), l'ULPS coupe trop fortement la tension et provoque des écrans gris/noirs au démarrage ou en sortie de veille.",
-                    "On AMD Radeon GPUs (e.g. RX 7800 XT), ULPS drops idle/boot voltage too low and causes grey or black screens at startup and wake.",
-                    "En gráficas AMD Radeon, ULPS reduce demasiado el voltaje y provoca pantallas grises o negras al iniciar o despertar.",
-                    "Bei AMD-Radeon-GPUs senkt ULPS die Spannung zu stark ab und verursacht graue/schwarze Bildschirme beim Start oder Aufwachen.",
-                    "Sulle GPU AMD Radeon, l'ULPS abbassa troppo la tensione causando schermi grigi o neri all'avvio o al risveglio.",
-                    "Em GPUs AMD Radeon, o ULPS reduz demais a tensão e causa telas cinzas ou pretas na inicialização ou ao despertar."),
-                ApplyBtn = Localizer.L("Désactiver ULPS", "Disable ULPS", "Desactivar ULPS", "ULPS deaktivieren", "Disattiva ULPS", "Desativar ULPS"),
-                RestoreBtn = Localizer.L("Réactiver", "Re-enable", "Reactivar", "Aktivieren", "Riattiva", "Reativar"),
+                        ? Localizer.S("diagnostics_engine.ulps_disabled_enableulps_0")
+                        : Localizer.F("diagnostics_engine.ulps_enabled_adapter", ulpsEnabledCount)),
+                Explanation = Localizer.S("diagnostics_engine.on_amd_radeon_gpus_e_g"),
+                ApplyBtn = Localizer.S("diagnostics_engine.disable_ulps"),
+                RestoreBtn = Localizer.S("risky_drivers.re_enable"),
                 Status = ulpsFoundCount == 0 ? FixStatus.Info : (ulpsDisabled ? FixStatus.Applied : (hw.HasAmdGpu ? FixStatus.Recommended : FixStatus.Optional)),
                 RequiresAdmin = true,
                 CanRestore = ulpsDisabled,
@@ -994,26 +867,14 @@ namespace WinCrashDoctor
                     Group = FixGroup.Gpu,
                     VendorTag = "AMD RADEON",
                     HardwareTarget = "AMD_GPU",
-                    Title = Localizer.L(
-                        "Désactiver AMD Issue Detection / Crash Defender (EnableIssueDetection = 0)",
-                        "Disable AMD Issue Detection / Crash Defender (EnableIssueDetection = 0)",
-                        "Desactivar AMD Issue Detection / Crash Defender (EnableIssueDetection = 0)",
-                        "AMD Issue Detection / Crash Defender deaktivieren (EnableIssueDetection = 0)",
-                        "Disattiva AMD Issue Detection / Crash Defender (EnableIssueDetection = 0)",
-                        "Desativar AMD Issue Detection / Crash Defender (EnableIssueDetection = 0)"),
+                    Title = Localizer.S("diagnostics_engine.disable_amd_issue_detection_crash_defend"),
                     RegPathDisplay = @"HKLM\SYSTEM\CurrentControlSet\Services\amdwddmg & amdkmdag  •  EnableIssueDetection = 0",
                     CurrentValue = amdIssueDetOff
-                        ? Localizer.L("Issue Detection désactivé (EnableIssueDetection = 0)", "Issue Detection disabled (EnableIssueDetection = 0)", "Desactivado (0)", "Deaktiviert (0)", "Disattivato (0)", "Desativado (0)")
-                        : Localizer.L("Actif par défaut (surveillance agressive)", "Enabled by default", "Activo por defecto", "Standardmäßig aktiv", "Attivo per impostazione predefinita", "Ativo por padrão"),
-                    Explanation = Localizer.L(
-                        "Sur Radeon RX 6000/7000 (RX 7800 XT / 7900), la détection d'incident d'Adrenalin déclenche parfois de faux timeouts et des écrans gris lors des pics de charge.",
-                        "On Radeon RX 6000/7000 (RX 7800 XT / 7900), kernel Issue Detection can trigger false-positive driver timeouts and grey screens during load spikes.",
-                        "En Radeon RX 6000/7000, Issue Detection puede provocar falsos timeouts y pantallas grises durante picos de carga.",
-                        "Auf Radeon RX 6000/7000 kann Issue Detection bei Lastspitzen falsche Treiber-Timeouts und graue Bildschirme auslösen.",
-                        "Su Radeon RX 6000/7000, Issue Detection può causare falsi timeout e schermi grigi durante i picchi di carico.",
-                        "Nas Radeon RX 6000/7000, o Issue Detection pode acionar falsos timeouts e telas cinzas em picos de carga."),
-                    ApplyBtn = Localizer.L("Désactiver", "Disable", "Desactivar", "Deaktivieren", "Disattiva", "Desativar"),
-                    RestoreBtn = Localizer.L("Par défaut", "Default", "Por defecto", "Standard", "Predefinito", "Padrão"),
+                        ? Localizer.S("diagnostics_engine.issue_detection_disabled_enableissuedete")
+                        : Localizer.S("diagnostics_engine.enabled_by_default"),
+                    Explanation = Localizer.S("diagnostics_engine.on_radeon_rx_6000_7000_rx"),
+                    ApplyBtn = Localizer.S("risky_drivers.disable"),
+                    RestoreBtn = Localizer.S("diagnostics_engine.default"),
                     Status = amdIssueDetOff ? FixStatus.Applied : (hw.HasAmdGpu && !hw.HasNvidiaGpu ? FixStatus.Recommended : FixStatus.Optional),
                     RequiresAdmin = true,
                     CanRestore = amdIssueDetOff,
@@ -1029,26 +890,14 @@ namespace WinCrashDoctor
                 Id = "wu_driver_lock",
                 Group = FixGroup.Gpu,
                 VendorTag = "AMD / NVIDIA",
-                Title = Localizer.L(
-                    "Bloquer le remplacement du pilote GPU par Windows Update",
-                    "Prevent Windows Update from Overwriting GPU Drivers",
-                    "Evitar que Windows Update sobrescriba el controlador GPU",
-                    "Überschreiben des GPU-Treibers durch Windows Update verhindern",
-                    "Impedisci a Windows Update di sovrascrivere il driver GPU",
-                    "Impedir que o Windows Update substitua o driver da GPU"),
+                Title = Localizer.S("diagnostics_engine.prevent_windows_update_from_overwriting"),
                 RegPathDisplay = @"HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate  •  ExcludeWUDriversInQualityUpdate = 1",
                 CurrentValue = wuLocked
-                    ? Localizer.L("Pilotes verrouillés face à Windows Update", "Drivers locked against Windows Update", "Controladores protegidos", "Treiber-Updates gesperrt", "Driver protetti da Windows Update", "Drivers protegidos contra Windows Update")
-                    : Localizer.L("Par défaut (remplacement automatique autorisé)", "Default (silent driver overwrite allowed)", "Por defecto (actualización automática permitida)", "Standard (automatisches Überschreiben erlaubt)", "Predefinito (sovrascrittura consentita)", "Padrão (substituição automática permitida)"),
-                Explanation = Localizer.L(
-                    "Empêche Windows Update d'écraser votre pilote AMD Adrenalin ou NVIDIA par une ancienne version générique incompatible.",
-                    "Stops Windows Update from silently replacing your AMD Adrenalin or NVIDIA driver with an older generic build.",
-                    "Impide que Windows Update reemplace su controlador AMD Adrenalin o NVIDIA por una versión antigua incompatible.",
-                    "Verhindert, dass Windows Update Ihren AMD-Adrenalin- oder NVIDIA-Treiber heimlich durch eine alte Version ersetzt.",
-                    "Impedisce a Windows Update di sostituire il driver AMD Adrenalin o NVIDIA con una vecchia versione generica.",
-                    "Impede o Windows Update de substituir silenciosamente seu driver AMD Adrenalin ou NVIDIA por uma versão antiga."),
-                ApplyBtn = Localizer.L("Verrouiller", "Lock Drivers", "Bloquear", "Sperren", "Blocca", "Bloquear"),
-                RestoreBtn = Localizer.L("Autoriser", "Allow", "Permitir", "Erlauben", "Consenti", "Permitir"),
+                    ? Localizer.S("diagnostics_engine.drivers_locked_against_windows_update")
+                    : Localizer.S("diagnostics_engine.default_silent_driver_overwrite_allowed"),
+                Explanation = Localizer.S("diagnostics_engine.stops_windows_update_from_silently_repla"),
+                ApplyBtn = Localizer.S("diagnostics_engine.lock_drivers"),
+                RestoreBtn = Localizer.S("diagnostics_engine.allow"),
                 Status = wuLocked ? FixStatus.Applied : (hw.HasAmdGpu ? FixStatus.Recommended : FixStatus.Optional),
                 RequiresAdmin = true,
                 CanRestore = wuLocked || (searchOrd.HasValue && searchOrd.Value == 0),
@@ -1063,23 +912,11 @@ namespace WinCrashDoctor
                 Id = "shader_cache",
                 Group = FixGroup.Gpu,
                 VendorTag = "DIRECTX / GPU",
-                Title = Localizer.L(
-                    "Purger les caches de Shaders (DirectX, NVIDIA & AMD)",
-                    "Purge Compiled GPU Shader Caches (DirectX, NVIDIA & AMD)",
-                    "Limpiar cachés de Shaders (DirectX, NVIDIA y AMD)",
-                    "GPU-Shader-Cache leeren (DirectX, NVIDIA & AMD)",
-                    "Svuota cache degli Shader GPU (DirectX, NVIDIA e AMD)",
-                    "Limpar cache de Shaders da GPU (DirectX, NVIDIA e AMD)"),
+                Title = Localizer.S("diagnostics_engine.purge_compiled_gpu_shader_caches_directx"),
                 RegPathDisplay = @"%LOCALAPPDATA%\D3DSCache  •  NVIDIA\DXCache  •  AMD\DxCache",
                 CurrentValue = string.Format("{0:F1} MB", shaderMb),
-                Explanation = Localizer.L(
-                    "Élimine les shaders corrompus après une mise à jour de pilote ou de jeu (UE5, CoD, CS2). Les fichiers actifs sont ignorés.",
-                    "Clears stale compiled shaders after driver or game updates (UE5, CoD, CS2). Active files in use are safely skipped.",
-                    "Elimina shaders corruptos tras actualizar controladores o juegos (UE5, CoD, CS2). Los archivos en uso se omiten.",
-                    "Entfernt veraltete Shader nach Treiber- oder Spiel-Updates (UE5, CoD, CS2). Aktive Dateien werden übersprungen.",
-                    "Rimuove gli shader obsoleti dopo aggiornamenti driver o giochi (UE5, CoD, CS2). I file in uso vengono ignorati.",
-                    "Remove shaders corrompidos após atualizar drivers ou jogos (UE5, CoD, CS2). Arquivos em uso são ignorados."),
-                ApplyBtn = Localizer.L("Nettoyer", "Purge Cache", "Limpiar", "Bereinigen", "Pulisci", "Limpar"),
+                Explanation = Localizer.S("diagnostics_engine.clears_stale_compiled_shaders_after_driv"),
+                ApplyBtn = Localizer.S("diagnostics_engine.purge_cache"),
                 RestoreBtn = "",
                 Status = shaderMb < 5.0 ? FixStatus.Applied : FixStatus.Optional,
                 RequiresAdmin = false,
@@ -1095,37 +932,19 @@ namespace WinCrashDoctor
                 Id = "hags",
                 Group = FixGroup.Gpu,
                 VendorTag = primaryAmd ? "AMD RADEON / WDDM" : "WDDM / DLSS",
-                Title = Localizer.L(
-                    "Planification GPU à accélération matérielle (HAGS)",
-                    "Hardware-Accelerated GPU Scheduling (HAGS)",
-                    "Programación de GPU acelerada por hardware (HAGS)",
-                    "Hardwarebeschleunigte GPU-Planung (HAGS)",
-                    "Pianificazione GPU con accelerazione hardware (HAGS)",
-                    "Agendamento de GPU acelerado por hardware (HAGS)"),
+                Title = Localizer.S("diagnostics_engine.hardware_accelerated_gpu_scheduling_hags"),
                 RegPathDisplay = @"HKLM\SYSTEM\CurrentControlSet\Control\GraphicsDrivers  •  HwSchMode",
                 CurrentValue = hagsOn
                     ? (primaryAmd
-                        ? Localizer.L("Activé (peut causer écrans gris / timeouts sur RX 7000)", "Enabled (can cause grey screens / timeouts on RX 7000)", "Activado (riesgo en RX 7000)", "Aktiviert (Risiko auf RX 7000)", "Attivo (rischio su RX 7000)", "Ativado (risco na RX 7000)")
-                        : Localizer.L("Activé (requis pour DLSS Frame Gen)", "Enabled (required for DLSS Frame Gen)", "Activado (necesario para DLSS Frame Gen)", "Aktiviert (für DLSS Frame Gen nötig)", "Attivo (richiesto per DLSS Frame Gen)", "Ativado (necessário para DLSS Frame Gen)"))
-                    : Localizer.L("Désactivé (HwSchMode = 1)", "Disabled (HwSchMode = 1)", "Desactivado (HwSchMode = 1)", "Deaktiviert (HwSchMode = 1)", "Disattivato (HwSchMode = 1)", "Desativado (HwSchMode = 1)"),
+                        ? Localizer.S("diagnostics_engine.enabled_can_cause_grey_screens_timeouts")
+                        : Localizer.S("diagnostics_engine.enabled_required_for_dlss_frame_gen"))
+                    : Localizer.S("diagnostics_engine.disabled_hwschmode_1"),
                 Explanation = primaryAmd
-                    ? Localizer.L(
-                        "Sur AMD Radeon RX 6000/7000 (ex. RX 7800 XT) sous Windows 11 24H2+, désactiver HAGS corrige de nombreux écrans gris et pop-ups Driver Timeout en jeu DirectX 12.",
-                        "On AMD Radeon RX 6000/7000 (e.g. RX 7800 XT) with Windows 11 24H2+, disabling HAGS resolves many grey screens and DirectX 12 Driver Timeouts.",
-                        "En AMD Radeon RX 6000/7000 (RX 7800 XT), desactivar HAGS corrige pantallas grises y fallos Driver Timeout en juegos DX12.",
-                        "Bei AMD Radeon RX 6000/7000 (z. B. RX 7800 XT) behebt das Deaktivieren von HAGS häufig graue Bildschirme und DX12-Treiber-Timeouts.",
-                        "Su AMD Radeon RX 6000/7000 (es. RX 7800 XT), disattivare HAGS risolve molti schermi grigi e Driver Timeout in DX12.",
-                        "Nas AMD Radeon RX 6000/7000 (ex. RX 7800 XT), desativar o HAGS resolve telas cinzas e Driver Timeouts em jogos DX12.")
-                    : Localizer.L(
-                        "Gardez HAGS activé sur RTX 40/50 pour le DLSS Frame Generation. Sur GPU AMD Radeon RX 7000 ou cartes plus anciennes subissant des freezes, le désactiver aide.",
-                        "Keep HAGS enabled on RTX 40/50 for DLSS Frame Generation. On AMD Radeon RX 7000 or older cards experiencing freezes, disabling it helps.",
-                        "Mantenga HAGS activo en RTX 40/50 para DLSS Frame Generation. En Radeon RX 7000 o tarjetas antiguas con bloqueos, desactivarlo ayuda.",
-                        "Auf RTX 40/50 für DLSS Frame Generation aktiviert lassen. Bei Radeon RX 7000 oder älteren Karten mit Freezes kann Deaktivieren helfen.",
-                        "Mantieni HAGS attivo su RTX 40/50 per DLSS Frame Generation. Su Radeon RX 7000 o schede con freeze può aiutare disattivarlo.",
-                        "Mantenha o HAGS ativo nas RTX 40/50 para DLSS Frame Generation. Nas Radeon RX 7000 ou placas com travamentos, desativar ajuda."),
+                    ? Localizer.S("diagnostics_engine.on_amd_radeon_rx_6000_7000")
+                    : Localizer.S("diagnostics_engine.keep_hags_enabled_on_rtx_40"),
                 ApplyBtn = hagsOn
-                    ? Localizer.L("Désactiver", "Disable", "Desactivar", "Deaktivieren", "Disattiva", "Desativar")
-                    : Localizer.L("Activer", "Enable", "Activar", "Aktivieren", "Attiva", "Ativar"),
+                    ? Localizer.S("risky_drivers.disable")
+                    : Localizer.S("diagnostics_engine.enable"),
                 RestoreBtn = "",
                 Status = primaryAmd ? (!hagsOn ? FixStatus.Applied : FixStatus.Recommended) : (hagsOn ? FixStatus.Applied : FixStatus.Optional),
                 RequiresAdmin = true,
@@ -1141,28 +960,16 @@ namespace WinCrashDoctor
                 Id = "chrome_graphite",
                 Group = FixGroup.BrowserApps,
                 VendorTag = "CHROME",
-                Title = Localizer.L(
-                    "Désactiver Skia Graphite dans Google Chrome",
-                    "Disable Skia Graphite in Google Chrome",
-                    "Desactivar Skia Graphite en Google Chrome",
-                    "Skia Graphite in Google Chrome deaktivieren",
-                    "Disattiva Skia Graphite in Google Chrome",
-                    "Desativar Skia Graphite no Google Chrome"),
+                Title = Localizer.S("diagnostics_engine.disable_skia_graphite_in_google_chrome"),
                 RegPathDisplay = @"%LOCALAPPDATA%\Google\Chrome\User Data\Local State  •  skia-graphite@5",
                 CurrentValue = chromeState == "not_installed"
-                    ? Localizer.L("Non installé", "Not installed", "No instalado", "Nicht installiert", "Non installato", "Não instalado")
+                    ? Localizer.S("diagnostics_engine.not_installed")
                     : (chromeGraphiteOff
-                        ? Localizer.L("Skia Graphite désactivé", "Skia Graphite disabled", "Skia Graphite desactivado", "Skia Graphite deaktiviert", "Skia Graphite disattivato", "Skia Graphite desativado")
-                        : Localizer.L("Par défaut (Skia Graphite actif)", "Default (Skia Graphite enabled)", "Por defecto (activo)", "Standard (aktiv)", "Predefinito (attivo)", "Padrão (ativo)")),
-                Explanation = Localizer.L(
-                    "Évite le crash de GraphiteDawnD3D11 en lecture vidéo YouTube 4K AV1/VP9 tout en conservant le décodage matériel fluide.",
-                    "Prevents GraphiteDawnD3D11 from stalling Direct3D 11 during 4K YouTube playback while keeping hardware video decoding.",
-                    "Evita que GraphiteDawnD3D11 bloquee Direct3D 11 al reproducir YouTube 4K manteniendo la decodificación por hardware.",
-                    "Verhindert Direct3D-11-Hänger durch GraphiteDawnD3D11 bei 4K-YouTube-Videos bei voller Hardware-Dekodierung.",
-                    "Evita il blocco di Direct3D 11 da parte di GraphiteDawnD3D11 nei video YouTube 4K mantenendo la decodifica hardware.",
-                    "Evita que o GraphiteDawnD3D11 trave o Direct3D 11 em vídeos 4K do YouTube mantendo a decodificação por hardware."),
-                ApplyBtn = Localizer.L("Désactiver", "Disable", "Desactivar", "Deaktivieren", "Disattiva", "Desativar"),
-                RestoreBtn = Localizer.L("Par défaut", "Restore", "Restaurar", "Standard", "Ripristina", "Restaurar"),
+                        ? Localizer.S("diagnostics_engine.skia_graphite_disabled")
+                        : Localizer.S("diagnostics_engine.default_skia_graphite_enabled")),
+                Explanation = Localizer.S("diagnostics_engine.prevents_graphitedawnd3d11_from_stalling"),
+                ApplyBtn = Localizer.S("risky_drivers.disable"),
+                RestoreBtn = Localizer.S("diagnostics_engine.restore"),
                 Status = chromeGraphiteOff ? FixStatus.Applied : (chromeState == "not_installed" ? FixStatus.Info : FixStatus.Recommended),
                 RequiresAdmin = false,
                 CanRestore = chromeGraphiteOff,
@@ -1176,26 +983,14 @@ namespace WinCrashDoctor
                 Id = "edge_graphite",
                 Group = FixGroup.BrowserApps,
                 VendorTag = "EDGE",
-                Title = Localizer.L(
-                    "Désactiver Skia Graphite dans Microsoft Edge",
-                    "Disable Skia Graphite in Microsoft Edge",
-                    "Desactivar Skia Graphite en Microsoft Edge",
-                    "Skia Graphite in Microsoft Edge deaktivieren",
-                    "Disattiva Skia Graphite in Microsoft Edge",
-                    "Desativar Skia Graphite no Microsoft Edge"),
+                Title = Localizer.S("diagnostics_engine.disable_skia_graphite_in_microsoft_edge"),
                 RegPathDisplay = @"%LOCALAPPDATA%\Microsoft\Edge\User Data\Local State  •  skia-graphite@2",
                 CurrentValue = edgeGraphiteOff
-                    ? Localizer.L("Skia Graphite désactivé", "Skia Graphite disabled", "Skia Graphite desactivado", "Skia Graphite deaktiviert", "Skia Graphite disattivato", "Skia Graphite desativado")
-                    : Localizer.L("Par défaut (Skia Graphite actif)", "Default (Skia Graphite enabled)", "Por defecto (activo)", "Standard (aktiv)", "Predefinito (attivo)", "Padrão (ativo)"),
-                Explanation = Localizer.L(
-                    "Protège Microsoft Edge contre les mêmes timeouts Direct3D 11 que Chrome en lecture vidéo matérielle.",
-                    "Protects Microsoft Edge from the same Chromium Direct3D 11 video timeout bugs as Chrome.",
-                    "Protege Microsoft Edge de los mismos bloqueos de vídeo Direct3D 11 que Chrome.",
-                    "Schützt Microsoft Edge vor denselben Chromium-Direct3D-11-Videofehlern wie Chrome.",
-                    "Protegge Microsoft Edge dagli stessi blocchi video Direct3D 11 di Chrome.",
-                    "Protege o Microsoft Edge contra os mesmos travamentos de vídeo Direct3D 11 do Chrome."),
-                ApplyBtn = Localizer.L("Désactiver", "Disable", "Desactivar", "Deaktivieren", "Disattiva", "Desativar"),
-                RestoreBtn = Localizer.L("Par défaut", "Restore", "Restaurar", "Standard", "Ripristina", "Restaurar"),
+                    ? Localizer.S("diagnostics_engine.skia_graphite_disabled")
+                    : Localizer.S("diagnostics_engine.default_skia_graphite_enabled"),
+                Explanation = Localizer.S("diagnostics_engine.protects_microsoft_edge_from_the_same"),
+                ApplyBtn = Localizer.S("risky_drivers.disable"),
+                RestoreBtn = Localizer.S("diagnostics_engine.restore"),
                 Status = edgeGraphiteOff ? FixStatus.Applied : FixStatus.Optional,
                 RequiresAdmin = false,
                 CanRestore = edgeGraphiteOff,
@@ -1209,28 +1004,16 @@ namespace WinCrashDoctor
                 Id = "discord_hwaccel",
                 Group = FixGroup.BrowserApps,
                 VendorTag = "DISCORD",
-                Title = Localizer.L(
-                    "Désactiver l'accélération matérielle dans Discord",
-                    "Disable GPU Hardware Acceleration in Discord",
-                    "Desactivar aceleración por hardware en Discord",
-                    "Hardwarebeschleunigung in Discord deaktivieren",
-                    "Disattiva accelerazione hardware in Discord",
-                    "Desativar aceleração por hardware no Discord"),
+                Title = Localizer.S("diagnostics_engine.disable_gpu_hardware_acceleration_in_dis"),
                 RegPathDisplay = @"%APPDATA%\discord\settings.json  •  ENABLE_HARDWARE_ACCELERATION = false",
                 CurrentValue = discordStatus == "not_installed"
-                    ? Localizer.L("Discord non détecté", "Discord not detected", "Discord no detectado", "Discord nicht erkannt", "Discord non rilevato", "Discord não detectado")
+                    ? Localizer.S("diagnostics_engine.discord_not_detected")
                     : (discordOff
-                        ? Localizer.L("Accélération GPU désactivée", "GPU acceleration disabled", "Aceleración GPU desactivada", "GPU-Beschleunigung deaktiviert", "Accelerazione GPU disattivata", "Aceleração GPU desativada")
-                        : Localizer.L("Par défaut (accélération active)", "Default (GPU acceleration enabled)", "Por defecto (activa)", "Standard (aktiv)", "Predefinito (attiva)", "Padrão (ativa)")),
-                Explanation = Localizer.L(
-                    "Évite les conflits d'overlays et de fréquences GPU lorsque Discord tourne en arrière-plan ou sur un second écran en jeu.",
-                    "Prevents overlay and P-state conflicts when Discord runs in the background or on a second monitor while gaming.",
-                    "Evita conflictos de superposición y estados de energía cuando Discord está abierto en segundo plano al jugar.",
-                    "Vermeidet Overlay- und P-State-Konflikte, wenn Discord beim Spielen im Hintergrund oder auf einem Zweitmonitor läuft.",
-                    "Evita conflitti di overlay e frequenze GPU quando Discord è aperto in background durante il gioco.",
-                    "Evita conflitos de overlay e estados de energia quando o Discord roda em segundo plano durante jogos."),
-                ApplyBtn = Localizer.L("Désactiver", "Disable", "Desactivar", "Deaktivieren", "Disattiva", "Desativar"),
-                RestoreBtn = Localizer.L("Réactiver", "Re-enable", "Reactivar", "Aktivieren", "Riattiva", "Reativar"),
+                        ? Localizer.S("diagnostics_engine.gpu_acceleration_disabled")
+                        : Localizer.S("diagnostics_engine.default_gpu_acceleration_enabled")),
+                Explanation = Localizer.S("diagnostics_engine.prevents_overlay_and_p_state_conflicts"),
+                ApplyBtn = Localizer.S("risky_drivers.disable"),
+                RestoreBtn = Localizer.S("risky_drivers.re_enable"),
                 Status = discordOff ? FixStatus.Applied : FixStatus.Optional,
                 RequiresAdmin = false,
                 CanRestore = discordOff,
@@ -1245,26 +1028,14 @@ namespace WinCrashDoctor
                 Id = "nvme_hmb",
                 Group = FixGroup.StoragePcie,
                 VendorTag = "SSD NVMe",
-                Title = Localizer.L(
-                    "Stabiliser le cache HMB des SSD NVMe (Windows 11 24H2+)",
-                    "Stabilize NVMe SSD Host Memory Buffer (Windows 11 24H2+)",
-                    "Estabilizar caché HMB de SSD NVMe (Windows 11 24H2+)",
-                    "NVMe-SSD Host Memory Buffer stabilisieren (Windows 11 24H2+)",
-                    "Stabilizza cache HMB degli SSD NVMe (Windows 11 24H2+)",
-                    "Estabilizar cache HMB de SSDs NVMe (Windows 11 24H2+)"),
+                Title = Localizer.S("diagnostics_engine.stabilize_nvme_ssd_host_memory_buffer"),
                 RegPathDisplay = @"HKLM\SYSTEM\CurrentControlSet\Services\stornvme\Parameters\Device  •  HmbAllocationPolicy = 2",
                 CurrentValue = hmbFixed
-                    ? Localizer.L("HMB plafonné à 64 Mo (Policy = " + hmbVal.Value + ")", "HMB safely capped at 64 MB", "HMB limitado a 64 MB", "HMB sicher auf 64 MB begrenzt", "HMB limitato a 64 MB", "HMB limitado a 64 MB")
-                    : Localizer.L("Par défaut (allocation non plafonnée)", "Default (uncapped HMB allocation)", "Por defecto (sin límite)", "Standard (unbegrenzt)", "Predefinito (non limitato)", "Padrão (sem limite)"),
-                Explanation = Localizer.L(
-                    "Corrige les freezes complets stornvme Event 129 et écrans bleus 0xEF sous Windows 11 24H2+ pour les SSD NVMe sans DRAM.",
-                    "Fixes total system freezes (stornvme Event 129) and 0xEF BSODs on Windows 11 24H2+ with DRAM-less NVMe SSDs.",
-                    "Corrige congelamientos stornvme 129 y pantallazos 0xEF en Windows 11 24H2+ para unidades NVMe sin DRAM.",
-                    "Behebt System-Freezes (stornvme 129) und 0xEF-Bluescreens unter Windows 11 24H2+ bei DRAM-losen NVMe-SSDs.",
-                    "Risolve i freeze completi stornvme 129 e BSOD 0xEF su Windows 11 24H2+ con SSD NVMe DRAM-less.",
-                    "Corrige congelamentos stornvme 129 e telas azuis 0xEF no Windows 11 24H2+ em SSDs NVMe sem DRAM."),
-                ApplyBtn = Localizer.L("Stabiliser NVMe", "Apply Fix", "Aplicar", "Anwenden", "Applica", "Aplicar"),
-                RestoreBtn = Localizer.L("Par défaut", "Restore", "Restaurar", "Standard", "Ripristina", "Restaurar"),
+                    ? Localizer.F("diagnostics_engine.hmb_safely_capped_at_64_mb", hmbVal.Value)
+                    : Localizer.S("diagnostics_engine.default_uncapped_hmb_allocation"),
+                Explanation = Localizer.S("diagnostics_engine.fixes_total_system_freezes_stornvme_even"),
+                ApplyBtn = Localizer.S("diagnostics_engine.apply_fix"),
+                RestoreBtn = Localizer.S("diagnostics_engine.restore"),
                 Status = hmbFixed ? FixStatus.Applied : FixStatus.Optional,
                 RequiresAdmin = true,
                 CanRestore = hmbFixed,
@@ -1278,26 +1049,14 @@ namespace WinCrashDoctor
                 Id = "pcie_aspm",
                 Group = FixGroup.StoragePcie,
                 VendorTag = "PCIe / ITX",
-                Title = Localizer.L(
-                    "Désactiver l'économie d'énergie du bus PCI-Express (ASPM)",
-                    "Disable PCI-Express Link Power Management (ASPM)",
-                    "Desactivar ahorro de energía PCI-Express (ASPM)",
-                    "PCI-Express-Energiesparmodus (ASPM) deaktivieren",
-                    "Disattiva risparmio energetico PCI-Express (ASPM)",
-                    "Desativar economia de energia PCI-Express (ASPM)"),
+                Title = Localizer.S("diagnostics_engine.disable_pci_express_link_power_managemen"),
                 RegPathDisplay = @"PowerCfg  •  SUB_PCIEXPRESS \ ASPM = 0",
                 CurrentValue = aspmOff
-                    ? Localizer.L("ASPM désactivé sur secteur", "ASPM disabled on AC power", "ASPM desactivado en corriente", "ASPM im Netzbetrieb deaktiviert", "ASPM disattivato su rete", "ASPM desativado na tomada")
-                    : Localizer.L("Économie PCIe active (niveau " + aspmAc + ")", "PCIe power saving active (level " + aspmAc + ")", "Ahorro PCIe activo", "PCIe-Sparmodus aktiv", "Risparmio PCIe attivo", "Economia PCIe ativa"),
-                Explanation = Localizer.L(
-                    "Maintient le signal électrique stable sur le port GPU et les SSD NVMe. Essentiel en boîtier ITX avec câble Riser PCIe.",
-                    "Keeps full signaling stability on GPU and NVMe PCIe lanes. Essential for SFF/ITX builds with PCIe riser cables.",
-                    "Mantiene estable la señal PCIe del GPU y SSD NVMe. Esencial en cajas ITX con cable Riser PCIe.",
-                    "Hält das PCIe-Signal für GPU und NVMe stabil. Unverzichtbar bei ITX-Gehäusen mit PCIe-Riser-Kabel.",
-                    "Mantiene stabile il segnale PCIe di GPU e NVMe. Essenziale nei case ITX con cavo Riser PCIe.",
-                    "Mantém estável o sinal PCIe da GPU e NVMe. Essencial em gabinetes ITX com cabo Riser PCIe."),
-                ApplyBtn = Localizer.L("Désactiver ASPM", "Disable ASPM", "Desactivar ASPM", "ASPM deaktivieren", "Disattiva ASPM", "Desativar ASPM"),
-                RestoreBtn = Localizer.L("Modéré", "Moderate", "Moderado", "Moderat", "Moderato", "Moderado"),
+                    ? Localizer.S("diagnostics_engine.aspm_disabled_on_ac_power")
+                    : Localizer.F("diagnostics_engine.pcie_power_saving_active_level", aspmAc),
+                Explanation = Localizer.S("diagnostics_engine.keeps_full_signaling_stability_on_gpu"),
+                ApplyBtn = Localizer.S("diagnostics_engine.disable_aspm"),
+                RestoreBtn = Localizer.S("diagnostics_engine.moderate"),
                 Status = aspmOff ? FixStatus.Applied : FixStatus.Recommended,
                 RequiresAdmin = false,
                 CanRestore = aspmOff,
@@ -1311,26 +1070,14 @@ namespace WinCrashDoctor
                 Id = "usb_suspend",
                 Group = FixGroup.StoragePcie,
                 VendorTag = "USB",
-                Title = Localizer.L(
-                    "Désactiver la suspension sélective USB",
-                    "Disable USB Selective Suspend on AC Power",
-                    "Desactivar suspensión selectiva USB",
-                    "Selektives USB-Energiesparen deaktivieren",
-                    "Disattiva sospensione selettiva USB",
-                    "Desativar suspensão seletiva USB"),
+                Title = Localizer.S("diagnostics_engine.disable_usb_selective_suspend_on_ac"),
                 RegPathDisplay = @"PowerCfg  •  SUB_USB \ USBSELECTIVESUSPEND = 0",
                 CurrentValue = usbSuspendOff
-                    ? Localizer.L("Suspension USB désactivée", "USB suspend disabled", "Suspensión USB desactivada", "USB-Energiesparen deaktiviert", "Sospensione USB disattivata", "Suspensão USB desativada")
-                    : Localizer.L("Par défaut (suspension active)", "Default (suspend enabled)", "Por defecto (activa)", "Standard (aktiv)", "Predefinito (attiva)", "Padrão (ativa)"),
-                Explanation = Localizer.L(
-                    "Évite les micro-coupures de souris sans fil, cartes son USB / DAC et manettes sur chipsets AMD et Intel.",
-                    "Prevents micro-dropouts on wireless mouse dongles, USB DACs/headsets, and controllers.",
-                    "Evita microcortes en ratones inalámbricos, tarjetas de sonido USB / DAC y mandos.",
-                    "Verhindert Aussetzer bei kabellosen Mäusen, USB-Soundkarten/DACs und Controllern.",
-                    "Evita micro-disconnessioni di mouse wireless, schede audio USB / DAC e controller.",
-                    "Evita micro-desconexões em mouses sem fio, placas de som USB / DAC e controles."),
-                ApplyBtn = Localizer.L("Désactiver", "Disable", "Desactivar", "Deaktivieren", "Disattiva", "Desativar"),
-                RestoreBtn = Localizer.L("Par défaut", "Restore", "Restaurar", "Standard", "Ripristina", "Restaurar"),
+                    ? Localizer.S("diagnostics_engine.usb_suspend_disabled")
+                    : Localizer.S("diagnostics_engine.default_suspend_enabled"),
+                Explanation = Localizer.S("diagnostics_engine.prevents_micro_dropouts_on_wireless_mous"),
+                ApplyBtn = Localizer.S("risky_drivers.disable"),
+                RestoreBtn = Localizer.S("diagnostics_engine.restore"),
                 Status = usbSuspendOff ? FixStatus.Applied : FixStatus.Optional,
                 RequiresAdmin = false,
                 CanRestore = usbSuspendOff,
@@ -1344,25 +1091,13 @@ namespace WinCrashDoctor
                 Id = "pagefile_auto",
                 Group = FixGroup.SystemMaint,
                 VendorTag = "RAM / OS",
-                Title = Localizer.L(
-                    "Fichier d'échange (Pagefile) géré automatiquement",
-                    "System-Managed Virtual Memory (Pagefile)",
-                    "Memoria virtual (Pagefile) automática",
-                    "Automatische Auslagerungsdatei (Pagefile)",
-                    "Memoria virtuale (Pagefile) automatica",
-                    "Memória virtual (Pagefile) automática"),
+                Title = Localizer.S("diagnostics_engine.system_managed_virtual_memory_pagefile"),
                 RegPathDisplay = @"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management  •  PagingFiles",
                 CurrentValue = pagefileOk
-                    ? Localizer.L("Gestion automatique active", "Automatic management active", "Gestión automática activa", "Automatische Verwaltung aktiv", "Gestione automatica attiva", "Gerenciamento automático ativo")
-                    : Localizer.L("Attention : Pagefile désactivé ou bridé", "Warning: Pagefile disabled or restricted", "Atención: Pagefile desactivado", "Warnung: Pagefile deaktiviert", "Attenzione: Pagefile disattivato", "Atenção: Pagefile desativado"),
-                Explanation = Localizer.L(
-                    "Même avec 32 ou 64 Go de RAM, de nombreux jeux récents plantent immédiatement si le fichier d'échange Windows est désactivé.",
-                    "Even with 32GB+ RAM, many modern games crash immediately if the Windows Pagefile is manually disabled.",
-                    "Incluso con 32 GB+ de RAM, muchos juegos actuales se cierran si el archivo de paginación está desactivado.",
-                    "Selbst mit 32+ GB RAM stürzen viele moderne Spiele sofort ab, wenn die Auslagerungsdatei deaktiviert wurde.",
-                    "Anche con 32+ GB di RAM, molti giochi moderni vanno in crash se il file di paging è disattivato.",
-                    "Mesmo com 32+ GB de RAM, muitos jogos modernos fecham na hora se o arquivo de paginação estiver desativado."),
-                ApplyBtn = Localizer.L("Activer Auto", "Set Automatic", "Activar Auto", "Automatisch", "Imposta Auto", "Ativar Auto"),
+                    ? Localizer.S("diagnostics_engine.automatic_management_active")
+                    : Localizer.S("diagnostics_engine.warning_pagefile_disabled_or_restricted"),
+                Explanation = Localizer.S("diagnostics_engine.even_with_32gb_ram_many_modern"),
+                ApplyBtn = Localizer.S("diagnostics_engine.set_automatic"),
                 RestoreBtn = "",
                 Status = pagefileOk ? FixStatus.Applied : FixStatus.Recommended,
                 RequiresAdmin = true,
@@ -1377,26 +1112,14 @@ namespace WinCrashDoctor
                 Id = "gamedvr",
                 Group = FixGroup.SystemMaint,
                 VendorTag = "GAMING",
-                Title = Localizer.L(
-                    "Désactiver l'enregistrement Xbox Game DVR en arrière-plan",
-                    "Disable Background Xbox Game DVR Capture",
-                    "Desactivar grabación Xbox Game DVR en segundo plano",
-                    "Xbox Game DVR Hintergrundaufnahme deaktivieren",
-                    "Disattiva registrazione Xbox Game DVR in background",
-                    "Desativar gravação Xbox Game DVR em segundo plano"),
+                Title = Localizer.S("diagnostics_engine.disable_background_xbox_game_dvr_capture"),
                 RegPathDisplay = @"HKCU\System\GameConfigStore  •  GameDVR_Enabled = 0",
                 CurrentValue = dvrOff
-                    ? Localizer.L("Game DVR désactivé", "Game DVR disabled", "Game DVR desactivado", "Game DVR deaktiviert", "Game DVR disattivato", "Game DVR desativado")
-                    : Localizer.L("Par défaut (actif en arrière-plan)", "Default (active in background)", "Por defecto (activo)", "Standard (im Hintergrund aktiv)", "Predefinito (attivo)", "Padrão (ativo)"),
-                Explanation = Localizer.L(
-                    "Libère l'encodeur vidéo du GPU et évite les micro-saccades tout en gardant le Mode Jeu Windows actif.",
-                    "Frees GPU encoder resources and prevents capture micro-stutters while keeping Windows Game Mode enabled.",
-                    "Libera el codificador de la GPU y evita tirones manteniendo activo el Modo Juego de Windows.",
-                    "Entlastet den GPU-Encoder und verhindert Mikroruckler, während der Windows-Spielmodus aktiv bleibt.",
-                    "Libera l'encoder della GPU ed evita micro-scatti mantenendo attiva la Modalità Gioco.",
-                    "Libera o codificador da GPU e evita engasgos mantendo o Modo de Jogo do Windows ativo."),
-                ApplyBtn = Localizer.L("Désactiver", "Disable", "Desactivar", "Deaktivieren", "Disattiva", "Desativar"),
-                RestoreBtn = Localizer.L("Réactiver", "Re-enable", "Reactivar", "Aktivieren", "Riattiva", "Reativar"),
+                    ? Localizer.S("diagnostics_engine.game_dvr_disabled")
+                    : Localizer.S("diagnostics_engine.default_active_in_background"),
+                Explanation = Localizer.S("diagnostics_engine.frees_gpu_encoder_resources_and_prevents"),
+                ApplyBtn = Localizer.S("risky_drivers.disable"),
+                RestoreBtn = Localizer.S("risky_drivers.re_enable"),
                 Status = dvrOff ? FixStatus.Applied : FixStatus.Recommended,
                 RequiresAdmin = false,
                 CanRestore = dvrOff,
@@ -1410,26 +1133,14 @@ namespace WinCrashDoctor
                 Id = "fast_startup",
                 Group = FixGroup.SystemMaint,
                 VendorTag = "WINDOWS",
-                Title = Localizer.L(
-                    "Désactiver le Démarrage rapide (Fast Startup)",
-                    "Disable Windows Fast Startup (Hiberboot)",
-                    "Desactivar Inicio rápido de Windows",
-                    "Windows-Schnellstart (Hiberboot) deaktivieren",
-                    "Disattiva Avvio rapido di Windows",
-                    "Desativar Inicialização rápida do Windows"),
+                Title = Localizer.S("diagnostics_engine.disable_windows_fast_startup_hiberboot"),
                 RegPathDisplay = @"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Power  •  HiberbootEnabled = 0",
                 CurrentValue = fastStartupOff
-                    ? Localizer.L("Désactivé (démarrage propre)", "Disabled (clean cold boots)", "Desactivado (arranque limpio)", "Deaktiviert (sauberer Neustart)", "Disattivato (avvio pulito)", "Desativado (boot limpo)")
-                    : Localizer.L("Par défaut (hibernation noyau active)", "Default (kernel hibernation active)", "Por defecto (hibernación activa)", "Standard (Kernel-Ruhezustand aktiv)", "Predefinito (ibernazione attiva)", "Padrão (hibernação ativa)"),
-                Explanation = Localizer.L(
-                    "Force Windows à recharger proprement le noyau et le pilote GPU à chaque mise sous tension (élimine l'écran gris au démarrage sur Radeon RX 7000 / RX 7800 XT).",
-                    "Forces Windows to initialize kernel and GPU drivers cleanly on every cold boot (eliminates the boot grey screen on Radeon RX 7000 / RX 7800 XT).",
-                    "Obliga a Windows a recargar limpiamente el núcleo y el controlador GPU en cada encendido (elimina la pantalla gris al iniciar en RX 7000).",
-                    "Zwingt Windows, Kernel und GPU-Treiber bei jedem Kaltstart frisch zu laden (behebt den grauen Startbildschirm bei Radeon RX 7000).",
-                    "Forza Windows a ricaricare in modo pulito kernel e driver GPU ad ogni accensione (elimina lo schermo grigio all'avvio su RX 7000).",
-                    "Força o Windows a recarregar o kernel e o driver da GPU de forma limpa (elimina a tela cinza na inicialização nas Radeon RX 7000)."),
-                ApplyBtn = Localizer.L("Désactiver", "Disable", "Desactivar", "Deaktivieren", "Disattiva", "Desativar"),
-                RestoreBtn = Localizer.L("Réactiver", "Re-enable", "Reactivar", "Aktivieren", "Riattiva", "Reativar"),
+                    ? Localizer.S("diagnostics_engine.disabled_clean_cold_boots")
+                    : Localizer.S("diagnostics_engine.default_kernel_hibernation_active"),
+                Explanation = Localizer.S("diagnostics_engine.forces_windows_to_initialize_kernel_and"),
+                ApplyBtn = Localizer.S("risky_drivers.disable"),
+                RestoreBtn = Localizer.S("risky_drivers.re_enable"),
                 Status = fastStartupOff ? FixStatus.Applied : (primaryAmd ? FixStatus.Recommended : FixStatus.Optional),
                 RequiresAdmin = true,
                 CanRestore = fastStartupOff,
@@ -1441,23 +1152,11 @@ namespace WinCrashDoctor
                 Id = "sfc_repair",
                 Group = FixGroup.SystemMaint,
                 VendorTag = "SFC / DISM",
-                Title = Localizer.L(
-                    "Vérifier l'intégrité système (SFC /scannow)",
-                    "Verify System Integrity (SFC /scannow)",
-                    "Verificar archivos del sistema (SFC /scannow)",
-                    "Systemdateien prüfen (SFC /scannow)",
-                    "Verifica integrità di sistema (SFC /scannow)",
-                    "Verificar integridade do sistema (SFC /scannow)"),
+                Title = Localizer.S("diagnostics_engine.verify_system_integrity_sfc_scannow"),
                 RegPathDisplay = "sfc /scannow",
-                CurrentValue = Localizer.L("Outil prêt", "Repair tool ready", "Herramienta lista", "Bereit", "Pronto", "Pronto"),
-                Explanation = Localizer.L(
-                    "Ouvre une console Administrateur qui exécute SFC /scannow. Les fichiers de crash (dumps) sont conservés : ce sont eux qui permettent le diagnostic.",
-                    "Opens an Administrator console running SFC /scannow. Crash dump files are kept: they are what the diagnosis relies on.",
-                    "Abre una consola de Administrador que ejecuta SFC /scannow. Los volcados de fallos se conservan: son la base del diagnóstico.",
-                    "Öffnet eine Administrator-Konsole mit SFC /scannow. Absturz-Dumps bleiben erhalten: Sie sind die Grundlage der Diagnose.",
-                    "Apre una console Amministratore che esegue SFC /scannow. I dump dei crash vengono conservati: sono la base della diagnosi.",
-                    "Abre um console Administrador que executa SFC /scannow. Os dumps de falhas são mantidos: são a base do diagnóstico."),
-                ApplyBtn = Localizer.L("Lancer SFC", "Run SFC", "Ejecutar SFC", "SFC starten", "Avvia SFC", "Executar SFC"),
+                CurrentValue = Localizer.S("diagnostics_engine.repair_tool_ready"),
+                Explanation = Localizer.S("diagnostics_engine.opens_an_administrator_console_running_s"),
+                ApplyBtn = Localizer.S("diagnostics_engine.run_sfc"),
                 RestoreBtn = "",
                 Status = FixStatus.Info,
                 RequiresAdmin = false,
@@ -1473,26 +1172,14 @@ namespace WinCrashDoctor
                 Id = "dwm_alt_tab",
                 Group = FixGroup.Gpu,
                 VendorTag = "WIN11 24H2+",
-                Title = Localizer.L(
-                    "Corriger le freeze d'Alt+Tab en jeu sous Windows 11 24H2+ (OverlayMinFPS = 0)",
-                    "Fix Windows 11 24H2+ Game Alt+Tab Freeze (OverlayMinFPS = 0)",
-                    "Corregir bloqueo de Alt+Tab en juegos en Windows 11 24H2+ (OverlayMinFPS = 0)",
-                    "Alt+Tab-Freeze unter Windows 11 24H2+ beheben (OverlayMinFPS = 0)",
-                    "Correggi il freeze di Alt+Tab su Windows 11 24H2+ (OverlayMinFPS = 0)",
-                    "Corrigir travamento de Alt+Tab no Windows 11 24H2+ (OverlayMinFPS = 0)"),
+                Title = Localizer.S("diagnostics_engine.fix_windows_11_24h2_game_alt"),
                 RegPathDisplay = @"HKLM\SOFTWARE\Microsoft\Windows\Dwm -> OverlayMinFPS",
                 CurrentValue = minFpsFixed
                     ? "OverlayMinFPS = 0 (Actif)"
-                    : Localizer.L("Par défaut Windows (Non défini)", "Windows default (Not set)", "Por defecto", "Standard", "Predefinito", "Padrão"),
-                Explanation = Localizer.L(
-                    "Élimine le gel d'écran de 3 à 8 secondes lors d'un Alt+Tab entre un jeu plein écran sans bordure et Discord / Chrome sous Windows 11 24H2/25H2.",
-                    "Eliminates the 3–8 second partial screen freeze when Alt+Tabbing between borderless games and Discord / Chrome on Windows 11 24H2/25H2.",
-                    "Elimina el congelamiento de 3 a 8 s al hacer Alt+Tab entre juegos y Discord / Chrome en Windows 11 24H2+.",
-                    "Behebt das 3–8-sekündige Einfrieren beim Alt+Tab-Wechsel zwischen Spielen und Discord / Chrome unter Win11 24H2+.",
-                    "Elimina il blocco di 3–8 secondi facendo Alt+Tab tra giochi e Discord / Chrome su Windows 11 24H2+.",
-                    "Elimina o congelamento de 3–8 segundos ao usar Alt+Tab entre jogos e Discord / Chrome no Windows 11 24H2+."),
-                ApplyBtn = Localizer.L("Corriger Alt+Tab", "Fix Alt+Tab", "Corregir Alt+Tab", "Alt+Tab fixen", "Correggi Alt+Tab", "Corrigir Alt+Tab"),
-                RestoreBtn = Localizer.L("Par défaut", "Default", "Por defecto", "Standard", "Predefinito", "Padrão"),
+                    : Localizer.S("diagnostics_engine.windows_default_not_set"),
+                Explanation = Localizer.S("diagnostics_engine.eliminates_the_3_8_second_partial"),
+                ApplyBtn = Localizer.S("diagnostics_engine.fix_alt_tab"),
+                RestoreBtn = Localizer.S("diagnostics_engine.default"),
                 Status = minFpsFixed ? FixStatus.Applied : FixStatus.Optional,
                 RequiresAdmin = true,
                 CanRestore = minFpsVal.HasValue,
@@ -1509,26 +1196,14 @@ namespace WinCrashDoctor
                     Id = "nic_powersave",
                     Group = FixGroup.StoragePcie,
                     VendorTag = "2.5GbE / WIFI",
-                    Title = Localizer.L(
-                        "Désactiver la veille EEE / Green Ethernet 2.5GbE & Wi-Fi (Anti-Freeze NDIS)",
-                        "Disable 2.5GbE EEE / Green Ethernet & Wi-Fi Sleep (NDIS Anti-Freeze)",
-                        "Desactivar ahorro EEE / Green Ethernet 2.5GbE y Wi-Fi (Anti-Freeze NDIS)",
-                        "2.5GbE EEE / Green Ethernet & WLAN-Ruhemodus deaktivieren",
-                        "Disattiva risparmio EEE / Green Ethernet 2.5GbE e Wi-Fi",
-                        "Desativar economia EEE / Green Ethernet 2.5GbE e Wi-Fi"),
+                    Title = Localizer.S("diagnostics_engine.disable_2_5gbe_eee_green_ethernet"),
                     RegPathDisplay = @"HKLM\...\Class\{4d36e972-...} -> *EEE=0, EnableGreenEthernet=0, PnPCapabilities=24",
                     CurrentValue = nicHasRisk
-                        ? (nicNames + " — " + Localizer.L("Économie EEE / Veille active", "EEE / Power-Save active", "Ahorro EEE activo", "EEE-Sparmodus aktiv", "Risparmio EEE attivo", "Economia EEE ativa"))
-                        : (nicNames + " — " + Localizer.L("Stabilisé (EEE Off)", "Stabilized (EEE Off)", "Estabilizado", "Stabilisiert", "Stabilizzato", "Estabilizado")),
-                    Explanation = Localizer.L(
-                        "Coupe les modes d'économie instables (Green Ethernet, EEE et coupure d'alimentation Windows) sur Realtek 2.5GbE et MediaTek/Realtek Wi-Fi 6E qui causent des micro-freezes et pertes Bluetooth.",
-                        "Disables unstable power-saving modes (Green Ethernet, EEE, and Windows device power-off) on Realtek 2.5GbE and MediaTek/Realtek Wi-Fi 6E that cause NDIS stutters and Bluetooth drops.",
-                        "Desactiva los modos de ahorro inestables en tarjetas Realtek 2.5GbE y Wi-Fi 6E que causan microcortes.",
-                        "Deaktiviert instabile Energiesparmodi bei Realtek 2.5GbE und Wi-Fi 6E, die NDIS-Ruckler verursachen.",
-                        "Disattiva i risparmi energetici instabili su Realtek 2.5GbE e Wi-Fi 6E che causano micro-freeze.",
-                        "Desativa modos de economia instáveis na Realtek 2.5GbE e Wi-Fi 6E que causam travamentos NDIS."),
-                    ApplyBtn = Localizer.L("Stabiliser Réseau", "Stabilize NIC", "Estabilizar Red", "Netzwerk fixen", "Stabilizza Rete", "Estabilizar Rede"),
-                    RestoreBtn = Localizer.L("Par défaut", "Default", "Por defecto", "Standard", "Predefinito", "Padrão"),
+                        ? (nicNames + " — " + Localizer.S("diagnostics_engine.eee_power_save_active"))
+                        : (nicNames + " — " + Localizer.S("diagnostics_engine.stabilized_eee_off")),
+                    Explanation = Localizer.S("diagnostics_engine.disables_unstable_power_saving_modes_gre"),
+                    ApplyBtn = Localizer.S("diagnostics_engine.stabilize_nic"),
+                    RestoreBtn = Localizer.S("diagnostics_engine.default"),
                     Status = nicHasRisk ? FixStatus.Optional : FixStatus.Applied,
                     RequiresAdmin = true,
                     CanRestore = !nicHasRisk,

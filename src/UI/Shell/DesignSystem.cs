@@ -9,8 +9,35 @@ namespace WinCrashDoctor
     /// <summary>Design tokens that are not colours (type scale, radii, icon font).</summary>
     public static class Ds
     {
-        public static readonly FontFamily UiFont = new FontFamily("Segoe UI Variable Text, Segoe UI");
-        public static readonly FontFamily DisplayFont = new FontFamily("Segoe UI Variable Display, Segoe UI");
+        /// <summary>Body text font for the current language (Segoe UI + the matching CJK font first).</summary>
+        public static FontFamily UiFont { get { return WithCjk("Segoe UI Variable Text, Segoe UI"); } }
+        /// <summary>Title font for the current language.</summary>
+        public static FontFamily DisplayFont { get { return WithCjk("Segoe UI Variable Display, Segoe UI"); } }
+
+        private static readonly Dictionary<string, FontFamily> FontCache = new Dictionary<string, FontFamily>();
+
+        /// <summary>
+        /// Segoe UI has no Chinese / Japanese / Korean glyphs: WPF then takes them from the next font in the list.
+        /// The current language's font comes first, so shared Han characters get the right regional shapes
+        /// (Japanese kanji are not drawn with Chinese forms, and the reverse). All Windows 10/11 editions ship them.
+        /// </summary>
+        private static FontFamily WithCjk(string latin)
+        {
+            string cjk;
+            switch (Localizer.Current)
+            {
+                case AppLang.JA: cjk = "Yu Gothic UI, Meiryo UI, Microsoft YaHei UI, Malgun Gothic"; break;
+                case AppLang.KO: cjk = "Malgun Gothic, Microsoft YaHei UI, Yu Gothic UI"; break;
+                default:         cjk = "Microsoft YaHei UI, Yu Gothic UI, Malgun Gothic"; break; // zh, and a fallback for everyone
+            }
+            string spec = latin + ", " + cjk;
+            lock (FontCache)
+            {
+                FontFamily f;
+                if (!FontCache.TryGetValue(spec, out f)) { f = new FontFamily(spec); FontCache[spec] = f; }
+                return f;
+            }
+        }
         public static readonly FontFamily IconFont = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets");
         public static readonly FontFamily MonoFont = new FontFamily("Cascadia Mono, Consolas");
 

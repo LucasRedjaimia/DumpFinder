@@ -98,13 +98,7 @@ namespace WinCrashDoctor
                     {
                         // Comments, trailing commas…: rewriting it would wipe the user's other MCP servers. Stop instead.
                         Log.Warn(ex, filePath);
-                        throw new InvalidDataException(Localizer.L(
-                            "Ce fichier de configuration n'est pas un JSON standard (commentaire ou virgule en trop ?). Il n'a pas été modifié : ajoute Dump Finder à la main ou corrige le fichier : " + filePath,
-                            "This configuration file is not standard JSON (a comment or a trailing comma?). It was not changed: add Dump Finder by hand or fix the file: " + filePath,
-                            "Este archivo de configuración no es JSON estándar (¿un comentario o una coma de más?). No se modificó: añade Dump Finder a mano o corrige el archivo: " + filePath,
-                            "Diese Konfigurationsdatei ist kein Standard-JSON (Kommentar oder überzähliges Komma?). Sie wurde nicht geändert: Füge Dump Finder von Hand hinzu oder korrigiere die Datei: " + filePath,
-                            "Questo file di configurazione non è JSON standard (un commento o una virgola in più?). Non è stato modificato: aggiungi Dump Finder a mano o correggi il file: " + filePath,
-                            "Este arquivo de configuração não é JSON padrão (um comentário ou uma vírgula a mais?). Ele não foi alterado: adicione o Dump Finder manualmente ou corrija o arquivo: " + filePath));
+                        throw new InvalidDataException(Localizer.F("mcp_server.this_configuration_file_is_not_standard", filePath));
                     }
                     // Readable: keep a backup of the exact previous content next to it.
                     File.Copy(filePath, filePath + ".bak", true);

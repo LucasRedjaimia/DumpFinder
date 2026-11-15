@@ -145,11 +145,11 @@ namespace WinCrashDoctor.Stress
             using (var r = TryOpen())
             {
                 double t, w;
-                string chosen = Localizer.L("Lecture retenue : ", "Selected reading: ", "Lectura elegida: ", "Gewählter Messwert: ", "Lettura scelta: ", "Leitura escolhida: ");
+                string chosen = Localizer.S("cpu_temp.selected_reading");
                 if (r != null && r.Read(out t, out w))
                     sb.AppendLine(chosen + r.SensorName + " = " + t.ToString("0.0") + " °C, "
-                                  + (double.IsNaN(w) ? Localizer.L("puissance n/d", "power n/a", "potencia n/d", "Leistung k. A.", "potenza n/d", "potência n/d") : w.ToString("0") + " W"));
-                else sb.AppendLine(chosen + Localizer.L("aucune", "none", "ninguna", "keiner", "nessuna", "nenhuma"));
+                                  + (double.IsNaN(w) ? Localizer.S("cpu_temp.power_n_a") : w.ToString("0") + " W"));
+                else sb.AppendLine(chosen + Localizer.S("cpu_temp.none"));
             }
             System.IO.File.WriteAllText(outPath, sb.ToString(), new UTF8Encoding(false));
             return 0;

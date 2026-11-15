@@ -105,7 +105,7 @@ namespace WinCrashDoctor
             Height = Math.Max(MinHeight, Math.Min(820, workArea.Height));
             Title = "Dump Finder";
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
-            FontFamily = Ds.UiFont;
+            ApplyLanguageTypography();
             TextOptions.SetTextFormattingMode(this, TextFormattingMode.Ideal);
             UseLayoutRounding = true;
 
@@ -165,13 +165,7 @@ namespace WinCrashDoctor
             if (!_forceExit && _stressRunner.IsRunning)
             {
                 var ans = MessageBox.Show(this,
-                    Localizer.L(
-                        "Un test de stabilité est en cours.\n\nOui : arrêter le test et fermer.\nNon : laisser le test tourner (la fenêtre reste ouverte).",
-                        "A stability test is running.\n\nYes: stop the test and close.\nNo: keep the test running (the window stays open).",
-                        "Hay una prueba de estabilidad en curso.\n\nSí: detener la prueba y cerrar.\nNo: dejar que la prueba continúe (la ventana sigue abierta).",
-                        "Ein Stabilitätstest läuft.\n\nJa: Test stoppen und schließen.\nNein: Test weiterlaufen lassen (das Fenster bleibt offen).",
-                        "È in corso un test di stabilità.\n\nSì: interrompi il test e chiudi.\nNo: lascia proseguire il test (la finestra resta aperta).",
-                        "Um teste de estabilidade está em andamento.\n\nSim: parar o teste e fechar.\nNão: deixar o teste continuar (a janela permanece aberta)."),
+                    Localizer.S("main_window.a_stability_test_is_running_yes"),
                     "Dump Finder", MessageBoxButton.YesNo, MessageBoxImage.Warning);
                 if (ans != MessageBoxResult.Yes)
                 {
@@ -182,7 +176,7 @@ namespace WinCrashDoctor
                 _stressRunner.RequestStop();
                 if (_btnStopStress != null) _btnStopStress.IsEnabled = false;
                 if (_lblStressStatus != null)
-                    _lblStressStatus.Text = Localizer.L("Arrêt en cours…", "Stopping…", "Deteniendo…", "Wird gestoppt…", "Arresto in corso…", "Parando…");
+                    _lblStressStatus.Text = Localizer.S("main_window.stopping");
             }
 
             if (_sentinelEnabled && !_forceExit)
@@ -757,12 +751,12 @@ namespace WinCrashDoctor
                 try
                 {
                     Clipboard.SetText(_txtReportBox.Text ?? "");
-                    SetToast(Localizer.L("Rapport copié dans le presse-papiers.", "Report copied to clipboard.", "Informe copiado al portapapeles.", "Bericht in die Zwischenablage kopiert.", "Rapporto copiato negli appunti.", "Relatório copiado para a área de transferência."), "SuccessFg");
+                    SetToast(Localizer.S("main_window.report_copied_to_clipboard"), "SuccessFg");
                 }
                 catch (Exception ex)
                 {
                     Log.Warn(ex, "Clipboard");
-                    SetToast(Localizer.L("Le presse-papiers est occupé, réessayez.", "Clipboard busy, try again.", "Portapapeles ocupado.", "Zwischenablage belegt.", "Appunti occupati.", "Área de transferência ocupada."), "WarnFg");
+                    SetToast(Localizer.S("ai.clipboard_busy_try_again"), "WarnFg");
                 }
             };
 
@@ -913,11 +907,23 @@ namespace WinCrashDoctor
         private void SwitchLanguage(AppLang lang)
         {
             Localizer.Current = lang;
+            ApplyLanguageTypography();
             SaveCurrentPreferences();
             PopulateLocalizedDropdowns();
             RefreshStaticLabels();
             UpdateSentinelButtonVisual();
             RelocalizeScanResult();
+        }
+
+        /// <summary>
+        /// Window font and xml:lang for the current language (inherited by every element): picks the right CJK
+        /// font, line breaking and hyphenation rules for Chinese / Japanese / Korean text.
+        /// </summary>
+        private void ApplyLanguageTypography()
+        {
+            FontFamily = Ds.UiFont;
+            try { Language = System.Windows.Markup.XmlLanguage.GetLanguage(Localizer.Culture.IetfLanguageTag); }
+            catch (Exception ex) { Log.Warn(ex); }
         }
 
         // Relocalization state (UI thread only): one pass at a time, never during a scan.
@@ -989,25 +995,25 @@ namespace WinCrashDoctor
 
             int curTheme = (int)ThemeManager.CurrentMode;
             _cbTheme.Items.Clear();
-            _cbTheme.Items.Add(Localizer.L("Système (Windows)", "System (Windows)", "Sistema (Windows)", "System (Windows)", "Sistema (Windows)", "Sistema (Windows)"));
-            _cbTheme.Items.Add(Localizer.L("Mode sombre", "Dark mode", "Modo oscuro", "Dunkelmodus", "Modalità scura", "Modo escuro"));
-            _cbTheme.Items.Add(Localizer.L("Mode clair", "Light mode", "Modo claro", "Hellmodus", "Modalità chiara", "Modo claro"));
+            _cbTheme.Items.Add(Localizer.S("main_window.system_windows"));
+            _cbTheme.Items.Add(Localizer.S("main_window.dark_mode"));
+            _cbTheme.Items.Add(Localizer.S("main_window.light_mode"));
             _cbTheme.SelectedIndex = curTheme;
 
             _cbTimeframe.Items.Clear();
-            _cbTimeframe.Items.Add(Localizer.L("Depuis le démarrage", "Since last boot", "Desde el inicio", "Seit Systemstart", "Dall'ultimo avvio", "Desde a inicialização"));
-            _cbTimeframe.Items.Add(Localizer.L("3 derniers jours", "Last 3 days", "Últimos 3 días", "Letzte 3 Tage", "Ultimi 3 giorni", "Últimos 3 dias"));
-            _cbTimeframe.Items.Add(Localizer.L("30 derniers jours", "Last 30 days", "Últimos 30 días", "Letzte 30 Tage", "Ultimi 30 giorni", "Últimos 30 dias"));
-            _cbTimeframe.Items.Add(Localizer.L("Tout l'historique", "All history", "Todo el historial", "Gesamter Verlauf", "Tutta la cronologia", "Todo o histórico"));
+            _cbTimeframe.Items.Add(Localizer.S("main_window.since_last_boot"));
+            _cbTimeframe.Items.Add(Localizer.S("main_window.last_3_days"));
+            _cbTimeframe.Items.Add(Localizer.S("main_window.last_30_days"));
+            _cbTimeframe.Items.Add(Localizer.S("main_window.all_history"));
             _cbTimeframe.SelectedIndex = _selectedRangeMode;
 
             _cbEventCategory.Items.Clear();
-            _cbEventCategory.Items.Add(Localizer.L("Toutes les catégories", "All categories", "Todas las categorías", "Alle Kategorien", "Tutte le categorie", "Todas as categorias"));
-            _cbEventCategory.Items.Add(Localizer.L("Écrans bleus & Reboots", "BSOD & Reboots", "Pantallas azules y reinicios", "Bluescreens & Neustarts", "BSOD e riavvii", "Telas azuis e reinícios"));
-            _cbEventCategory.Items.Add(Localizer.L("Pilote graphique (GPU)", "Graphics driver (GPU)", "Controlador gráfico (GPU)", "Grafiktreiber (GPU)", "Driver grafico (GPU)", "Driver de vídeo (GPU)"));
-            _cbEventCategory.Items.Add(Localizer.L("Stockage SSD NVMe", "NVMe SSD storage", "Almacenamiento SSD NVMe", "NVMe-SSD-Speicher", "Archiviazione SSD NVMe", "Armazenamento SSD NVMe"));
-            _cbEventCategory.Items.Add(Localizer.L("Matériel WHEA & RAM", "WHEA Hardware & RAM", "Hardware WHEA y RAM", "WHEA-Hardware & RAM", "Hardware WHEA e RAM", "Hardware WHEA e RAM"));
-            _cbEventCategory.Items.Add(Localizer.L("Navigateurs & Applications", "Browsers & Applications", "Navegadores y aplicaciones", "Browser & Anwendungen", "Browser e applicazioni", "Navegadores e aplicativos"));
+            _cbEventCategory.Items.Add(Localizer.S("main_window.all_categories"));
+            _cbEventCategory.Items.Add(Localizer.S("main_window.bsod_reboots"));
+            _cbEventCategory.Items.Add(Localizer.S("main_window.graphics_driver_gpu"));
+            _cbEventCategory.Items.Add(Localizer.S("main_window.nvme_ssd_storage"));
+            _cbEventCategory.Items.Add(Localizer.S("main_window.whea_hardware_ram"));
+            _cbEventCategory.Items.Add(Localizer.S("main_window.browsers_applications"));
             _cbEventCategory.SelectedIndex = _eventFilterMode;
 
             _suppressDropdownEvents = false;
@@ -1017,15 +1023,15 @@ namespace WinCrashDoctor
         {
             Title = "Dump Finder";
 
-            _navLabels[TabHome].Text = Localizer.L("Accueil", "Home", "Inicio", "Start", "Home", "Início");
-            _navLabels[TabCrashes].Text = Localizer.L("Crashs", "Crashes", "Fallos", "Abstürze", "Crash", "Falhas");
-            _navLabels[TabHardware].Text = Localizer.L("Matériel", "Hardware", "Hardware", "Hardware", "Hardware", "Hardware");
-            _navLabels[TabFixes].Text = Localizer.L("Correctifs", "Fixes", "Correcciones", "Korrekturen", "Correzioni", "Correções");
-            _navLabels[TabOptimize].Text = Localizer.L("Optimiser", "Optimize", "Optimizar", "Optimieren", "Ottimizza", "Otimizar");
-            _navLabels[TabTools].Text = Localizer.L("Outils", "Tools", "Herramientas", "Werkzeuge", "Strumenti", "Ferramentas");
-            _navLabels[TabSettings].Text = Localizer.L("Paramètres", "Settings", "Ajustes", "Einstellungen", "Impostazioni", "Configurações");
+            _navLabels[TabHome].Text = Localizer.S("main_window.home");
+            _navLabels[TabCrashes].Text = Localizer.S("crashes.crashes");
+            _navLabels[TabHardware].Text = Localizer.S("main_window.hardware");
+            _navLabels[TabFixes].Text = Localizer.S("main_window.fixes");
+            _navLabels[TabOptimize].Text = Localizer.S("main_window.optimize");
+            _navLabels[TabTools].Text = Localizer.S("main_window.tools");
+            _navLabels[TabSettings].Text = Localizer.S("main_window.settings");
 
-            _btnElevate.Content = Localizer.L("🛡️ Mode Administrateur", "🛡️ Run as Admin", "🛡️ Modo Administrador", "🛡️ Als Admin starten", "🛡️ Avvia come Admin", "🛡️ Iniciar como Admin");
+            _btnElevate.Content = Localizer.S("main_window.run_as_admin");
 
             RefreshShellLabels();
             RefreshHealthPageLabels();
@@ -1043,17 +1049,11 @@ namespace WinCrashDoctor
 
 
             // Page 2 (Fixes)
-            _lblFixesTitle.Text = Localizer.L("Correctifs & Protections", "Fixes & Protections", "Correcciones y protecciones", "Korrekturen & Schutz", "Correzioni e protezioni", "Correções e proteções");
-            _lblFixesSub.Text = Localizer.L(
-                "Sauvegarde automatique du Registre avant toute modification. Annulable à tout moment.",
-                "Automatic Registry snapshot saved before any tweak. Revertible anytime in one click.",
-                "Copia automática del Registro antes de cualquier ajuste. Reversible en 1 clic.",
-                "Automatische Registry-Sicherung vor jeder Änderung. Jederzeit umkehrbar.",
-                "Backup automatico del Registro prima di ogni modifica. Annullabile in 1 clic.",
-                "Backup automático do Registro antes de qualquer ajuste. Reversível em 1 clique.");
-            _btnCreateRestorePt.Content = Localizer.L("🛡️ Point de restauration", "🛡️ Restore point", "🛡️ Punto de restauración", "🛡️ Wiederherstellungspunkt", "🛡️ Punto di ripristino", "🛡️ Ponto de restauração");
-            _btnRestoreSnapshot.Content = Localizer.L("↺ Annuler les modifications", "↺ Rollback Fixes", "↺ Deshacer cambios", "↺ Änderungen zurücksetzen", "↺ Annulla modifiche", "↺ Desfazer alterações");
-            _btnApplyAllRec.Content = Localizer.L("⚡ Appliquer les recommandés", "⚡ Apply recommended", "⚡ Aplicar recomendados", "⚡ Empfohlene anwenden", "⚡ Applica consigliati", "⚡ Aplicar recomendados");
+            _lblFixesTitle.Text = Localizer.S("main_window.fixes_protections");
+            _lblFixesSub.Text = Localizer.S("main_window.automatic_registry_snapshot_saved_before");
+            _btnCreateRestorePt.Content = Localizer.S("main_window.restore_point");
+            _btnRestoreSnapshot.Content = Localizer.S("main_window.rollback_fixes");
+            _btnApplyAllRec.Content = Localizer.S("main_window.apply_recommended");
             RefreshSnapshotButtonState();
 
             FixGroup[] groups = new[] { FixGroup.All, FixGroup.Gpu, FixGroup.BrowserApps, FixGroup.StoragePcie, FixGroup.SystemMaint };
@@ -1063,9 +1063,9 @@ namespace WinCrashDoctor
             RefreshStressPageLabels();
 
             // Page 6 (Guide & Report)
-            _btnCopyReport.Content = Localizer.L("📋 Copier le rapport", "📋 Copy report", "📋 Copiar informe", "📋 Bericht kopieren", "📋 Copia rapporto", "📋 Copiar relatório");
-            _btnSaveReport.Content = Localizer.L("💾 Enregistrer (.txt)", "💾 Save (.txt)", "💾 Guardar (.txt)", "💾 Speichern (.txt)", "💾 Salva (.txt)", "💾 Salvar (.txt)");
-            _btnExportFullReg.Content = Localizer.L("📄 Exporter pack .reg", "📄 Export .reg pack", "📄 Exportar .reg", "📄 .reg-Paket exportieren", "📄 Esporta .reg", "📄 Exportar .reg");
+            _btnCopyReport.Content = Localizer.S("main_window.copy_report");
+            _btnSaveReport.Content = Localizer.S("main_window.save_txt");
+            _btnExportFullReg.Content = Localizer.S("main_window.export_reg_pack");
 
             RenderKnowledgeBase();
             RefreshReportLabels();
@@ -1125,7 +1125,7 @@ namespace WinCrashDoctor
 
         private async Task RunScanCoreAsync()
         {
-            SetToast(Localizer.L("Analyse en cours...", "Scanning system...", "Analizando el sistema...", "System wird geprüft...", "Analisi in corso...", "Analisando o sistema..."), "TextSecondary");
+            SetToast(Localizer.S("main_window.scanning_system"), "TextSecondary");
 
             ScanResult res;
             try
@@ -1140,7 +1140,7 @@ namespace WinCrashDoctor
             catch (Exception ex)
             {
                 Log.Error(ex, "RunScan");
-                SetToast(Localizer.L("L'analyse a échoué (détails dans le journal).", "Scan failed (see log for details).", "El análisis falló (ver registro).", "Prüfung fehlgeschlagen (siehe Protokoll).", "Analisi non riuscita (vedi log).", "A análise falhou (ver log)."), "DangerFg");
+                SetToast(Localizer.S("main_window.scan_failed_see_log_for_details"), "DangerFg");
                 return;
             }
 
@@ -1155,13 +1155,7 @@ namespace WinCrashDoctor
             }
             int crashCount = _crashEntries.Count(c => (DateTime.Now - c.Time).TotalDays <= Stability.WindowDays);
             SetToast(
-                Localizer.L(
-                    string.Format("Dernière analyse à {0:HH:mm} — {1} crash(s) sur 30 jours.", DateTime.Now, crashCount),
-                    string.Format("Last scan at {0:HH:mm} — {1} crash(es) in 30 days.", DateTime.Now, crashCount),
-                    string.Format("Último análisis a las {0:HH:mm} — {1} fallo(s) en 30 días.", DateTime.Now, crashCount),
-                    string.Format("Letzte Prüfung um {0:HH:mm} — {1} Absturz/Abstürze in 30 Tagen.", DateTime.Now, crashCount),
-                    string.Format("Ultima analisi alle {0:HH:mm} — {1} crash in 30 giorni.", DateTime.Now, crashCount),
-                    string.Format("Última análise às {0:HH:mm} — {1} falha(s) em 30 dias.", DateTime.Now, crashCount)),
+                Localizer.F("main_window.last_scan_at_0_hh_mm", DateTime.Now, crashCount),
                 "TextMuted");
         }
 
@@ -1216,39 +1210,15 @@ namespace WinCrashDoctor
                 int hiddenCount = totalInGroup - filtered.Count;
                 if (_onlyHardwareRelevantFixes)
                 {
-                    _lblHwFixesStatus.Text = Localizer.L(
-                        string.Format("🎯 Filtre actif ({0}) : {1} correctif(s) adaptés à votre matériel ({2} masqués).", hwTag, filtered.Count, hiddenCount),
-                        string.Format("🎯 Active filter ({0}): {1} fix(es) tailored for your hardware ({2} hidden).", hwTag, filtered.Count, hiddenCount),
-                        string.Format("🎯 Filtro activo ({0}): {1} corrección(es) para su hardware ({2} ocultas).", hwTag, filtered.Count, hiddenCount),
-                        string.Format("🎯 Aktiver Filter ({0}): {1} passende Korrektur(en) ({2} ausgeblendet).", hwTag, filtered.Count, hiddenCount),
-                        string.Format("🎯 Filtro attivo ({0}): {1} correzione/i per il vostro hardware ({2} nascoste).", hwTag, filtered.Count, hiddenCount),
-                        string.Format("🎯 Filtro ativo ({0}): {1} correção(ões) para o seu hardware ({2} ocultas).", hwTag, filtered.Count, hiddenCount));
+                    _lblHwFixesStatus.Text = Localizer.F("main_window.active_filter_fix_es_tailored_for", hwTag, filtered.Count, hiddenCount);
 
-                    _btnToggleHardwareFixesFilter.Content = Localizer.L(
-                        string.Format("Afficher tout ({0})", totalInGroup),
-                        string.Format("Show all ({0})", totalInGroup),
-                        string.Format("Mostrar todo ({0})", totalInGroup),
-                        string.Format("Alle anzeigen ({0})", totalInGroup),
-                        string.Format("Mostra tutto ({0})", totalInGroup),
-                        string.Format("Mostrar tudo ({0})", totalInGroup));
+                    _btnToggleHardwareFixesFilter.Content = Localizer.F("main_window.show_all", totalInGroup);
                 }
                 else
                 {
-                    _lblHwFixesStatus.Text = Localizer.L(
-                        string.Format("ℹ️ Affichage complet : {0} correctif(s) (tous constructeurs : AMD, Intel, NVIDIA).", filtered.Count),
-                        string.Format("ℹ️ Showing all {0} fix(es) across all platforms (AMD, Intel, NVIDIA).", filtered.Count),
-                        string.Format("ℹ️ Mostrando todas las {0} correcciones de todas las plataformas.", filtered.Count),
-                        string.Format("ℹ️ Alle {0} Korrekturen anzeigen (alle Hersteller).", filtered.Count),
-                        string.Format("ℹ️ Mostra tutte le {0} correzioni (tutti i produttori).", filtered.Count),
-                        string.Format("ℹ️ Mostrando todas as {0} correções de todas as plataformas.", filtered.Count));
+                    _lblHwFixesStatus.Text = Localizer.F("main_window.showing_all_fix_es_across_all", filtered.Count);
 
-                    _btnToggleHardwareFixesFilter.Content = Localizer.L(
-                        string.Format("🎯 Filtrer par mon matériel ({0})", hwTag),
-                        string.Format("🎯 Filter by my hardware ({0})", hwTag),
-                        string.Format("🎯 Filtrar por mi hardware ({0})", hwTag),
-                        string.Format("🎯 Nach meiner Hardware filtern ({0})", hwTag),
-                        string.Format("🎯 Filtra per il mio hardware ({0})", hwTag),
-                        string.Format("🎯 Filtrar pelo meu hardware ({0})", hwTag));
+                    _btnToggleHardwareFixesFilter.Content = Localizer.F("main_window.filter_by_my_hardware", hwTag);
                 }
             }
 
@@ -1256,23 +1226,11 @@ namespace WinCrashDoctor
             _btnApplyAllRec.IsEnabled = (recCount > 0);
             if (recCount > 0)
             {
-                _btnApplyAllRec.Content = Localizer.L(
-                    string.Format("⚡ Appliquer les recommandés ({0})", recCount),
-                    string.Format("⚡ Apply recommended ({0})", recCount),
-                    string.Format("⚡ Aplicar recomendados ({0})", recCount),
-                    string.Format("⚡ Empfohlene anwenden ({0})", recCount),
-                    string.Format("⚡ Applica consigliati ({0})", recCount),
-                    string.Format("⚡ Aplicar recomendadas ({0})", recCount));
+                _btnApplyAllRec.Content = Localizer.F("main_window.apply_recommended_2", recCount);
             }
             else
             {
-                _btnApplyAllRec.Content = Localizer.L(
-                    "⚡ Aucun correctif requis",
-                    "⚡ No fix required",
-                    "⚡ Sin correcciones requeridas",
-                    "⚡ Keine Korrektur nötig",
-                    "⚡ Nessuna correzione richiesta",
-                    "⚡ Nenhuma correção necessária");
+                _btnApplyAllRec.Content = Localizer.S("main_window.no_fix_required");
             }
 
             foreach (var fix in filtered)
@@ -1393,7 +1351,7 @@ namespace WinCrashDoctor
                 StackPanel drwLeft = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
                 drwLeft.Children.Add(ResFg(new TextBlock
                 {
-                    Text = Localizer.L("État actuel : ", "Current state: ", "Estado actual: ", "Aktueller Status: ", "Stato attuale: ", "Estado atual: ") + fix.CurrentValue,
+                    Text = Localizer.S("main_window.current_state") + fix.CurrentValue,
                     FontSize = 12,
                     FontWeight = FontWeights.SemiBold
                 }, "TextPrimary"));
@@ -1452,39 +1410,15 @@ namespace WinCrashDoctor
                 int hiddenCount = allEntries.Count - entries.Count;
                 if (_onlyHardwareRelevantGuide)
                 {
-                    _lblHwGuideStatus.Text = Localizer.L(
-                        string.Format("🎯 Guide personnalisé ({0}) : {1} fiche(s) pertinentes ({2} masquées).", hwTag, entries.Count, hiddenCount),
-                        string.Format("🎯 Targeted Guide ({0}): {1} article(s) for your hardware ({2} hidden).", hwTag, entries.Count, hiddenCount),
-                        string.Format("🎯 Guía personalizada ({0}): {1} artículo(s) relevantes ({2} ocultos).", hwTag, entries.Count, hiddenCount),
-                        string.Format("🎯 Personalisierter Ratgeber ({0}): {1} passende(r) Artikel ({2} ausgeblendet).", hwTag, entries.Count, hiddenCount),
-                        string.Format("🎯 Guida personalizzata ({0}): {1} articolo/i per il vostro hardware ({2} nascosti).", hwTag, entries.Count, hiddenCount),
-                        string.Format("🎯 Guia personalizado ({0}): {1} artigo(s) para o seu hardware ({2} ocultos).", hwTag, entries.Count, hiddenCount));
+                    _lblHwGuideStatus.Text = Localizer.F("main_window.targeted_guide_article_s_for_your", hwTag, entries.Count, hiddenCount);
 
-                    _btnToggleHardwareGuideFilter.Content = Localizer.L(
-                        string.Format("Afficher tout ({0})", allEntries.Count),
-                        string.Format("Show all ({0})", allEntries.Count),
-                        string.Format("Mostrar todo ({0})", allEntries.Count),
-                        string.Format("Alle anzeigen ({0})", allEntries.Count),
-                        string.Format("Mostra tutto ({0})", allEntries.Count),
-                        string.Format("Mostrar tudo ({0})", allEntries.Count));
+                    _btnToggleHardwareGuideFilter.Content = Localizer.F("main_window.show_all", allEntries.Count);
                 }
                 else
                 {
-                    _lblHwGuideStatus.Text = Localizer.L(
-                        string.Format("ℹ️ Guide universel : {0} fiche(s) (tous composants : Intel, AMD, NVIDIA).", entries.Count),
-                        string.Format("ℹ️ Universal Guide: {0} article(s) across all architectures.", entries.Count),
-                        string.Format("ℹ️ Guía universal: {0} artículos de todas las plataformas.", entries.Count),
-                        string.Format("ℹ️ Vollständiger Ratgeber: {0} Artikel (alle Plattformen).", entries.Count),
-                        string.Format("ℹ️ Guida universale: {0} articoli (tutte le architetture).", entries.Count),
-                        string.Format("ℹ️ Guia universal: {0} artigos de todas as plataformas.", entries.Count));
+                    _lblHwGuideStatus.Text = Localizer.F("main_window.universal_guide_article_s_across_all", entries.Count);
 
-                    _btnToggleHardwareGuideFilter.Content = Localizer.L(
-                        string.Format("🎯 Cibler mon matériel ({0})", hwTag),
-                        string.Format("🎯 Target my hardware ({0})", hwTag),
-                        string.Format("🎯 Filtrar por mi hardware ({0})", hwTag),
-                        string.Format("🎯 Nach meiner Hardware filtern ({0})", hwTag),
-                        string.Format("🎯 Filtra per il mio hardware ({0})", hwTag),
-                        string.Format("🎯 Filtrar pelo meu hardware ({0})", hwTag));
+                    _btnToggleHardwareGuideFilter.Content = Localizer.F("main_window.target_my_hardware", hwTag);
                 }
             }
 
@@ -1545,9 +1479,9 @@ namespace WinCrashDoctor
                     Margin = new Thickness(0, 10, 0, 2),
                     Visibility = openDefault ? Visibility.Visible : Visibility.Collapsed
                 };
-                body.Children.Add(MakeKbParagraph(Localizer.L("Symptômes : ", "Symptoms: ", "Síntomas: ", "Symptome: ", "Sintomi: ", "Sintomas: "), k.Symptoms, "TextSecondary"));
-                body.Children.Add(MakeKbParagraph(Localizer.L("Cause : ", "Root cause: ", "Causa: ", "Ursache: ", "Causa: ", "Causa: "), k.Cause, "WarnFg"));
-                body.Children.Add(MakeKbParagraph(Localizer.L("Solution : ", "How to fix: ", "Solución: ", "Lösung: ", "Soluzione: ", "Solução: "), k.Solution, "SuccessFg"));
+                body.Children.Add(MakeKbParagraph(Localizer.S("main_window.symptoms"), k.Symptoms, "TextSecondary"));
+                body.Children.Add(MakeKbParagraph(Localizer.S("main_window.root_cause"), k.Cause, "WarnFg"));
+                body.Children.Add(MakeKbParagraph(Localizer.S("main_window.how_to_fix"), k.Solution, "SuccessFg"));
                 sp.Children.Add(body);
 
                 card.Child = sp;
@@ -1634,15 +1568,15 @@ namespace WinCrashDoctor
             string title = fix != null ? fix.Title : id;
             switch (op)
             {
-                case "restore_snapshot": return Localizer.L("Restauration de la sauvegarde initiale du Registre", "Initial Registry snapshot restored", "Restauración del Registro inicial", "Ursprüngliche Registry wiederhergestellt", "Ripristino del Registro iniziale", "Restauração do Registro inicial");
-                case "create_restore_point": return Localizer.L("Point de restauration Windows", "Windows restore point", "Punto de restauración", "Wiederherstellungspunkt", "Punto di ripristino", "Ponto de restauração");
-                case "crashdump_apply": return Localizer.L("Réactivation de l'enregistrement des écrans bleus", "Blue screen recording turned back on", "Registro de pantallas azules reactivado", "Bluescreen-Aufzeichnung wieder aktiviert", "Registrazione schermate blu riattivata", "Registro de telas azuis reativado");
-                case "disable_risky_oem": return Localizer.L("Neutralisation des logiciels constructeur à risque", "Risky OEM software neutralized", "Software OEM neutralizado", "Riskante OEM-Software neutralisiert", "Software OEM neutralizzato", "Software OEM neutralizado");
-                case "disable_ryzen_igpu": return Localizer.L("Service AMD External Events désactivé", "AMD External Events service disabled", "Servicio AMD External Events desactivado", "AMD External Events-Dienst deaktiviert", "Servizio AMD External Events disattivato", "Serviço AMD External Events desativado");
-                case "disable_autohdr": return Localizer.L("Auto HDR désactivé", "Auto HDR disabled", "Auto HDR desactivado", "Auto HDR deaktiviert", "Auto HDR disattivato", "Auto HDR desativado");
+                case "restore_snapshot": return Localizer.S("main_window.initial_registry_snapshot_restored");
+                case "create_restore_point": return Localizer.S("main_window.windows_restore_point");
+                case "crashdump_apply": return Localizer.S("main_window.blue_screen_recording_turned_back_on");
+                case "disable_risky_oem": return Localizer.S("main_window.risky_oem_software_neutralized");
+                case "disable_ryzen_igpu": return Localizer.S("main_window.amd_external_events_service_disabled");
+                case "disable_autohdr": return Localizer.S("main_window.auto_hdr_disabled");
             }
             if (op.EndsWith("_restore", StringComparison.Ordinal))
-                return Localizer.L("Remis par défaut : ", "Reset to default: ", "Restablecido: ", "Zurückgesetzt: ", "Ripristinato: ", "Restaurado: ") + title;
+                return Localizer.S("main_window.reset_to_default") + title;
             return title;
         }
 
@@ -1653,7 +1587,7 @@ namespace WinCrashDoctor
             if (proc == null || !DiagnosticsEngine.IsProcessRunning(proc)) return true;
             string name = proc == "chrome" ? "Google Chrome" : "Microsoft Edge";
             var ans = MessageBox.Show(this,
-                Localizer.L("Fermer " + name + " proprement pour appliquer ce réglage ?", "Close " + name + " gracefully to apply this setting?", "¿Cerrar " + name + " para aplicar este ajuste?", name + " schließen, um diese Einstellung anzuwenden?", "Chiudere " + name + " per applicare l'impostazione?", "Fechar o " + name + " para aplicar este ajuste?"),
+                Localizer.F("main_window.close_gracefully_to_apply_this_setting", name),
                 "Dump Finder", MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (ans != MessageBoxResult.Yes) return false;
             await Task.Run(() => DiagnosticsEngine.CloseProcessGracefully(proc));
@@ -1683,7 +1617,7 @@ namespace WinCrashDoctor
 
         private static string PendingFixMessage
         {
-            get { return Localizer.L("Application en cours…", "Applying…", "Aplicando…", "Wird angewendet…", "Applicazione in corso…", "Aplicando…"); }
+            get { return Localizer.S("main_window.applying"); }
         }
 
         // ==================== FIX RE-ENTRANCY GUARD ====================
@@ -1698,13 +1632,7 @@ namespace WinCrashDoctor
         {
             if (_fixInProgress)
             {
-                SetToast(Localizer.L(
-                    "Une autre opération est déjà en cours, attends qu'elle se termine.",
-                    "Another operation is already running, wait for it to finish.",
-                    "Ya hay otra operación en curso, espera a que termine.",
-                    "Ein anderer Vorgang läuft bereits. Bitte warten, bis er fertig ist.",
-                    "È già in corso un'altra operazione, attendi che finisca.",
-                    "Já há outra operação em andamento, aguarde até que termine."), "WarnFg");
+                SetToast(Localizer.S("main_window.another_operation_is_already_running_wai"), "WarnFg");
                 return null;
             }
             _fixInProgress = true;
@@ -1762,7 +1690,7 @@ namespace WinCrashDoctor
                     .ToList();
                 if (pending.Count == 0)
                 {
-                    SetToast(Localizer.L("Tous les correctifs recommandés sont déjà actifs.", "All recommended fixes are already active.", "Todas las correcciones recomendadas ya están activas.", "Alle empfohlenen Korrekturen sind bereits aktiv.", "Tutte le correzioni consigliate sono già attive.", "Todas as correções recomendadas já estão ativas."), "SuccessFg");
+                    SetToast(Localizer.S("main_window.all_recommended_fixes_are_already_active"), "SuccessFg");
                     return;
                 }
 
@@ -1789,32 +1717,20 @@ namespace WinCrashDoctor
                 int applied = results.Count(r => r.Ok), failed = results.Count - applied;
                 foreach (var r in results.Where(r => !r.Ok)) Log.Warn("Fix " + r.Op + " failed: " + r.MessageEn);
                 if (failed == 0)
-                    SetToast(Localizer.L(
-                        applied + " correctif(s) appliqué(s). Chacun est annulable dans Outils › Historique.",
-                        applied + " fix(es) applied. Each one can be undone in Tools › History.",
-                        applied + " corrección(es) aplicada(s).",
-                        applied + " Korrektur(en) angewendet.",
-                        applied + " correzione/i applicata/e.",
-                        applied + " correção(ões) aplicada(s)."), "SuccessFg");
+                    SetToast(Localizer.F("main_window.fix_es_applied_each_one_can", applied), "SuccessFg");
                 else
-                    SetToast(Localizer.L(
-                        applied + " correctif(s) appliqué(s), " + failed + " en échec.",
-                        applied + " fix(es) applied, " + failed + " failed.",
-                        applied + " aplicada(s), " + failed + " fallida(s).",
-                        applied + " angewendet, " + failed + " fehlgeschlagen.",
-                        applied + " applicata/e, " + failed + " non riuscita/e.",
-                        applied + " aplicada(s), " + failed + " com falha."), "WarnFg");
+                    SetToast(Localizer.F("main_window.fix_es_applied_failed", applied, failed), "WarnFg");
             }
         }
 
         private static string SavedPrefix
         {
-            get { return Localizer.L("Enregistré : ", "Saved: ", "Guardado: ", "Gespeichert: ", "Salvato: ", "Salvo: "); }
+            get { return Localizer.S("main_window.saved"); }
         }
 
         private static string SaveFailedPrefix
         {
-            get { return Localizer.L("Impossible d'enregistrer le fichier : ", "Could not save the file: ", "No se pudo guardar el archivo: ", "Datei konnte nicht gespeichert werden: ", "Impossibile salvare il file: ", "Não foi possível salvar o arquivo: "); }
+            get { return Localizer.S("main_window.could_not_save_the_file"); }
         }
 
         private void SaveRegSnippet(string name, string content)
@@ -1888,7 +1804,7 @@ namespace WinCrashDoctor
                 Application.Current.Shutdown();
             }
             else
-                SetToast(Localizer.L("Élévation annulée.", "Elevation cancelled.", "Elevación cancelada.", "Erhöhung abgebrochen.", "Elevazione annullata.", "Elevação cancelada."), "WarnFg");
+                SetToast(Localizer.S("main_window.elevation_cancelled"), "WarnFg");
         }
 
         /// <summary>

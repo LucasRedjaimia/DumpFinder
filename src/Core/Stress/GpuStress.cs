@@ -333,26 +333,15 @@ __kernel void vcheck(__global const uint* p, uint seed, uint base, uint inv, uin
 
     internal static class GpuStress
     {
-        private static string L(string fr, string en, string es, string de, string it, string pt) { return Localizer.L(fr, en, es, de, it, pt); }
 
         private static OpenClDevice Device(StageContext ctx, out StressStageResult skip)
         {
             skip = null;
             OpenClDevice d = ctx.GpuDevice != null ? ctx.GpuDevice() : null;
             if (d != null && d.Abandoned)
-                skip = StressAdvice.GpuUnavailable(ctx, L("la carte graphique a cessé de répondre à une étape précédente.",
-                                                          "the graphics card stopped responding in an earlier stage.",
-                                                          "la GPU dejó de responder en una etapa anterior.",
-                                                          "die Grafikkarte reagierte in einem früheren Schritt nicht mehr.",
-                                                          "la GPU ha smesso di rispondere in una fase precedente.",
-                                                          "a GPU parou de responder em uma etapa anterior."));
+                skip = StressAdvice.GpuUnavailable(ctx, Localizer.S("gpu_stress.the_graphics_card_stopped_responding_in"));
             else if (d == null || !d.Ready)
-                skip = StressAdvice.GpuUnavailable(ctx, L("pas de carte graphique OpenCL utilisable (pilote absent ou trop ancien).",
-                                                          "no usable OpenCL graphics card (driver missing or too old).",
-                                                          "no hay GPU OpenCL utilizable (controlador ausente o antiguo).",
-                                                          "keine nutzbare OpenCL-Grafikkarte (Treiber fehlt oder zu alt).",
-                                                          "nessuna GPU OpenCL utilizzabile (driver assente o troppo vecchio).",
-                                                          "nenhuma GPU OpenCL utilizável (driver ausente ou antigo)."));
+                skip = StressAdvice.GpuUnavailable(ctx, Localizer.S("gpu_stress.no_usable_opencl_graphics_card_driver"));
             return d;
         }
 
@@ -365,8 +354,8 @@ __kernel void vcheck(__global const uint* p, uint seed, uint base, uint inv, uin
             return new[]
             {
                 StressTile.Make(StressText.GpuClock, Num(g.ClockMhz, "MHz"), clockSub),
-                StressTile.Make(StressText.GpuPower, Num(g.PowerW, "W"), g.Available ? NumPeak(g.PeakPowerW, "W") : L("capteur indisponible", "no sensor", "sin sensor", "kein Sensor", "nessun sensore", "sem sensor")),
-                StressTile.Make(StressText.GpuTemp, Num(g.TempC, "°C"), g.Available ? NumPeak(g.PeakTempC, "°C") : L("capteur indisponible", "no sensor", "sin sensor", "kein Sensor", "nessun sensore", "sem sensor")),
+                StressTile.Make(StressText.GpuPower, Num(g.PowerW, "W"), g.Available ? NumPeak(g.PeakPowerW, "W") : Localizer.S("gpu_stress.no_sensor")),
+                StressTile.Make(StressText.GpuTemp, Num(g.TempC, "°C"), g.Available ? NumPeak(g.PeakTempC, "°C") : Localizer.S("gpu_stress.no_sensor")),
                 ctx.ErrorTile(errors)
             };
         }
@@ -375,9 +364,7 @@ __kernel void vcheck(__global const uint* p, uint seed, uint base, uint inv, uin
         {
             get
             {
-                return L("Violet : puissance GPU (W)   •   Ambre : température GPU (°C)", "Violet: GPU power (W)   •   Amber: GPU temperature (°C)",
-                         "Violeta: potencia GPU (W)   •   Ámbar: temperatura GPU (°C)", "Violett: GPU-Leistung (W)   •   Gelb: GPU-Temperatur (°C)",
-                         "Viola: potenza GPU (W)   •   Ambra: temperatura GPU (°C)", "Violeta: potência GPU (W)   •   Âmbar: temperatura GPU (°C)");
+                return Localizer.S("gpu_stress.violet_gpu_power_w_amber_gpu");
             }
         }
 
@@ -391,7 +378,7 @@ __kernel void vcheck(__global const uint* p, uint seed, uint base, uint inv, uin
             ctx.Publish(StressText.Calibrating, SensorTiles(ctx, d.Name, 0), double.NaN, double.NaN, PowerLegend);
             using (BurnJob job = BurnJob.Calibrate(d, 120))
             {
-                if (job.Error == "inconsistent") return StressAdvice.GpuComputeFailed(ctx, L("dès le calibrage", "already during calibration", "ya en la calibración", "schon bei der Kalibrierung", "già in calibrazione", "já na calibração"));
+                if (job.Error == "inconsistent") return StressAdvice.GpuComputeFailed(ctx, Localizer.S("gpu_stress.already_during_calibration"));
                 if (job.Error != null) return StressAdvice.GpuDriverReset(ctx, job.Error);
 
                 long launches = 0;
@@ -403,22 +390,16 @@ __kernel void vcheck(__global const uint* p, uint seed, uint base, uint inv, uin
                     if (rc != 0) return StressAdvice.GpuDriverReset(ctx, "OpenCL " + rc);
                     launches++;
                     if (bad > 0)
-                        return StressAdvice.GpuComputeFailed(ctx, string.Format(L("{0} valeur(s) fausse(s) sur {1:N0}", "{0} wrong value(s) out of {1:N0}", "{0} valor(es) erróneo(s) de {1:N0}", "{0} falsche(r) Wert(e) von {1:N0}", "{0} valore/i errato/i su {1:N0}", "{0} valor(es) errado(s) de {1:N0}"), bad, job.N));
+                        return StressAdvice.GpuComputeFailed(ctx, string.Format(Localizer.S("gpu_stress.wrong_value_s_out_of_1"), bad, job.N));
                     if (tick.ElapsedMilliseconds >= 1000)
                     {
                         tick.Restart();
-                        string sub = string.Format(L("{0:N0} calculs vérifiés", "{0:N0} verified launches", "{0:N0} cálculos verificados", "{0:N0} geprüfte Durchläufe", "{0:N0} calcoli verificati", "{0:N0} cálculos verificados"), launches);
-                        ctx.Publish(d.Name + " · " + string.Format(L("{0:F0} ms par calcul", "{0:F0} ms per launch", "{0:F0} ms por cálculo", "{0:F0} ms pro Durchlauf", "{0:F0} ms per calcolo", "{0:F0} ms por cálculo"), job.LaunchMs),
+                        string sub = string.Format(Localizer.S("gpu_stress.0_n0_verified_launches"), launches);
+                        ctx.Publish(d.Name + " · " + string.Format(Localizer.S("gpu_stress.0_f0_ms_per_launch"), job.LaunchMs),
                             SensorTiles(ctx, sub, 0), ctx.Gpu.PowerW, ctx.Gpu.TempC, PowerLegend);
                     }
                 }
-                return StressAdvice.Passed(ctx, string.Format(L(
-                    "{0:N0} calculs vérifiés sur {1}, aucun écart. Puissance max : {2}, température max : {3}.",
-                    "{0:N0} verified launches on {1}, no mismatch. Peak power: {2}, peak temperature: {3}.",
-                    "{0:N0} cálculos verificados en {1}, sin diferencias. Potencia máx.: {2}, temperatura máx.: {3}.",
-                    "{0:N0} geprüfte Durchläufe auf {1}, keine Abweichung. Max. Leistung: {2}, max. Temperatur: {3}.",
-                    "{0:N0} calcoli verificati su {1}, nessuna discrepanza. Potenza max: {2}, temperatura max: {3}.",
-                    "{0:N0} cálculos verificados em {1}, nenhuma divergência. Potência máx.: {2}, temperatura máx.: {3}."),
+                return StressAdvice.Passed(ctx, string.Format(Localizer.S("gpu_stress.0_n0_verified_launches_on_no"),
                     launches, d.Name, Num(ctx.Gpu.PeakPowerW, "W"), Num(ctx.Gpu.PeakTempC, "°C")));
             }
         }
@@ -440,12 +421,7 @@ __kernel void vcheck(__global const uint* p, uint seed, uint base, uint inv, uin
                 long cap = avail > 0 ? (long)(avail / 2) : (1L << 30);
                 if (cap < target)
                 {
-                    ctx.Log(string.Format(L("Carte graphique à mémoire partagée : test limité à {0} (moitié de la mémoire libre).",
-                                            "Shared-memory graphics: test limited to {0} (half of the free memory).",
-                                            "Gráfica con memoria compartida: prueba limitada a {0} (la mitad de la memoria libre).",
-                                            "Grafik mit gemeinsamem Speicher: Test auf {0} begrenzt (Hälfte des freien Speichers).",
-                                            "Grafica a memoria condivisa: test limitato a {0} (metà della memoria libera).",
-                                            "Gráfico com memória compartilhada: teste limitado a {0} (metade da memória livre)."), StressText.Gb(cap)));
+                    ctx.Log(string.Format(Localizer.S("gpu_stress.shared_memory_graphics_test_limited_to"), StressText.Gb(cap)));
                     target = cap;
                 }
             }
@@ -467,11 +443,11 @@ __kernel void vcheck(__global const uint* p, uint seed, uint base, uint inv, uin
                     if (Fill(d, b, 0u, ChunkSeed(0x13579BDFu, chunks.Count), 0, chunkWords) != 0) { OpenClDevice.Free(b); break; }
                     chunks.Add(b);
                     if (chunks.Count % 4 == 0)
-                        ctx.Publish(L("Allocation de la mémoire vidéo… ", "Allocating video memory… ", "Reservando memoria de vídeo… ", "Grafikspeicher wird belegt… ", "Allocazione memoria video… ", "Alocando memória de vídeo… ") + StressText.Gb(chunks.Count * chunkBytes),
+                        ctx.Publish(Localizer.S("gpu_stress.allocating_video_memory") + StressText.Gb(chunks.Count * chunkBytes),
                             VramTiles(ctx, chunks.Count * chunkBytes, d.GlobalMem, 0, 0), double.NaN, ctx.Gpu.TempC);
                 }
                 if (chunks.Count == 0)
-                    return StressAdvice.GpuUnavailable(ctx, L("impossible d'allouer de la mémoire vidéo.", "could not allocate video memory.", "no se pudo reservar memoria de vídeo.", "Grafikspeicher konnte nicht belegt werden.", "impossibile allocare memoria video.", "não foi possível alocar memória de vídeo."));
+                    return StressAdvice.GpuUnavailable(ctx, Localizer.S("gpu_stress.could_not_allocate_video_memory"));
 
                 long tested = chunks.Count * chunkBytes;
                 long passes = 0, errors = 0;
@@ -513,20 +489,12 @@ __kernel void vcheck(__global const uint* p, uint seed, uint base, uint inv, uin
                         double gbps = (bytesDone - lastBytes) / tick.Elapsed.TotalSeconds / (1024.0 * 1024 * 1024);
                         lastBytes = bytesDone;
                         tick.Restart();
-                        ctx.Publish(string.Format(L("Passe {0:N0} · motif {1}", "Pass {0:N0} · {1} pattern", "Pasada {0:N0} · patrón {1}", "Durchlauf {0:N0} · Muster {1}", "Passaggio {0:N0} · schema {1}", "Passagem {0:N0} · padrão {1}"), passes, inv == 0 ? "A" : "Ā"),
+                        ctx.Publish(string.Format(Localizer.S("gpu_stress.pass_0_n0_pattern"), passes, inv == 0 ? "A" : "Ā"),
                             VramTiles(ctx, tested, d.GlobalMem, passes, gbps), gbps, ctx.Gpu.TempC,
-                            L("Violet : débit mémoire vidéo (Go/s)   •   Ambre : température GPU (°C)", "Violet: video memory throughput (GB/s)   •   Amber: GPU temperature (°C)",
-                              "Violeta: velocidad de memoria de vídeo (GB/s)   •   Ámbar: temperatura GPU (°C)", "Violett: Grafikspeicher-Durchsatz (GB/s)   •   Gelb: GPU-Temperatur (°C)",
-                              "Viola: velocità memoria video (GB/s)   •   Ambra: temperatura GPU (°C)", "Violeta: taxa da memória de vídeo (GB/s)   •   Âmbar: temperatura GPU (°C)"));
+                            Localizer.S("gpu_stress.violet_video_memory_throughput_gb_s"));
                     }
                 }
-                return StressAdvice.Passed(ctx, string.Format(L(
-                    "{0} de mémoire vidéo écrits et relus {1:N0} fois dans le désordre, aucune donnée corrompue.",
-                    "{0} of video memory written and read back {1:N0} times in scrambled order, no corrupted data.",
-                    "{0} de memoria de vídeo escritos y releídos {1:N0} veces en desorden, sin datos corruptos.",
-                    "{0} Grafikspeicher {1:N0}-mal geschrieben und ungeordnet zurückgelesen, keine beschädigten Daten.",
-                    "{0} di memoria video scritti e riletti {1:N0} volte in ordine sparso, nessun dato corrotto.",
-                    "{0} de memória de vídeo gravados e relidos {1:N0} vezes fora de ordem, nenhum dado corrompido."),
+                return StressAdvice.Passed(ctx, string.Format(Localizer.S("gpu_stress.of_video_memory_written_and_read"),
                     StressText.Gb(tested), passes));
             }
             finally
@@ -562,9 +530,9 @@ __kernel void vcheck(__global const uint* p, uint seed, uint base, uint inv, uin
         {
             return new[]
             {
-                StressTile.Make(StressText.Tested, StressText.Gb(tested), Localizer.L("sur ", "of ", "de ", "von ", "su ", "de ") + StressText.Gb(total)),
-                StressTile.Make(Localizer.L("Passes", "Passes", "Pasadas", "Durchläufe", "Passaggi", "Passagens"), passes.ToString("N0"), Localizer.L("écriture + 2 relectures", "write + 2 read-backs", "escritura + 2 relecturas", "Schreiben + 2× Lesen", "scrittura + 2 riletture", "gravação + 2 releituras")),
-                StressTile.Make(StressText.Throughput, gbps > 0 ? gbps.ToString("N0") + " " + Localizer.L("Go/s", "GB/s", "GB/s", "GB/s", "GB/s", "GB/s") : "—", StressText.GpuTemp + " " + Num(ctx.Gpu.TempC, "°C")),
+                StressTile.Make(StressText.Tested, StressText.Gb(tested), Localizer.S("gpu_stress.of") + StressText.Gb(total)),
+                StressTile.Make(Localizer.S("gpu_stress.passes"), passes.ToString("N0"), Localizer.S("gpu_stress.write_2_read_backs")),
+                StressTile.Make(StressText.Throughput, gbps > 0 ? gbps.ToString("N0") + " " + Localizer.S("gpu_stress.gb_s") : "—", StressText.GpuTemp + " " + Num(ctx.Gpu.TempC, "°C")),
                 ctx.ErrorTile(0)
             };
         }
@@ -590,7 +558,7 @@ __kernel void vcheck(__global const uint* p, uint seed, uint base, uint inv, uin
             bool workerHung = false;
             try
             {
-                if (job.Error == "inconsistent") return StressAdvice.GpuComputeFailed(ctx, L("dès le calibrage", "already during calibration", "ya en la calibración", "schon bei der Kalibrierung", "già in calibrazione", "já na calibração"));
+                if (job.Error == "inconsistent") return StressAdvice.GpuComputeFailed(ctx, Localizer.S("gpu_stress.already_during_calibration"));
                 if (job.Error != null) return StressAdvice.GpuDriverReset(ctx, job.Error);
 
                 int[] halfPeriods = { 2000, 1000, 500, 250, 100 };
@@ -629,7 +597,7 @@ __kernel void vcheck(__global const uint* p, uint seed, uint base, uint inv, uin
                         if (ms - lastPublish >= 1000)
                         {
                             lastPublish = ms;
-                            ctx.Publish(string.Format(L("Créneaux 0 ↔ 100 % toutes les {0} ms", "0 ↔ 100 % square wave every {0} ms", "Onda cuadrada 0 ↔ 100 % cada {0} ms", "Rechteck 0 ↔ 100 % alle {0} ms", "Onda quadra 0 ↔ 100 % ogni {0} ms", "Onda quadrada 0 ↔ 100 % a cada {0} ms"), half),
+                            ctx.Publish(string.Format(Localizer.S("gpu_stress.0_100_square_wave_every_ms"), half),
                                 TransientTiles(ctx, half, swings), ctx.Gpu.PowerW, ctx.Gpu.TempC, PowerLegend);
                         }
                         Thread.Sleep(5);
@@ -649,16 +617,10 @@ __kernel void vcheck(__global const uint* p, uint seed, uint base, uint inv, uin
                     if (pool.Errors > 0) return StressAdvice.CpuFailed(ctx, pool.FirstErrorCpu, pool.FirstErrorWork);
                 }
                 if (workerHung)
-                    return StressAdvice.GpuDriverReset(ctx, L("le calcul GPU ne répond plus", "GPU computation stopped responding", "el cálculo de la GPU dejó de responder", "GPU-Berechnung reagiert nicht mehr", "il calcolo GPU non risponde più", "o cálculo da GPU parou de responder"));
+                    return StressAdvice.GpuDriverReset(ctx, Localizer.S("gpu_stress.gpu_computation_stopped_responding"));
                 if (gpuRc != 0) return StressAdvice.GpuDriverReset(ctx, "OpenCL " + gpuRc);
-                if (gpuBad > 0) return StressAdvice.GpuComputeFailed(ctx, string.Format(L("{0} valeur(s) fausse(s) pendant un pic", "{0} wrong value(s) during a spike", "{0} valor(es) erróneo(s) durante un pico", "{0} falsche(r) Wert(e) während einer Spitze", "{0} valore/i errato/i durante un picco", "{0} valor(es) errado(s) durante um pico"), gpuBad));
-                return StressAdvice.Passed(ctx, string.Format(L(
-                    "{0:N0} passages brusques de 0 à 100 % (CPU + GPU), tous les calculs justes. Puissance GPU max : {1}.",
-                    "{0:N0} sudden 0 → 100 % swings (CPU + GPU), every result correct. Peak GPU power: {1}.",
-                    "{0:N0} saltos bruscos de 0 a 100 % (CPU + GPU), todos los cálculos correctos. Potencia GPU máx.: {1}.",
-                    "{0:N0} abrupte Wechsel von 0 auf 100 % (CPU + GPU), alle Ergebnisse korrekt. Max. GPU-Leistung: {1}.",
-                    "{0:N0} passaggi bruschi da 0 a 100 % (CPU + GPU), tutti i calcoli corretti. Potenza GPU max: {1}.",
-                    "{0:N0} saltos bruscos de 0 a 100 % (CPU + GPU), todos os cálculos corretos. Potência GPU máx.: {1}."),
+                if (gpuBad > 0) return StressAdvice.GpuComputeFailed(ctx, string.Format(Localizer.S("gpu_stress.wrong_value_s_during_a_spike"), gpuBad));
+                return StressAdvice.Passed(ctx, string.Format(Localizer.S("gpu_stress.0_n0_sudden_0_100_swings"),
                     swings, Num(ctx.Gpu.PeakPowerW, "W")) + ctx.CpuTempSummary);
             }
             finally
@@ -672,9 +634,9 @@ __kernel void vcheck(__global const uint* p, uint seed, uint base, uint inv, uin
             GpuSensor g = ctx.Gpu;
             return new[]
             {
-                StressTile.Make(StressText.GpuPower, Num(g.PowerW, "W"), g.Available ? NumPeak(g.PeakPowerW, "W") : L("capteur indisponible", "no sensor", "sin sensor", "kein Sensor", "nessun sensore", "sem sensor")),
-                StressTile.Make(L("Rythme", "Rhythm", "Ritmo", "Rhythmus", "Ritmo", "Ritmo"), half > 0 ? half + " ms" : "—", L("par demi-période", "per half-period", "por semiperiodo", "pro Halbperiode", "per semiperiodo", "por semiperíodo")),
-                StressTile.Make(L("Pics", "Spikes", "Picos", "Spitzen", "Picchi", "Picos"), swings.ToString("N0"), "CPU + GPU 0 → 100 %"),
+                StressTile.Make(StressText.GpuPower, Num(g.PowerW, "W"), g.Available ? NumPeak(g.PeakPowerW, "W") : Localizer.S("gpu_stress.no_sensor")),
+                StressTile.Make(Localizer.S("gpu_stress.rhythm"), half > 0 ? half + " ms" : "—", Localizer.S("gpu_stress.per_half_period")),
+                StressTile.Make(Localizer.S("gpu_stress.spikes"), swings.ToString("N0"), "CPU + GPU 0 → 100 %"),
                 ctx.ErrorTile(0)
             };
         }

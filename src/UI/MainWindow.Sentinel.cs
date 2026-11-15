@@ -40,15 +40,15 @@ namespace WinCrashDoctor
 
                 CrashEntry last = severe[0];
                 string when = last.Time.Date == now.Date
-                    ? Localizer.L("aujourd'hui à ", "today at ", "hoy a las ", "heute um ", "oggi alle ", "hoje às ") + last.Time.ToString("HH:mm")
+                    ? Localizer.S("sentinel.today_at") + last.Time.ToString("HH:mm")
                     : last.Time.Date == now.Date.AddDays(-1)
-                        ? Localizer.L("hier à ", "yesterday at ", "ayer a las ", "gestern um ", "ieri alle ", "ontem às ") + last.Time.ToString("HH:mm")
+                        ? Localizer.S("sentinel.yesterday_at") + last.Time.ToString("HH:mm")
                         : last.Time.ToString("g");
                 string key = last.Key;
                 _traySentinel.Notify(
-                    Localizer.L("Votre PC a planté " + when, "Your PC crashed " + when, "Su PC falló " + when, "Ihr PC ist abgestürzt: " + when, "Il PC è andato in crash " + when, "Seu PC travou " + when),
-                    last.Title + (severe.Count > 1 ? Localizer.L(" (+" + (severe.Count - 1) + " autre(s))", " (+" + (severe.Count - 1) + " more)", " (+" + (severe.Count - 1) + ")", " (+" + (severe.Count - 1) + ")", " (+" + (severe.Count - 1) + ")", " (+" + (severe.Count - 1) + ")") : "")
-                        + "\n" + Localizer.L("Cliquez pour voir l'analyse.", "Click to see the analysis.", "Haga clic para ver el análisis.", "Klicken Sie für die Analyse.", "Clicca per vedere l'analisi.", "Clique para ver a análise."),
+                    Localizer.F("sentinel.your_pc_crashed", when),
+                    last.Title + (severe.Count > 1 ? Localizer.F("sentinel.more", (severe.Count - 1)) : "")
+                        + "\n" + Localizer.S("sentinel.click_to_see_the_analysis"),
                     true,
                     () => Dispatcher.BeginInvoke(new Action(() =>
                     {
@@ -84,10 +84,10 @@ namespace WinCrashDoctor
             bool ok = Autostart.Set(target);
             RefreshAutostartVisual();
             SetToast(!ok
-                    ? Localizer.L("Impossible de modifier le démarrage automatique.", "Could not change automatic start.", "No se pudo cambiar el inicio automático.", "Autostart konnte nicht geändert werden.", "Impossibile modificare l'avvio automatico.", "Não foi possível alterar o início automático.")
+                    ? Localizer.S("sentinel.could_not_change_automatic_start")
                     : target
-                        ? Localizer.L("Dump Finder démarrera avec Windows, discrètement dans la zone de notification.", "Dump Finder will start with Windows, quietly in the notification area.", "Dump Finder se iniciará con Windows.", "Dump Finder startet mit Windows.", "Dump Finder si avvierà con Windows.", "O Dump Finder iniciará com o Windows.")
-                        : Localizer.L("Démarrage automatique désactivé.", "Automatic start disabled.", "Inicio automático desactivado.", "Autostart deaktiviert.", "Avvio automatico disattivato.", "Início automático desativado."),
+                        ? Localizer.S("sentinel.dump_finder_will_start_with_windows")
+                        : Localizer.S("sentinel.automatic_start_disabled"),
                 ok ? "SuccessFg" : "WarnFg");
         }
 
@@ -96,19 +96,13 @@ namespace WinCrashDoctor
             if (_btnAutostart == null) return;
             bool on = Autostart.IsEnabled;
             _btnAutostart.Content = on
-                ? Localizer.L("● Activé", "● On", "● Activado", "● An", "● Attivo", "● Ativado")
-                : Localizer.L("○ Désactivé", "○ Off", "○ Desactivado", "○ Aus", "○ Disattivo", "○ Desativado");
+                ? Localizer.S("sentinel.on")
+                : Localizer.S("sentinel.off");
             _btnAutostart.SetResourceReference(Button.BackgroundProperty, on ? "SuccessSoftBg" : "BgCard");
             _btnAutostart.SetResourceReference(Button.ForegroundProperty, on ? "SuccessFg" : "TextSecondary");
             _btnAutostart.SetResourceReference(Button.BorderBrushProperty, on ? "SuccessBorder" : "BorderCard");
-            _lblSetAutostartTitle.Text = Localizer.L("Démarrer avec Windows", "Start with Windows", "Iniciar con Windows", "Mit Windows starten", "Avvia con Windows", "Iniciar com o Windows");
-            _lblSetAutostartDesc.Text = Localizer.L(
-                "Lance la Sentinelle à l'ouverture de session, sans fenêtre. Si un crash grave a eu lieu, une notification vous le signale.",
-                "Starts the Sentinel at sign-in, without a window. If a severe crash happened, a notification tells you.",
-                "Inicia el Centinela al iniciar sesión, sin ventana.",
-                "Startet den Wächter bei der Anmeldung, ohne Fenster.",
-                "Avvia la Sentinella all'accesso, senza finestra.",
-                "Inicia a Sentinela ao entrar, sem janela.");
+            _lblSetAutostartTitle.Text = Localizer.S("sentinel.start_with_windows");
+            _lblSetAutostartDesc.Text = Localizer.S("sentinel.starts_the_sentinel_at_sign_in");
         }
     }
 }

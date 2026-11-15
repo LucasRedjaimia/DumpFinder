@@ -171,7 +171,7 @@ namespace WinCrashDoctor
                     UseShellExecute = true
                 };
                 Process.Start(psi);
-                SetToast(Localizer.L("Outil lancé : ", "Launched tool: ", "Herramienta abierta: ", "Tool gestartet: ", "Strumento avviato: ", "Ferramenta aberta: ") + exe + (string.IsNullOrEmpty(arg) ? "" : (" " + arg)), "AccentText");
+                SetToast(Localizer.S("win_tools.launched_tool") + exe + (string.IsNullOrEmpty(arg) ? "" : (" " + arg)), "AccentText");
             }
             catch (Exception ex)
             {
@@ -184,74 +184,68 @@ namespace WinCrashDoctor
             bool started = Elevation.Launch("cmd.exe",
                 "/k echo [Dump Finder] Lancement de la verification et reparation systeme... && echo. && sfc /scannow && echo. && echo [Dump Finder] Analyse du magasin de composants DISM... && DISM /Online /Cleanup-Image /RestoreHealth");
             if (started)
-                SetToast(Localizer.L("Console de réparation SFC/DISM lancée en Administrateur.", "SFC/DISM repair console launched as Administrator.", "Consola de reparación SFC/DISM iniciada.", "SFC/DISM-Reparaturkonsole gestartet.", "Console di ripristino SFC/DISM avviata.", "Console de reparo SFC/DISM iniciada."), "SuccessFg");
+                SetToast(Localizer.S("win_tools.sfc_dism_repair_console_launched_as"), "SuccessFg");
             else
-                SetToast(Localizer.L("Élévation annulée.", "Elevation cancelled.", "Elevación cancelada.", "Erhöhung abgebrochen.", "Elevazione annullata.", "Elevação cancelada."), "WarnFg");
+                SetToast(Localizer.S("main_window.elevation_cancelled"), "WarnFg");
         }
 
         private void RefreshWinToolsPageLabels()
         {
             if (_lblWinToolsMainTitle == null) return;
 
-            _lblWinToolsMainTitle.Text = Localizer.L("Outils de Diagnostic Windows", "Windows Diagnostic Tools", "Herramientas de diagnóstico de Windows", "Windows-Diagnosewerkzeuge", "Strumenti di diagnostica Windows", "Ferramentas de diagnóstico do Windows");
-            _lblWinToolsMainSub.Text = Localizer.L(
-                "Passerelles directes vers les utilitaires avancés intégrés à Windows (sans console, lancement en 1 clic).",
-                "Direct one-click access to advanced Windows built-in diagnostic and maintenance utilities.",
-                "Acceso directo en 1 clic a las herramientas de diagnóstico integradas en Windows.",
-                "Direkter 1-Klick-Zugriff auf integrierte Windows-Diagnose- und Wartungstools.",
-                "Accesso diretto con 1 clic agli strumenti di diagnostica integrati di Windows.",
-                "Acesso direto com 1 clique aos utilitários integrados de diagnóstico do Windows.");
+            _lblWinToolsMainTitle.Text = Localizer.S("win_tools.windows_diagnostic_tools");
+            _lblWinToolsMainSub.Text = Localizer.S("win_tools.direct_one_click_access_to_advanced");
 
-            _btnQuickSfcAdmin.Content = Localizer.L("🛡️ Réparation SFC & DISM (Admin)", "🛡️ SFC & DISM Repair (Admin)", "🛡️ Reparación SFC y DISM (Admin)", "🛡️ SFC- & DISM-Reparatur (Admin)", "🛡️ Ripristino SFC e DISM (Admin)", "🛡️ Reparo SFC e DISM (Admin)");
+            _btnQuickSfcAdmin.Content = Localizer.S("win_tools.sfc_dism_repair_admin");
 
             // Category Headers
-            _lblWinToolCatHeaders[0].Text = Localizer.L("1. Analyse des Crashs & Historique de Stabilité", "1. Crash Logs & Reliability History", "1. Registros de fallos e historial de fiabilidad", "1. Absturzberichte & Zuverlässigkeitsverlauf", "1. Log di crash e cronologia affidabilità", "1. Logs de falhas e histórico de confiabilidade");
-            _lblWinToolCatHeaders[1].Text = Localizer.L("2. Diagnostic Matériel, BIOS & Pilotes", "2. Hardware Diagnostics, BIOS & Drivers", "2. Diagnóstico de hardware, BIOS y controladores", "2. Hardware-Diagnose, BIOS & Treiber", "2. Diagnostica hardware, BIOS e driver", "2. Diagnóstico de hardware, BIOS e drivers");
-            _lblWinToolCatHeaders[2].Text = Localizer.L("3. Surveillance des Ressources & Stockage", "3. Real-Time Resources & Storage Management", "3. Supervisión de recursos y almacenamiento", "3. Echtzeit-Ressourcen & Speicherverwaltung", "3. Monitoraggio risorse e archiviazione", "3. Monitoramento de recursos e armazenamento");
-            _lblWinToolCatHeaders[3].Text = Localizer.L("4. Intégrité Système & Nettoyage", "4. System Integrity & Disk Cleanup", "4. Integridad del sistema y limpieza", "4. Systemintegrität & Bereinigung", "4. Integrità del sistema e pulizia", "4. Integridade do sistema e limpeza");
+            _lblWinToolCatHeaders[0].Text = Localizer.S("win_tools.1_crash_logs_reliability_history");
+            _lblWinToolCatHeaders[1].Text = Localizer.S("win_tools.2_hardware_diagnostics_bios_drivers");
+            _lblWinToolCatHeaders[2].Text = Localizer.S("win_tools.3_real_time_resources_storage_management");
+            _lblWinToolCatHeaders[3].Text = Localizer.S("win_tools.4_system_integrity_disk_cleanup");
 
             // Tool Items
             // 0: Reliability Monitor
-            _lblWinToolItemTitles[0].Text = Localizer.L("Moniteur de fiabilité (perfmon /rel)", "Reliability Monitor (perfmon /rel)", "Monitor de fiabilidad (perfmon /rel)", "Zuverlässigkeitsverlauf (perfmon /rel)", "Monitoraggio affidabilità (perfmon /rel)", "Monitor de Confiabilidade (perfmon /rel)");
-            _lblWinToolItemDescs[0].Text = Localizer.L("Courbe visuelle jour par jour de la stabilité de Windows, indice de 1 à 10 et historique de chaque plantage.", "Visual daily stability curve, 1–10 reliability index, and individual crash timeline.", "Gráfico cronológico de estabilidad, índice de 1 a 10 y detalle de fallos.", "Visueller Zuverlässigkeitsverlauf mit Index von 1 bis 10 und Absturzhistorie.", "Grafico giornaliero di stabilità, indice da 1 a 10 e cronologia dei crash.", "Gráfico diário de estabilidade, índice de 1 a 10 e histórico de falhas.");
+            _lblWinToolItemTitles[0].Text = Localizer.S("win_tools.reliability_monitor_perfmon_rel");
+            _lblWinToolItemDescs[0].Text = Localizer.S("win_tools.visual_daily_stability_curve_1_10");
 
             // 1: Event Viewer
-            _lblWinToolItemTitles[1].Text = Localizer.L("Observateur d'événements (eventvwr)", "Event Viewer (eventvwr.msc)", "Visor de eventos (eventvwr.msc)", "Ereignisanzeige (eventvwr.msc)", "Visualizzatore eventi (eventvwr.msc)", "Visualizador de Eventos (eventvwr.msc)");
-            _lblWinToolItemDescs[1].Text = Localizer.L("Consultation brute des journaux d'erreurs Système, Application, WHEA et BugCheck.", "Detailed query of Windows System, Application, WHEA hardware, and BugCheck logs.", "Consulta detallada de registros de Sistema, Aplicación, WHEA y BugCheck.", "Detaillierte Einsicht in System-, Anwendungs-, WHEA- und BugCheck-Protokolle.", "Consultazione dettagliata dei registri di Sistema, Applicazione, WHEA e BugCheck.", "Consulta detalhada dos logs do Sistema, Aplicativos, WHEA e BugCheck.");
+            _lblWinToolItemTitles[1].Text = Localizer.S("win_tools.event_viewer_eventvwr_msc");
+            _lblWinToolItemDescs[1].Text = Localizer.S("win_tools.detailed_query_of_windows_system_applica");
 
             // 2: Device Manager
-            _lblWinToolItemTitles[2].Text = Localizer.L("Gestionnaire de périphériques (devmgmt)", "Device Manager (devmgmt.msc)", "Administrador de dispositivos (devmgmt)", "Geräte-Manager (devmgmt.msc)", "Gestione dispositivi (devmgmt.msc)", "Gerenciador de Dispositivos (devmgmt)");
-            _lblWinToolItemDescs[2].Text = Localizer.L("Détection des périphériques en anomalie (Code 43 GPU, conflits de pilotes, points d'exclamation jaunes).", "Inspect hardware devices in error states (Code 43 GPU, driver conflicts, yellow triangles).", "Inspección de dispositivos con problemas (Code 43 GPU, controladores en conflicto).", "Erkennung von Problemgeräten (GPU-Code 43, Treiberkonflikte, gelbe Dreiecke).", "Rilevamento dispositivi in anomalia (Code 43 GPU, conflitti driver, triangoli gialli).", "Detecção de dispositivos com problemas (Código 43 na GPU, conflitos de drivers).");
+            _lblWinToolItemTitles[2].Text = Localizer.S("win_tools.device_manager_devmgmt_msc");
+            _lblWinToolItemDescs[2].Text = Localizer.S("win_tools.inspect_hardware_devices_in_error_states");
 
             // 3: Windows Memory Diagnostic
-            _lblWinToolItemTitles[3].Text = Localizer.L("Diagnostic de mémoire Windows (mdsched)", "Windows Memory Diagnostic (mdsched)", "Diagnóstico de memoria de Windows (mdsched)", "Windows-Speicherdiagnose (mdsched)", "Diagnostica memoria Windows (mdsched)", "Diagnóstico de Memória do Windows (mdsched)");
-            _lblWinToolItemDescs[3].Text = Localizer.L("Planifie un test matériel approfondi des barrettes RAM au prochain redémarrage.", "Schedules a low-level bare-metal RAM test during the next PC reboot.", "Programa una prueba profunda de memoria RAM en el próximo reinicio.", "Plant einen Tiefentest der RAM-Riegel beim nächsten PC-Neustart.", "Pianifica un test hardware della RAM al prossimo riavvio del PC.", "Agenda um teste profundo da memória RAM na próxima reinicialização.");
+            _lblWinToolItemTitles[3].Text = Localizer.S("win_tools.windows_memory_diagnostic_mdsched");
+            _lblWinToolItemDescs[3].Text = Localizer.S("win_tools.schedules_a_low_level_bare_metal");
 
             // 4: System Information
-            _lblWinToolItemTitles[4].Text = Localizer.L("Informations système complètes (msinfo32)", "System Information (msinfo32)", "Información del sistema (msinfo32)", "Systeminformationen (msinfo32)", "Informazioni di sistema (msinfo32)", "Informações do Sistema (msinfo32)");
-            _lblWinToolItemDescs[4].Text = Localizer.L("Fiche technique intégrale : révision BIOS, carte mère, canaux DMA, interruptions IRQ et pilotes noyau.", "Full hardware brief: BIOS revision, motherboard model, DMA channels, and active kernel drivers.", "Informe técnico completo: versión de BIOS, placa base, canales DMA y controladores.", "Vollständiger technischer Bericht: BIOS-Version, Mainboard, DMA-Kanäle und Treiber.", "Scheda tecnica completa: versione BIOS, scheda madre, canali DMA e driver di sistema.", "Ficha técnica completa: versão da BIOS, placa-mãe, canais DMA e drivers de sistema.");
+            _lblWinToolItemTitles[4].Text = Localizer.S("win_tools.system_information_msinfo32");
+            _lblWinToolItemDescs[4].Text = Localizer.S("win_tools.full_hardware_brief_bios_revision_mother");
 
             // 5: DirectX Diagnostic
-            _lblWinToolItemTitles[5].Text = Localizer.L("Outil de diagnostic DirectX (dxdiag)", "DirectX Diagnostic Tool (dxdiag)", "Herramienta de diagnóstico DirectX (dxdiag)", "DirectX-Diagnoseprogramm (dxdiag)", "Strumento di diagnostica DirectX (dxdiag)", "Ferramenta de Diagnóstico DirectX (dxdiag)");
-            _lblWinToolItemDescs[5].Text = Localizer.L("Contrôle du niveau de fonctionnalités Direct3D, pilote WDDM, DDI et accélération graphique.", "Inspect Direct3D feature levels, WDDM driver version, display DDI, and hardware acceleration.", "Comprobación de niveles de función Direct3D, controlador WDDM y aceleración gráfica.", "Prüfung von Direct3D-Funktionsebenen, WDDM-Treiberversion und Grafikbeschleunigung.", "Controllo dei livelli di funzionalità Direct3D, driver WDDM e accelerazione grafica.", "Verificação de níveis de recursos Direct3D, driver WDDM e aceleração gráfica.");
+            _lblWinToolItemTitles[5].Text = Localizer.S("win_tools.directx_diagnostic_tool_dxdiag");
+            _lblWinToolItemDescs[5].Text = Localizer.S("win_tools.inspect_direct3d_feature_levels_wddm_dri");
 
             // 6: Resource Monitor
-            _lblWinToolItemTitles[6].Text = Localizer.L("Moniteur de ressources (resmon)", "Resource Monitor (resmon.exe)", "Monitor de recursos (resmon.exe)", "Ressourcenmonitor (resmon.exe)", "Monitoraggio risorse (resmon.exe)", "Monitor de Recursos (resmon.exe)");
-            _lblWinToolItemDescs[6].Text = Localizer.L("Surveillance en temps réel des threads CPU bloqués, files d'attente disque et ports réseau ouverts.", "Real-time inspection of hung CPU threads, memory allocations, disk queues, and open ports.", "Supervisión en tiempo real de hilos CPU bloqueados, memoria, colas de disco y red.", "Echtzeit-Überwachung blockierter CPU-Threads, Speicher, Datenträger- und Netzwerk-Warteschlangen.", "Monitoraggio in tempo reale di thread CPU bloccati, memoria, code disco e rete.", "Monitoramento em tempo real de threads da CPU travadas, memória, filas de disco e rede.");
+            _lblWinToolItemTitles[6].Text = Localizer.S("win_tools.resource_monitor_resmon_exe");
+            _lblWinToolItemDescs[6].Text = Localizer.S("win_tools.real_time_inspection_of_hung_cpu");
 
             // 7: Disk Management
-            _lblWinToolItemTitles[7].Text = Localizer.L("Gestion des disques (diskmgmt)", "Disk Management (diskmgmt.msc)", "Administración de discos (diskmgmt)", "Datenträgerverwaltung (diskmgmt.msc)", "Gestione disco (diskmgmt.msc)", "Gerenciamento de Disco (diskmgmt)");
-            _lblWinToolItemDescs[7].Text = Localizer.L("Gestion des partitions GPT/MBR, lettres de lecteurs et détection des volumes NVMe/SATA.", "Partition layout (GPT/MBR), drive letters, unallocated space, and NVMe/SATA health.", "Gestión de particiones GPT/MBR, letras de unidad y volúmenes NVMe/SATA.", "Partitionen verwalten (GPT/MBR), Laufwerksbuchstaben und NVMe/SATA-Volumes prüfen.", "Gestione partizioni GPT/MBR, lettere di unità e volumi NVMe/SATA.", "Gerenciamento de partições GPT/MBR, letras de unidade e volumes NVMe/SATA.");
+            _lblWinToolItemTitles[7].Text = Localizer.S("win_tools.disk_management_diskmgmt_msc");
+            _lblWinToolItemDescs[7].Text = Localizer.S("win_tools.partition_layout_gpt_mbr_drive_letters");
 
             // 8: SFC & DISM Console
-            _lblWinToolItemTitles[8].Text = Localizer.L("Console de réparation SFC / DISM", "SFC / DISM Integrity Console", "Consola de reparación SFC / DISM", "SFC / DISM Systemreparatur-Konsole", "Console di ripristino SFC / DISM", "Console de Reparo SFC / DISM");
-            _lblWinToolItemDescs[8].Text = Localizer.L("Ouvre une invite de commandes Administrateur pour réparer les DLL et fichiers système Windows corrompus.", "Opens an elevated console executing 'sfc /scannow' and DISM image repair.", "Abre una consola Administrador para reparar archivos del sistema dañados.", "Öffnet eine Admin-Konsole für 'sfc /scannow' und DISM-Systemreparatur.", "Apre una console Amministratore per riparare file di sistema corrotti.", "Abre um console Administrador para reparar arquivos do sistema corrompidos.");
+            _lblWinToolItemTitles[8].Text = Localizer.S("win_tools.sfc_dism_integrity_console");
+            _lblWinToolItemDescs[8].Text = Localizer.S("win_tools.opens_an_elevated_console_executing_sfc");
 
             // 9: Disk Cleanup
-            _lblWinToolItemTitles[9].Text = Localizer.L("Nettoyage de disque Windows (cleanmgr)", "Disk Cleanup (cleanmgr.exe)", "Liberador de espacio en disco (cleanmgr)", "Datenträgerbereinigung (cleanmgr.exe)", "Pulizia disco (cleanmgr.exe)", "Limpeza de Disco (cleanmgr.exe)");
-            _lblWinToolItemDescs[9].Text = Localizer.L("Purge les anciens rapports de crash, caches temporaires de mise à jour et résidus d'installation.", "Purges old memory crash dumps, temporary update caches, and residual installation files.", "Elimina antiguos volcados de memoria, cachés temporales y archivos residuales.", "Löscht alte Speicherabbilder, temporäre Update-Caches und Installationsrückstände.", "Elimina vecchi dump di memoria, cache temporanee e file residui.", "Limpa antigos dumps de memória, caches temporários e arquivos residuais.");
+            _lblWinToolItemTitles[9].Text = Localizer.S("win_tools.disk_cleanup_cleanmgr_exe");
+            _lblWinToolItemDescs[9].Text = Localizer.S("win_tools.purges_old_memory_crash_dumps_temporary");
 
-            string openBtnText = Localizer.L("Ouvrir ↗", "Launch ↗", "Abrir ↗", "Öffnen ↗", "Apri ↗", "Abrir ↗");
+            string openBtnText = Localizer.S("win_tools.launch");
             for (int i = 0; i < 10; i++)
             {
                 if (_btnWinToolLaunch[i] != null)

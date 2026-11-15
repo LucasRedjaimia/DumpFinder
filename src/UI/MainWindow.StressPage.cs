@@ -46,7 +46,6 @@ namespace WinCrashDoctor
         private StackPanel _stressResultsPanel;
         private TextBox _txtStressLog;
 
-        private static string SL(string fr, string en, string es, string de, string it, string pt) { return Localizer.L(fr, en, es, de, it, pt); }
 
         // ==================== BUILD ====================
         private void BuildStressPage()
@@ -158,7 +157,7 @@ namespace WinCrashDoctor
             {
                 _stressRunner.RequestStop();
                 _btnStopStress.IsEnabled = false;
-                _lblStressStatus.Text = SL("Arrêt en cours…", "Stopping…", "Deteniendo…", "Wird gestoppt…", "Arresto in corso…", "Parando…");
+                _lblStressStatus.Text = Localizer.S("main_window.stopping");
             };
             Grid.SetColumn(_btnStopStress, 2);
             btnRow.Children.Add(_btnStopStress);
@@ -261,17 +260,12 @@ namespace WinCrashDoctor
         // ==================== LABELS ====================
         private void RefreshStressPageLabels()
         {
-            _lblStressTitle.Text = SL("Test de stabilité", "Stability test", "Prueba de estabilidad", "Stabilitätstest", "Test di stabilità", "Teste de estabilidade");
-            _lblStressSub.Text = SL("Chaque test vérifie ses propres résultats : une erreur est détectée avant même un plantage.",
-                                    "Every test checks its own results: an error is caught before it turns into a crash.",
-                                    "Cada prueba verifica sus propios resultados: un error se detecta antes de un bloqueo.",
-                                    "Jeder Test prüft seine eigenen Ergebnisse: Fehler werden erkannt, bevor es abstürzt.",
-                                    "Ogni test verifica i propri risultati: un errore viene rilevato prima di un crash.",
-                                    "Cada teste verifica os próprios resultados: um erro é detectado antes de um travamento.");
-            _lblStressPlanCaption.Text = SL("Que tester ?", "What to test?", "¿Qué probar?", "Was testen?", "Cosa testare?", "O que testar?");
-            _lblStressCapsCaption.Text = SL("Ce PC", "This PC", "Este PC", "Dieser PC", "Questo PC", "Este PC");
-            _btnStartStress.Content = SL("Démarrer", "Start", "Iniciar", "Starten", "Avvia", "Iniciar");
-            _btnStopStress.Content = SL("Arrêter", "Stop", "Detener", "Stopp", "Ferma", "Parar");
+            _lblStressTitle.Text = Localizer.S("health.stability_test");
+            _lblStressSub.Text = Localizer.S("stress.every_test_checks_its_own_results");
+            _lblStressPlanCaption.Text = Localizer.S("stress.what_to_test");
+            _lblStressCapsCaption.Text = Localizer.S("stress.this_pc");
+            _btnStartStress.Content = Localizer.S("stress.start");
+            _btnStopStress.Content = Localizer.S("stress.stop");
 
             bool old = _suppressDropdownEvents;
             _suppressDropdownEvents = true;
@@ -284,7 +278,7 @@ namespace WinCrashDoctor
                 {
                     double sec = Math.Round(StressPlanner.Build(k, 10).TotalSec / 300.0) * 300; // rounded to 5 min
                     name += " (≈ " + FormatStressDuration(sec)
-                          + (k == StressPlanKind.Thorough ? SL(", la nuit", ", overnight", ", de noche", ", über Nacht", ", di notte", ", à noite") : "") + ")";
+                          + (k == StressPlanKind.Thorough ? Localizer.S("stress.overnight") : "") + ")";
                 }
                 _cbStressPlan.Items.Add(name);
             }
@@ -315,12 +309,12 @@ namespace WinCrashDoctor
             _stressDurationRow.Visibility = suite ? Visibility.Collapsed : Visibility.Visible;
             if (_stressPlan == StressPlanKind.CpuPerCore)
             {
-                _lblStressDuration.Text = SL("Durée par cœur", "Time per core", "Duración por núcleo", "Dauer pro Kern", "Durata per core", "Duração por núcleo");
+                _lblStressDuration.Text = Localizer.S("stress.time_per_core");
                 _slStressDuration.Maximum = 30;
             }
             else
             {
-                _lblStressDuration.Text = SL("Durée", "Duration", "Duración", "Dauer", "Durata", "Duração");
+                _lblStressDuration.Text = Localizer.S("stress.duration");
                 _slStressDuration.Maximum = 120;
             }
             UpdateStressDurationLabel();
@@ -333,79 +327,35 @@ namespace WinCrashDoctor
             switch (_stressPlan)
             {
                 case StressPlanKind.Quick:
-                    t = SL("Enchaîne 7 tests vérifiés en {0} : processeur (tous les cœurs puis cœur par cœur), RAM, carte graphique, mémoire vidéo, pics de charge et SSD ({1} écrits puis relus). Un bon premier diagnostic.",
-                           "Runs 7 verified tests in {0}: CPU (all cores, then core by core), RAM, graphics card, video memory, load spikes and SSD ({1} written then read back). A good first check.",
-                           "Encadena 7 pruebas verificadas en {0}: CPU (todos los núcleos y uno a uno), RAM, gráfica, memoria de vídeo, picos de carga y SSD ({1} escritos y releídos). Un buen primer diagnóstico.",
-                           "Führt 7 geprüfte Tests in {0} aus: CPU (alle Kerne, dann einzeln), RAM, Grafikkarte, Grafikspeicher, Lastspitzen und SSD ({1} geschrieben und zurückgelesen). Eine gute erste Prüfung.",
-                           "Esegue 7 test verificati in {0}: CPU (tutti i core, poi uno per uno), RAM, scheda video, memoria video, picchi di carico e SSD ({1} scritti e riletti). Un buon primo controllo.",
-                           "Executa 7 testes verificados em {0}: CPU (todos os núcleos, depois um a um), RAM, placa de vídeo, memória de vídeo, picos de carga e SSD ({1} gravados e relidos). Um bom primeiro diagnóstico.");
+                    t = Localizer.S("stress.runs_7_verified_tests_in_cpu");
                     break;
                 case StressPlanKind.Thorough:
-                    t = SL("Les mêmes 7 tests en version longue ({0}) : à lancer le soir. La RAM est couverte de nombreuses fois, chaque cœur plusieurs minutes, et le SSD au-delà de son cache ({1}). Pour valider un overclock ou un undervolt.",
-                           "The same 7 tests, long version ({0}): start it in the evening. RAM is covered many times, each core for several minutes, and the SSD past its cache ({1}). To validate an overclock or undervolt.",
-                           "Las mismas 7 pruebas en versión larga ({0}): lánzala por la noche. La RAM se cubre muchas veces, cada núcleo varios minutos y el SSD más allá de su caché ({1}). Para validar un overclock o undervolt.",
-                           "Dieselben 7 Tests in Langfassung ({0}): abends starten. RAM wird vielfach abgedeckt, jeder Kern mehrere Minuten, die SSD über ihren Cache hinaus ({1}). Zum Absichern von Übertaktung oder Undervolting.",
-                           "Gli stessi 7 test in versione lunga ({0}): da avviare la sera. La RAM viene coperta molte volte, ogni core per diversi minuti e l'SSD oltre la sua cache ({1}). Per validare overclock o undervolt.",
-                           "Os mesmos 7 testes na versão longa ({0}): inicie à noite. A RAM é coberta muitas vezes, cada núcleo por vários minutos e o SSD além do cache ({1}). Para validar overclock ou undervolt.");
+                    t = Localizer.S("stress.the_same_7_tests_long_version");
                     break;
                 case StressPlanKind.CpuAllCore:
-                    t = SL("Tous les threads calculent en boucle des résultats connus d'avance (entier + " + CpuWork.SimdLabel + ") : la moindre erreur de calcul est repérée, avant même un plantage.",
-                           "Every thread loops over computations whose results are known in advance (integer + " + CpuWork.SimdLabel + "): any miscalculation is caught, even before a crash.",
-                           "Todos los hilos calculan en bucle resultados conocidos de antemano (entero + " + CpuWork.SimdLabel + "): cualquier error se detecta, incluso antes de un bloqueo.",
-                           "Alle Threads berechnen fortlaufend vorab bekannte Ergebnisse (Ganzzahl + " + CpuWork.SimdLabel + "): Jeder Rechenfehler wird erkannt, noch vor einem Absturz.",
-                           "Tutti i thread calcolano in ciclo risultati noti in anticipo (interi + " + CpuWork.SimdLabel + "): ogni errore viene rilevato, anche prima di un crash.",
-                           "Todas as threads calculam em loop resultados conhecidos (inteiro + " + CpuWork.SimdLabel + "): qualquer erro é detectado, antes mesmo de um travamento.");
+                    t = Localizer.F("stress.every_thread_loops_over_computations_who", CpuWork.SimdLabel);
                     break;
                 case StressPlanKind.CpuPerCore:
-                    t = SL("Teste chaque cœur seul, à sa fréquence maximale (méthode CoreCycler) : idéal pour régler un Curve Optimizer ou un undervolt par cœur. Durée totale : {0}.",
-                           "Tests each core on its own at its highest boost (CoreCycler method): ideal to tune Curve Optimizer or a per-core undervolt. Total time: {0}.",
-                           "Prueba cada núcleo solo a su frecuencia máxima (método CoreCycler): ideal para ajustar Curve Optimizer o un undervolt por núcleo. Duración total: {0}.",
-                           "Testet jeden Kern einzeln bei maximalem Boost (CoreCycler-Methode): ideal für Curve Optimizer oder Undervolting pro Kern. Gesamtdauer: {0}.",
-                           "Testa ogni core da solo alla massima frequenza (metodo CoreCycler): ideale per regolare Curve Optimizer o undervolt per core. Durata totale: {0}.",
-                           "Testa cada núcleo sozinho na frequência máxima (método CoreCycler): ideal para ajustar Curve Optimizer ou undervolt por núcleo. Duração total: {0}.");
+                    t = Localizer.S("stress.tests_each_core_on_its_own");
                     break;
                 case StressPlanKind.GpuCompute:
-                    t = SL("Charge la carte graphique avec un calcul vérifié à chaque passe, découpé pour ne jamais provoquer lui-même de reset du pilote (TDR).",
-                           "Loads the graphics card with a computation verified on every launch, split so that it never causes a driver reset (TDR) itself.",
-                           "Carga la gráfica con un cálculo verificado en cada pasada, dividido para no provocar nunca un reinicio del controlador (TDR).",
-                           "Lastet die Grafikkarte mit einer bei jedem Durchlauf geprüften Berechnung aus, so aufgeteilt, dass sie selbst nie einen Treiber-Reset (TDR) auslöst.",
-                           "Carica la scheda video con un calcolo verificato a ogni passaggio, suddiviso per non causare mai da solo un reset del driver (TDR).",
-                           "Carrega a placa de vídeo com um cálculo verificado a cada passagem, dividido para nunca causar por si só um reset do driver (TDR).");
+                    t = Localizer.S("stress.loads_the_graphics_card_with_a");
                     break;
                 case StressPlanKind.Vram:
-                    t = SL("Remplit environ 80 % de la mémoire vidéo puis la relit dans le désordre, avec des motifs et leurs inverses : révèle un overclock mémoire GPU instable ou une puce défaillante.",
-                           "Fills about 80 % of video memory, then reads it back in scrambled order with patterns and their inverses: exposes an unstable GPU memory overclock or a failing chip.",
-                           "Llena cerca del 80 % de la memoria de vídeo y la relee en desorden con patrones y sus inversos: revela un overclock de memoria GPU inestable o un chip defectuoso.",
-                           "Füllt etwa 80 % des Grafikspeichers und liest ihn ungeordnet mit Mustern und deren Inversen zurück: zeigt instabile Speicherübertaktung oder einen defekten Chip.",
-                           "Riempie circa l'80 % della memoria video e la rilegge in ordine sparso con schemi e loro inversi: rivela un overclock instabile della memoria GPU o un chip guasto.",
-                           "Preenche cerca de 80 % da memória de vídeo e a relê fora de ordem com padrões e seus inversos: revela overclock de memória da GPU instável ou chip com defeito.");
+                    t = Localizer.S("stress.fills_about_80_of_video_memory");
                     break;
                 case StressPlanKind.Transient:
-                    t = SL("Fait passer CPU et GPU ensemble de 0 à 100 % en créneaux de plus en plus rapides (2 s → 100 ms) : révèle une alimentation trop juste ou un câble 12V-2x6 / PCIe mal enfiché.",
-                           "Swings CPU and GPU together from 0 to 100 % in ever faster steps (2 s → 100 ms): exposes a marginal power supply or a badly seated 12V-2x6 / PCIe cable.",
-                           "Lleva CPU y GPU juntas de 0 a 100 % en escalones cada vez más rápidos (2 s → 100 ms): revela una fuente justa o un cable 12V-2x6 / PCIe mal conectado.",
-                           "Schaltet CPU und GPU gemeinsam immer schneller zwischen 0 und 100 % (2 s → 100 ms): deckt ein knappes Netzteil oder ein schlecht sitzendes 12V-2x6-/PCIe-Kabel auf.",
-                           "Porta CPU e GPU insieme da 0 a 100 % a gradini sempre più rapidi (2 s → 100 ms): rivela un alimentatore al limite o un cavo 12V-2x6 / PCIe inserito male.",
-                           "Leva CPU e GPU juntas de 0 a 100 % em degraus cada vez mais rápidos (2 s → 100 ms): revela uma fonte no limite ou um cabo 12V-2x6 / PCIe mal encaixado.");
+                    t = Localizer.S("stress.swings_cpu_and_gpu_together_from");
                     break;
                 case StressPlanKind.Ram:
-                    t = SL("Teste environ 85 % de la mémoire libre (pas seulement le cache) avec trois méthodes, chaque mot relu et comparé : révèle un profil EXPO/XMP instable ou une barrette défaillante.",
-                           "Tests about 85 % of free memory (not just the cache) with three methods, every word read back and compared: exposes an unstable EXPO/XMP profile or a failing stick.",
-                           "Prueba cerca del 85 % de la memoria libre (no solo la caché) con tres métodos, cada palabra releída y comparada: revela un perfil EXPO/XMP inestable o un módulo defectuoso.",
-                           "Testet etwa 85 % des freien Speichers (nicht nur den Cache) mit drei Methoden, jedes Wort zurückgelesen und verglichen: zeigt ein instabiles EXPO/XMP-Profil oder ein defektes Modul.",
-                           "Testa circa l'85 % della memoria libera (non solo la cache) con tre metodi, ogni parola riletta e confrontata: rivela un profilo EXPO/XMP instabile o un modulo guasto.",
-                           "Testa cerca de 85 % da memória livre (não só o cache) com três métodos, cada palavra relida e comparada: revela um perfil EXPO/XMP instável ou um pente com defeito.");
+                    t = Localizer.S("stress.tests_about_85_of_free_memory");
                     break;
                 default:
-                    t = SL("Écrit {1} de données connues sur " + drive + ", les relit directement depuis le disque (sans le cache de Windows) et compare tout, puis enchaîne des lectures aléatoires 4K vérifiées. Le fichier est supprimé à la fin.",
-                           "Writes {1} of known data to " + drive + ", reads it back straight from the drive (bypassing the Windows cache) and compares everything, then runs verified random 4K reads. The file is deleted at the end.",
-                           "Escribe {1} de datos conocidos en " + drive + ", los relee directamente del disco (sin la caché de Windows) y lo compara todo; luego lecturas aleatorias 4K verificadas. El archivo se borra al final.",
-                           "Schreibt {1} bekannter Daten auf " + drive + ", liest sie direkt vom Laufwerk zurück (ohne Windows-Cache) und vergleicht alles, danach geprüfte zufällige 4K-Lesezugriffe. Die Datei wird am Ende gelöscht.",
-                           "Scrive {1} di dati noti su " + drive + ", li rilegge direttamente dal disco (senza la cache di Windows) e confronta tutto, poi letture casuali 4K verificate. Il file viene eliminato alla fine.",
-                           "Grava {1} de dados conhecidos em " + drive + ", relê direto do disco (sem o cache do Windows) e compara tudo, depois leituras aleatórias 4K verificadas. O arquivo é apagado no fim.");
+                    t = Localizer.S("stress.disk_plan_hint");
                     break;
             }
-            _lblStressPlanHint.Text = string.Format(t, dur, gb);
+            // {0} duration, {1} size, {2} drive (each hint uses the ones it needs).
+            _lblStressPlanHint.Text = string.Format(t, dur, gb, drive);
         }
 
         private static string FormatStressDuration(double sec)
@@ -427,20 +377,20 @@ namespace WinCrashDoctor
             var c = _stressCaps;
             if (c == null)
             {
-                _lblStressCaps.Text = SL("Détection du matériel…", "Detecting hardware…", "Detectando hardware…", "Hardware wird erkannt…", "Rilevamento hardware…", "Detectando hardware…");
+                _lblStressCaps.Text = Localizer.S("stress.detecting_hardware");
                 RefreshStressCpuTempOption();
                 return;
             }
             var lines = new List<string>();
-            lines.Add(string.Format(SL("Processeur : {0} cœurs / {1} threads · {2}", "CPU: {0} cores / {1} threads · {2}", "CPU: {0} núcleos / {1} hilos · {2}", "CPU: {0} Kerne / {1} Threads · {2}", "CPU: {0} core / {1} thread · {2}", "CPU: {0} núcleos / {1} threads · {2}"), c.Cores, c.Threads, c.Simd));
+            lines.Add(string.Format(Localizer.S("stress.cpu_cores_threads"), c.Cores, c.Threads, c.Simd));
             if (!string.IsNullOrEmpty(c.GpuName))
-                lines.Add(string.Format(SL("Carte graphique : {0} · {1}", "Graphics: {0} · {1}", "Gráfica: {0} · {1}", "Grafik: {0} · {1}", "Scheda video: {0} · {1}", "Placa de vídeo: {0} · {1}"), c.GpuName, StressText.Gb(c.GpuMemBytes))
-                          + (c.GpuSensor != null ? SL(" (capteurs : ", " (sensors: ", " (sensores: ", " (Sensoren: ", " (sensori: ", " (sensores: ") + c.GpuSensor + ")"
-                                                 : SL(" (sans capteurs)", " (no sensors)", " (sin sensores)", " (ohne Sensoren)", " (senza sensori)", " (sem sensores)")));
+                lines.Add(string.Format(Localizer.S("stress.graphics"), c.GpuName, StressText.Gb(c.GpuMemBytes))
+                          + (c.GpuSensor != null ? Localizer.S("stress.sensors") + c.GpuSensor + ")"
+                                                 : Localizer.S("stress.no_sensors")));
             else
-                lines.Add(SL("Carte graphique : aucune compatible OpenCL (tests GPU sautés)", "Graphics: no OpenCL-capable GPU (GPU tests skipped)", "Gráfica: ninguna compatible con OpenCL (pruebas GPU omitidas)", "Grafik: keine OpenCL-fähige GPU (GPU-Tests übersprungen)", "Scheda video: nessuna compatibile OpenCL (test GPU saltati)", "Placa de vídeo: nenhuma compatível com OpenCL (testes de GPU ignorados)"));
-            lines.Add(string.Format(SL("Mémoire libre : {0} sur {1}", "Free memory: {0} of {1}", "Memoria libre: {0} de {1}", "Freier Speicher: {0} von {1}", "Memoria libera: {0} su {1}", "Memória livre: {0} de {1}"), StressText.Gb(c.RamAvailBytes), StressText.Gb(c.RamTotalBytes)));
-            lines.Add(string.Format(SL("Disque de test : {0} · {1} libres", "Test drive: {0} · {1} free", "Disco de prueba: {0} · {1} libres", "Testlaufwerk: {0} · {1} frei", "Disco di test: {0} · {1} liberi", "Disco de teste: {0} · {1} livres"), c.Drive, StressText.Gb(c.DiskFreeBytes)));
+                lines.Add(Localizer.S("stress.graphics_no_opencl_capable_gpu_gpu"));
+            lines.Add(string.Format(Localizer.S("stress.free_memory_of"), StressText.Gb(c.RamAvailBytes), StressText.Gb(c.RamTotalBytes)));
+            lines.Add(string.Format(Localizer.S("stress.test_drive_free"), c.Drive, StressText.Gb(c.DiskFreeBytes)));
             _lblStressCaps.Text = string.Join("\n", lines);
             RefreshStressCpuTempOption();
         }
@@ -449,7 +399,7 @@ namespace WinCrashDoctor
         private void RefreshStressCpuTempOption()
         {
             if (_chkStressCpuTemp == null) return;
-            _chkStressCpuTemp.Content = SL("Afficher la température du processeur", "Show the CPU temperature", "Mostrar la temperatura de la CPU", "CPU-Temperatur anzeigen", "Mostra la temperatura della CPU", "Mostrar a temperatura da CPU");
+            _chkStressCpuTemp.Content = Localizer.S("stress.show_the_cpu_temperature");
             var c = _stressCaps;
             bool pawn = c != null ? c.PawnIo : CpuTempReader.PawnIoInstalled;
             bool admin = c != null ? c.IsAdmin : Elevation.IsAdministrator();
@@ -457,30 +407,20 @@ namespace WinCrashDoctor
             if (!pawn)
             {
                 _chkStressCpuTemp.IsChecked = false;
-                _lblStressCpuTempHint.Text = SL("Nécessite le pilote PawnIO (gratuit, signé, utilisé par LibreHardwareMonitor et FanControl). Installe-le avec « winget install PawnIO » ou depuis pawnio.eu, puis rouvre cette page.",
-                                                "Needs the PawnIO driver (free, signed, used by LibreHardwareMonitor and FanControl). Install it with 'winget install PawnIO' or from pawnio.eu, then reopen this page.",
-                                                "Requiere el controlador PawnIO (gratuito, firmado). Instálalo con «winget install PawnIO» o desde pawnio.eu.",
-                                                "Benötigt den PawnIO-Treiber (kostenlos, signiert). Mit „winget install PawnIO“ oder von pawnio.eu installieren.",
-                                                "Richiede il driver PawnIO (gratuito, firmato). Installalo con «winget install PawnIO» o da pawnio.eu.",
-                                                "Requer o driver PawnIO (gratuito, assinado). Instale com «winget install PawnIO» ou em pawnio.eu.");
+                _lblStressCpuTempHint.Text = Localizer.S("stress.needs_the_pawnio_driver_free_signed");
             }
             else if (admin)
-                _lblStressCpuTempHint.Text = SL("Lue directement via PawnIO (mode administrateur).", "Read directly through PawnIO (administrator mode).", "Leída directamente vía PawnIO (modo administrador).", "Direkt über PawnIO gelesen (Administratormodus).", "Letta direttamente tramite PawnIO (modalità amministratore).", "Lida diretamente via PawnIO (modo administrador).");
+                _lblStressCpuTempHint.Text = Localizer.S("stress.read_directly_through_pawnio_administrat");
             else
-                _lblStressCpuTempHint.Text = SL("Lue via PawnIO : Windows demandera une autorisation au démarrage du test, pour un petit assistant qui s'arrête avec lui.",
-                                                "Read through PawnIO: Windows will ask for permission when the test starts, for a small helper that stops with it.",
-                                                "Leída vía PawnIO: Windows pedirá permiso al iniciar la prueba, para un pequeño asistente que se detiene con ella.",
-                                                "Über PawnIO gelesen: Windows fragt beim Teststart nach einer Freigabe für einen kleinen Helfer, der mit dem Test endet.",
-                                                "Letta tramite PawnIO: Windows chiederà un'autorizzazione all'avvio del test, per un piccolo assistente che si ferma con esso.",
-                                                "Lida via PawnIO: o Windows pedirá permissão ao iniciar o teste, para um pequeno assistente que para junto com ele.");
+                _lblStressCpuTempHint.Text = Localizer.S("stress.read_through_pawnio_windows_will_ask");
         }
 
         private void RefreshStressLast()
         {
             var last = History.StressRuns().FirstOrDefault();
-            if (last == null) { _lblStressLast.Text = SL("Aucun test lancé pour l'instant.", "No test run yet.", "Ninguna prueba realizada aún.", "Noch kein Test durchgeführt.", "Nessun test eseguito finora.", "Nenhum teste executado ainda."); return; }
+            if (last == null) { _lblStressLast.Text = Localizer.S("stress.no_test_run_yet"); return; }
             int ok = last.Stages.Count(s => s.Outcome == StressOutcome.Passed);
-            _lblStressLast.Text = string.Format(SL("Dernier test : {0:g} · {1} · {2}/{3} réussi(s)", "Last test: {0:g} · {1} · {2}/{3} passed", "Última prueba: {0:g} · {1} · {2}/{3} superada(s)", "Letzter Test: {0:g} · {1} · {2}/{3} bestanden", "Ultimo test: {0:g} · {1} · {2}/{3} superato/i", "Último teste: {0:g} · {1} · {2}/{3} aprovado(s)"),
+            _lblStressLast.Text = string.Format(Localizer.S("stress.last_test_0_g_passed"),
                 last.Time.ToString("g", Localizer.Culture), StressText.PlanName(last.Plan), ok, last.Stages.Count);
         }
 
@@ -488,8 +428,8 @@ namespace WinCrashDoctor
         {
             string[] titles =
             {
-                SL("Fréquence", "Clock", "Frecuencia", "Takt", "Frequenza", "Frequência"),
-                SL("Charge", "Load", "Carga", "Last", "Carico", "Carga"),
+                Localizer.S("stress.clock"),
+                Localizer.S("stress.load"),
                 StressText.Verified,
                 StressText.Errors
             };
@@ -515,12 +455,7 @@ namespace WinCrashDoctor
                 RefreshStressLast();
                 var bad = rec.Stages.LastOrDefault();
                 if (bad != null && bad.Outcome == StressOutcome.Interrupted)
-                    SetToast(string.Format(SL("Le dernier test de stabilité ne s'est pas terminé : le PC a planté pendant « {0} ». Détails dans Matériel › Test de stabilité.",
-                                              "The last stability test did not finish: the PC crashed during “{0}”. Details under Hardware › Stability test.",
-                                              "La última prueba de estabilidad no terminó: el PC se colgó durante «{0}». Detalles en Hardware › Prueba de estabilidad.",
-                                              "Der letzte Stabilitätstest wurde nicht beendet: Der PC stürzte bei „{0}“ ab. Details unter Hardware › Stabilitätstest.",
-                                              "L'ultimo test di stabilità non è terminato: il PC si è bloccato durante «{0}». Dettagli in Hardware › Test di stabilità.",
-                                              "O último teste de estabilidade não terminou: o PC travou durante «{0}». Detalhes em Hardware › Teste de estabilidade."), bad.Name), "DangerFg");
+                    SetToast(string.Format(Localizer.S("stress.the_last_stability_test_did_not"), bad.Name), "DangerFg");
             }
             else
             {
@@ -559,15 +494,9 @@ namespace WinCrashDoctor
             bool cpuTemp = _chkStressCpuTemp.IsEnabled && _chkStressCpuTemp.IsChecked == true;
 
             string diskLine = plan.DiskBytes > 0
-                ? string.Format(SL(" et environ {0} seront écrits puis effacés sur {1}", " and about {0} will be written then deleted on {1}", " y se escribirán y borrarán unos {0} en {1}", " und etwa {0} werden auf {1} geschrieben und wieder gelöscht", " e circa {0} verranno scritti e poi cancellati su {1}", " e cerca de {0} serão gravados e depois apagados em {1}"), StressText.Gb(plan.DiskBytes), StressPlanner.TestDrive)
+                ? string.Format(Localizer.S("stress.and_about_will_be_written_then"), StressText.Gb(plan.DiskBytes), StressPlanner.TestDrive)
                 : "";
-            string msg = string.Format(SL(
-                "{0} — durée prévue : {1}.\n\nLe PC va être fortement sollicité{2}. Ferme les jeux et applications lourdes et enregistre ton travail.\n\nSi le PC plante ou redémarre pendant le test, c'est justement le signe recherché : relance Dump Finder, il indiquera l'étape en cause.\n\nDémarrer ?",
-                "{0} — expected duration: {1}.\n\nThe PC will be heavily loaded{2}. Close games and heavy apps and save your work.\n\nIf the PC crashes or reboots during the test, that is exactly the sign we are looking for: start Dump Finder again and it will name the stage at fault.\n\nStart?",
-                "{0} — duración prevista: {1}.\n\nEl PC estará muy cargado{2}. Cierra juegos y aplicaciones pesadas y guarda tu trabajo.\n\nSi el PC se cuelga o reinicia durante la prueba, es justo la señal buscada: vuelve a abrir Dump Finder y te dirá qué etapa falló.\n\n¿Iniciar?",
-                "{0} — voraussichtliche Dauer: {1}.\n\nDer PC wird stark belastet{2}. Spiele und schwere Anwendungen schließen und Arbeit speichern.\n\nStürzt der PC während des Tests ab oder startet neu, ist genau das der gesuchte Hinweis: Dump Finder erneut öffnen, er nennt den betroffenen Schritt.\n\nStarten?",
-                "{0} — durata prevista: {1}.\n\nIl PC sarà molto sollecitato{2}. Chiudi giochi e app pesanti e salva il tuo lavoro.\n\nSe il PC si blocca o si riavvia durante il test, è proprio il segnale cercato: riapri Dump Finder e indicherà la fase in causa.\n\nAvviare?",
-                "{0} — duração prevista: {1}.\n\nO PC será muito exigido{2}. Feche jogos e aplicativos pesados e salve seu trabalho.\n\nSe o PC travar ou reiniciar durante o teste, é exatamente o sinal procurado: abra o Dump Finder de novo e ele indicará a etapa responsável.\n\nIniciar?"),
+            string msg = string.Format(Localizer.S("stress.expected_duration_the_pc_will_be"),
                 StressText.PlanName(plan.Kind), FormatStressDuration(plan.TotalSec), diskLine);
             if (forced == null && MessageBox.Show(this, msg, "Dump Finder", MessageBoxButton.YesNo, MessageBoxImage.Information) != MessageBoxResult.Yes) return;
 
@@ -632,7 +561,7 @@ namespace WinCrashDoctor
             if (s.Tiles == null) return;
 
             _lblStressPhase.Text = s.StageCount > 1
-                ? string.Format(SL("Étape {0}/{1} · {2}", "Stage {0}/{1} · {2}", "Etapa {0}/{1} · {2}", "Schritt {0}/{1} · {2}", "Fase {0}/{1} · {2}", "Etapa {0}/{1} · {2}"), s.StageIndex + 1, s.StageCount, s.StageName)
+                ? string.Format(Localizer.S("stress.stage"), s.StageIndex + 1, s.StageCount, s.StageName)
                 : s.StageName;
             _lblStressStatus.Text = s.Status ?? "";
             _lblStressTimer.Text = Clock(s.RunElapsedSec) + " / " + Clock(s.RunTotalSec);
@@ -715,24 +644,24 @@ namespace WinCrashDoctor
         {
             switch (o)
             {
-                case StressOutcome.Passed: return SL("Réussi", "Passed", "Superada", "Bestanden", "Superato", "Aprovado");
-                case StressOutcome.Warning: return SL("À surveiller", "Watch out", "A vigilar", "Beobachten", "Da tenere d'occhio", "Atenção");
-                case StressOutcome.Failed: return SL("Échec", "Failed", "Fallo", "Fehlgeschlagen", "Fallito", "Falhou");
-                case StressOutcome.Interrupted: return SL("PC planté", "PC crashed", "PC colgado", "PC abgestürzt", "PC bloccato", "PC travou");
-                case StressOutcome.Stopped: return SL("Arrêté", "Stopped", "Detenida", "Gestoppt", "Interrotto", "Parado");
-                default: return SL("Non testé", "Not tested", "No probada", "Nicht getestet", "Non testato", "Não testado");
+                case StressOutcome.Passed: return Localizer.S("stress.passed");
+                case StressOutcome.Warning: return Localizer.S("stress.watch_out");
+                case StressOutcome.Failed: return Localizer.S("stress.failed");
+                case StressOutcome.Interrupted: return Localizer.S("stress.pc_crashed");
+                case StressOutcome.Stopped: return Localizer.S("stress.stopped");
+                default: return Localizer.S("stress.not_tested");
             }
         }
 
         private static string StressVerdict(StressRunRecord rec)
         {
             if (rec.AnyFailure)
-                return SL("Instabilité détectée : voir les étapes en rouge.", "Instability found: see the stages in red.", "Inestabilidad detectada: mira las etapas en rojo.", "Instabilität gefunden: siehe rote Schritte.", "Instabilità rilevata: vedi le fasi in rosso.", "Instabilidade detectada: veja as etapas em vermelho.");
+                return Localizer.S("stress.instability_found_see_the_stages_in");
             if (!rec.Completed)
-                return SL("Test arrêté avant la fin : aucune erreur jusque-là.", "Test stopped early: no errors up to that point.", "Prueba detenida antes del final: ningún error hasta entonces.", "Test vorzeitig gestoppt: bis dahin keine Fehler.", "Test interrotto prima della fine: nessun errore fino ad allora.", "Teste parado antes do fim: nenhum erro até então.");
+                return Localizer.S("stress.test_stopped_early_no_errors_up");
             if (rec.Stages.Any(s => s.Outcome == StressOutcome.Warning))
-                return SL("Terminé, avec des points à surveiller.", "Finished, with points to watch.", "Terminada, con puntos a vigilar.", "Beendet, mit Auffälligkeiten.", "Terminato, con punti da tenere d'occhio.", "Concluído, com pontos de atenção.");
-            return SL("Aucune erreur détectée.", "No errors found.", "Ningún error detectado.", "Keine Fehler gefunden.", "Nessun errore rilevato.", "Nenhum erro detectado.");
+                return Localizer.S("stress.finished_with_points_to_watch");
+            return Localizer.S("stress.no_errors_found");
         }
 
         private StressRunRecord _stressShownRecord;
@@ -757,7 +686,7 @@ namespace WinCrashDoctor
             head.Children.Add(ResFg(new TextBlock { Text = StressVerdict(rec), FontSize = 15, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap }, fgKey));
             head.Children.Add(ResFg(new TextBlock
             {
-                Text = (previous ? SL("Dernier test", "Last test", "Última prueba", "Letzter Test", "Ultimo test", "Último teste") + " · " : "")
+                Text = (previous ? Localizer.S("stress.last_test") + " · " : "")
                        + StressText.PlanName(rec.Plan) + " · " + rec.Time.ToString("g", Localizer.Culture),
                 FontSize = 12,
                 Margin = new Thickness(0, 2, 0, 0)
@@ -765,12 +694,7 @@ namespace WinCrashDoctor
             if (!rec.AnyFailure && rec.Completed && rec.Plan == StressPlanKind.Quick)
                 head.Children.Add(ResFg(new TextBlock
                 {
-                    Text = SL("Un test rapide réussi est bon signe, pas une garantie : pour valider un overclock ou un undervolt, lance le test approfondi.",
-                              "A passed quick test is a good sign, not a guarantee: to validate an overclock or undervolt, run the thorough test.",
-                              "Una prueba rápida superada es buena señal, no una garantía: para validar un overclock o undervolt, lanza la prueba a fondo.",
-                              "Ein bestandener Schnelltest ist ein gutes Zeichen, keine Garantie: Für Übertaktung oder Undervolting den gründlichen Test starten.",
-                              "Un test rapido superato è un buon segno, non una garanzia: per validare overclock o undervolt, avvia il test approfondito.",
-                              "Um teste rápido aprovado é um bom sinal, não uma garantia: para validar overclock ou undervolt, rode o teste completo."),
+                    Text = Localizer.S("stress.a_passed_quick_test_is_a"),
                     FontSize = 12,
                     TextWrapping = TextWrapping.Wrap,
                     Margin = new Thickness(0, 6, 0, 0)
@@ -817,7 +741,7 @@ namespace WinCrashDoctor
                 foreach (string id in r.FixIds)
                 {
                     var fix = _lastResult != null && _lastResult.Fixes != null ? _lastResult.Fixes.FirstOrDefault(f => f.Id == id) : null;
-                    var b = CreateFlatButton(SL("Correctif : ", "Fix: ", "Corrección: ", "Korrektur: ", "Correzione: ", "Correção: ") + (fix != null ? fix.Title : id),
+                    var b = CreateFlatButton(Localizer.S("stress.fix") + (fix != null ? fix.Title : id),
                                              "BgSubtle", "AccentText", "BorderCard", new Thickness(10, 5, 10, 5), 12);
                     b.Margin = new Thickness(0, 0, 6, 4);
                     b.Click += (s, e) => SwitchTab(TabFixes);

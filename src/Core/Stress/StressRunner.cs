@@ -80,7 +80,7 @@ namespace WinCrashDoctor.Stress
             get
             {
                 if (CpuTemp == null || double.IsNaN(CpuTemp.PeakTempC)) return "";
-                return string.Format(Localizer.L(" {0} max : {1} °C.", " Peak {0}: {1} °C.", " {0} máx.: {1} °C.", " {0} max.: {1} °C.", " {0} max: {1} °C.", " {0} máx.: {1} °C."),
+                return string.Format(Localizer.S("stress_runner.peak_c"),
                                      StressText.CpuTemp, CpuTemp.PeakTempC.ToString("0"));
             }
         }
@@ -94,8 +94,8 @@ namespace WinCrashDoctor.Stress
             if (n == 0 && all.Count > 0) // only warnings (corrected WHEA, another disk…): shown, not counted as errors
                 return StressTile.Make(StressText.Errors, "0", all.Last().ToString(), 0);
             string sub = n == 0
-                ? Localizer.L("calculs + journal", "results + log", "cálculos + registro", "Ergebnisse + Protokoll", "calcoli + registro", "cálculos + log")
-                : (ev > 0 ? hard.Last().ToString() : Localizer.L("résultats faux", "wrong results", "resultados erróneos", "falsche Ergebnisse", "risultati errati", "resultados errados"));
+                ? Localizer.S("stress_runner.results_log")
+                : (ev > 0 ? hard.Last().ToString() : Localizer.S("stress_runner.wrong_results"));
             return StressTile.Make(StressText.Errors, n.ToString(), sub, n == 0 ? 1 : 2);
         }
 
@@ -268,7 +268,7 @@ namespace WinCrashDoctor.Stress
                 var evs = watch.Poll();
                 if (evs.Count == 0) return;
                 ctx.AddEvents(evs);
-                string prefix = Localizer.L("⚠ Windows : ", "⚠ Windows: ", "⚠ Windows: ", "⚠ Windows: ", "⚠ Windows: ", "⚠ Windows: ");
+                string prefix = Localizer.S("stress_runner.windows");
                 foreach (var e in evs) ctx.Log(prefix + e);
                 // Errors tied to what is being tested end the stage right away. Warning-only events (corrected WHEA,
                 // a disk event about another disk) are recorded and reported, but the stage keeps running.

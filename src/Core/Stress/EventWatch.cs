@@ -41,7 +41,6 @@ namespace WinCrashDoctor.Stress
 
         public EventWatch(DateTime since) { _since = since; }
 
-        private static string L(string fr, string en, string es, string de, string it, string pt) { return Localizer.L(fr, en, es, de, it, pt); }
 
         /// <summary>
         /// WHEA-Logger IDs for errors the hardware CORRECTED (17 = PCIe, 19 = machine check, 47 = memory). Every
@@ -81,7 +80,7 @@ namespace WinCrashDoctor.Stress
                             if (kind == LiveEventKind.Whea && IsCorrectedWhea(rec.Id))
                             {
                                 ev.WarningOnly = true;
-                                ev.Note = L("corrigée", "corrected", "corregido", "korrigiert", "corretto", "corrigido");
+                                ev.Note = Localizer.S("event_watch.corrected");
                             }
                             else if (kind == LiveEventKind.Disk)
                                 QualifyDisk(rec, provider, ev);
@@ -128,14 +127,14 @@ namespace WinCrashDoctor.Stress
             if (onTestDisk == false)
             {
                 ev.WarningOnly = true;
-                ev.Note = L("autre disque", "other disk", "otro disco", "anderes Laufwerk", "altro disco", "outro disco");
+                ev.Note = Localizer.S("event_watch.other_disk");
                 return;
             }
             bool diskClassEvent = provider.Equals("disk", StringComparison.OrdinalIgnoreCase) && (ev.Id == 7 || ev.Id == 11 || ev.Id == 153);
             if (diskClassEvent)
             {
                 ev.WarningOnly = true;
-                ev.Note = L("disque non identifié", "disk not identified", "disco no identificado", "Laufwerk nicht ermittelt", "disco non identificato", "disco não identificado");
+                ev.Note = Localizer.S("event_watch.disk_not_identified");
             }
         }
 

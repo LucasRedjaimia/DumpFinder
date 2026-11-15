@@ -205,12 +205,12 @@ namespace WinCrashDoctor
             }
 
             // Date labels (every 7 days + today)
-            var culture = CultureInfo.CurrentUICulture;
+            var culture = Localizer.Culture; // axis dates in the app language, not the Windows one
             var tf = new Typeface(Ds.UiFont, FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
             double dpi = VisualTreeHelper.GetDpi(this).PixelsPerDip;
             for (int i = 0; i < _days.Count - 4; i += 7)
-                DrawLabel(dc, _days[i].Date.ToString("d MMM", culture), X(i, w), h, tf, dpi, i == 0 ? 0 : 0.5);
-            DrawLabel(dc, Localizer.L("Auj.", "Today", "Hoy", "Heute", "Oggi", "Hoje"), X(_days.Count - 1, w), h, tf, dpi, 1);
+                DrawLabel(dc, Localizer.DayMonth(_days[i].Date), X(i, w), h, tf, dpi, i == 0 ? 0 : 0.5);
+            DrawLabel(dc, Localizer.S("charts.today"), X(_days.Count - 1, w), h, tf, dpi, 1);
         }
 
         private void DrawLabel(DrawingContext dc, string text, double x, double h, Typeface tf, double dpi, double align)
@@ -231,11 +231,11 @@ namespace WinCrashDoctor
             int n = d.Events != null ? d.Events.Count : 0;
             string head = d.Date.ToString("dddd d MMMM", Localizer.Culture);
             string body = n == 0
-                ? Localizer.L("Aucun crash", "No crash", "Sin fallos", "Kein Absturz", "Nessun crash", "Sem falhas")
+                ? Localizer.S("charts.no_crash")
                 : string.Join("\n", d.Events.Take(4).Select(ev => "• " + Localizer.CategoryName(ev.Category) + "  " + ev.Timestamp.ToString("HH:mm")));
             double widx;
             if (_reliability.TryGetValue(d.Date.Date, out widx))
-                body += "\n" + Localizer.L("Indice Windows : ", "Windows index: ", "Índice de Windows: ", "Windows-Index: ", "Indice Windows: ", "Índice do Windows: ") + widx.ToString("0.0") + " / 10";
+                body += "\n" + Localizer.S("charts.windows_index") + widx.ToString("0.0") + " / 10";
             _tip.Content = head + "\n" + body;
         }
     }

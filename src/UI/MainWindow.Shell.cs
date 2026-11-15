@@ -135,12 +135,12 @@ namespace WinCrashDoctor
         {
             if (_btnSidebarToggle != null)
             {
-                _btnSidebarToggle.ToolTip = Localizer.L("Réduire / développer le menu", "Collapse / expand menu", "Contraer / expandir menú", "Menü ein-/ausklappen", "Comprimi / espandi menu", "Recolher / expandir menu");
-                System.Windows.Automation.AutomationProperties.SetName(_btnSidebarToggle, Localizer.L("Menu", "Menu", "Menú", "Menü", "Menu", "Menu"));
+                _btnSidebarToggle.ToolTip = Localizer.S("shell.collapse_expand_menu");
+                System.Windows.Automation.AutomationProperties.SetName(_btnSidebarToggle, Localizer.S("shell.menu"));
             }
-            SetCaptionName(_btnCaptionMin, Localizer.L("Réduire", "Minimize", "Minimizar", "Minimieren", "Riduci", "Minimizar"));
-            SetCaptionName(_btnCaptionMax, Localizer.L("Agrandir", "Maximize", "Maximizar", "Maximieren", "Ingrandisci", "Maximizar"));
-            SetCaptionName(_btnCaptionClose, Localizer.L("Fermer", "Close", "Cerrar", "Schließen", "Chiudi", "Fechar"));
+            SetCaptionName(_btnCaptionMin, Localizer.S("shell.minimize"));
+            SetCaptionName(_btnCaptionMax, Localizer.S("shell.maximize"));
+            SetCaptionName(_btnCaptionClose, Localizer.S("shell.close"));
 
             // Collapsed sidebar: the icon tooltips carry the section names.
             if (_sidebarCollapsed)
@@ -219,8 +219,8 @@ namespace WinCrashDoctor
         /// <summary>Used by the --screenshot harness to capture the toast styles.</summary>
         public void ShowToastPreviewForCapture()
         {
-            ShowToast(Localizer.L("✓ Multiplane Overlay (MPO) désactivé (OverlayTestMode = 5).", "✓ Multiplane Overlay (MPO) disabled (OverlayTestMode = 5).", "✓ MPO desactivado.", "✓ MPO deaktiviert.", "✓ MPO disattivato.", "✓ MPO desativado."), ToastKind.Success);
-            ShowToast(Localizer.L("Opération annulée au contrôle Administrateur (UAC).", "Operation cancelled at the UAC Administrator prompt.", "Operación cancelada (UAC).", "Vorgang abgebrochen (UAC).", "Operazione annullata (UAC).", "Operação cancelada (UAC)."), ToastKind.Warning);
+            ShowToast(Localizer.S("shell.multiplane_overlay_mpo_disabled_overlayt"), ToastKind.Success);
+            ShowToast(Localizer.S("shell.operation_cancelled_at_the_uac_administr"), ToastKind.Warning);
         }
 
         private UIElement BuildToastHost()
@@ -307,7 +307,7 @@ namespace WinCrashDoctor
             close.Padding = new Thickness(0);
             close.Margin = new Thickness(0);
             close.VerticalAlignment = VerticalAlignment.Top;
-            System.Windows.Automation.AutomationProperties.SetName(close, Localizer.L("Fermer", "Dismiss", "Cerrar", "Schließen", "Chiudi", "Fechar"));
+            System.Windows.Automation.AutomationProperties.SetName(close, Localizer.S("shell.dismiss"));
             Grid.SetColumn(close, 2);
             g.Children.Add(close);
 

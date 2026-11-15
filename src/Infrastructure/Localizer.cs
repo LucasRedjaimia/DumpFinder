@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
@@ -121,20 +122,178 @@ namespace WinCrashDoctor
             catch (Exception ex) { Log.Warn(ex); }
         }
 
+        // ==================== Languages ====================
+        // One row per AppLang value (same order): code (= Locales/<code>.json), culture, native name.
+        private static readonly string[] Codes    = { "fr", "en", "es", "de", "it", "pt", "pl", "nl", "tr", "ru", "uk", "zh", "ja", "ko" };
+        private static readonly string[] Cultures = { "fr-FR", "en-US", "es-ES", "de-DE", "it-IT", "pt-BR", "pl-PL", "nl-NL", "tr-TR", "ru-RU", "uk-UA", "zh-CN", "ja-JP", "ko-KR" };
+        private static readonly string[] Natives  = { "Français", "English", "Español", "Deutsch", "Italiano", "Português", "Polski", "Nederlands", "Türkçe", "Русский", "Українська", "简体中文", "日本語", "한국어" };
+
+        /// <summary>Two-letter code of a language ("fr", "en"…), also the name of its Locales file.</summary>
+        public static string Code(AppLang lang)
+        {
+            int i = (int)lang;
+            return i >= 0 && i < Codes.Length ? Codes[i] : "en";
+        }
+
+        /// <summary>Language for a two-letter code, or null when the app does not have it.</summary>
+        public static AppLang? FromCode(string code)
+        {
+            int i = Array.IndexOf(Codes, (code ?? "").ToLowerInvariant());
+            return i >= 0 ? (AppLang?)(AppLang)i : null;
+        }
+
         public static AppLang DetectSystemLanguage()
         {
-            string iso = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
-            switch (iso)
+            // "zh-TW" / "zh-HK" also get Simplified Chinese: closer to the reader than English.
+            return FromCode(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName) ?? AppLang.EN;
+        }
+
+        /// <summary>Culture matching the app language (dates follow the UI, not the Windows locale).</summary>
+        public static CultureInfo Culture
+        {
+            get
             {
-                case "fr": return AppLang.FR;
-                case "es": return AppLang.ES;
-                case "de": return AppLang.DE;
-                case "it": return AppLang.IT;
-                case "pt": return AppLang.PT;
-                default:   return AppLang.EN;
+                int i = (int)Current;
+                return CultureInfo.GetCultureInfo(i >= 0 && i < Cultures.Length ? Cultures[i] : "en-US");
             }
         }
 
+        public static string LanguageDisplayName(AppLang lang)
+        {
+            int i = (int)lang;
+            return i >= 0 && i < Natives.Length ? Natives[i] : "English";
+        }
+
+        public static bool IsCjk(AppLang lang) { return lang == AppLang.ZH || lang == AppLang.JA || lang == AppLang.KO; }
+
+        /// <summary>Short day + month in the app language: "3 Nov", "3 нояб.", "11月3日", "11월 3일".</summary>
+        public static string DayMonth(DateTime d)
+        {
+            return d.ToString(IsCjk(Current) ? Culture.DateTimeFormat.MonthDayPattern : "d MMM", Culture);
+        }
+
+        /// <summary>Short date with year in the app language: "3 Nov 2025", "2025/11/3", "2025. 11. 3."…</summary>
+        public static string DayMonthYear(DateTime d)
+        {
+            return d.ToString(IsCjk(Current) ? Culture.DateTimeFormat.ShortDatePattern : "d MMM yyyy", Culture);
+        }
+
+        // ==================== Strings (Locales/<code>.json, embedded) ====================
+        private static readonly object TablesSync = new object();
+        private static readonly Dictionary<string, Dictionary<string, string>> Tables = new Dictionary<string, Dictionary<string, string>>();
+
+        /// <summary>Embedded "Locales.&lt;name&gt;.json" as a dictionary (empty when missing or unreadable). Cached.</summary>
+        internal static Dictionary<string, string> Table(string name)
+        {
+            lock (TablesSync)
+            {
+                Dictionary<string, string> t;
+                if (Tables.TryGetValue(name, out t)) return t;
+                t = new Dictionary<string, string>(StringComparer.Ordinal);
+                try
+                {
+                    using (Stream s = typeof(Localizer).Assembly.GetManifestResourceStream("Locales." + name + ".json"))
+                    {
+                        if (s != null)
+                        {
+                            using (var r = new StreamReader(s, Encoding.UTF8))
+                            {
+                                var parsed = new JavaScriptSerializer { MaxJsonLength = int.MaxValue }.Deserialize<Dictionary<string, string>>(r.ReadToEnd());
+                                if (parsed != null) t = new Dictionary<string, string>(parsed, StringComparer.Ordinal);
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex) { Log.Warn(ex, "Locales." + name); }
+                Tables[name] = t;
+                return t;
+            }
+        }
+
+        /// <summary>UI text by key, in the current language; falls back to English, then to the key itself.</summary>
+        public static string S(string key)
+        {
+            string v;
+            if (Table(Code(Current)).TryGetValue(key, out v) && !string.IsNullOrEmpty(v)) return v;
+            if (Current != AppLang.EN && Table("en").TryGetValue(key, out v) && !string.IsNullOrEmpty(v)) return v;
+            Log.Warn("Missing text: " + key);
+            return key;
+        }
+
+        /// <summary>UI text by key with {0}, {1}… placeholders filled in (same formatting as the former concatenations).</summary>
+        public static string F(string key, params object[] args)
+        {
+            return SafeFormat(S(key), key, args);
+        }
+
+        /// <summary>
+        /// Text that depends on a count. The value holds one form per plural category, separated by "|":
+        /// "one: {0} new crash | other: {0} new crashes" (categories: zero, one, two, few, many, other; CLDR rules).
+        /// A value without categories is used as is. {0} is the count, later placeholders come from <paramref name="args"/>.
+        /// </summary>
+        public static string P(string key, long count, params object[] args)
+        {
+            string raw = S(key);
+            string chosen = raw;
+            if (raw.IndexOf(':') > 0 && raw.IndexOf('|') > 0)
+            {
+                var forms = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                foreach (string part in raw.Split('|'))
+                {
+                    int c = part.IndexOf(':');
+                    if (c <= 0) continue;
+                    forms[part.Substring(0, c).Trim()] = part.Substring(c + 1).Trim();
+                }
+                string cat = PluralCategory(Current, count);
+                if (!forms.TryGetValue(cat, out chosen) && !forms.TryGetValue("other", out chosen)) chosen = raw;
+            }
+            var all = new object[(args != null ? args.Length : 0) + 1];
+            all[0] = count;
+            if (args != null) Array.Copy(args, 0, all, 1, args.Length);
+            return SafeFormat(chosen, key, all);
+        }
+
+        /// <summary>CLDR cardinal plural category for an integer count.</summary>
+        public static string PluralCategory(AppLang lang, long n)
+        {
+            long a = Math.Abs(n), m10 = a % 10, m100 = a % 100;
+            switch (lang)
+            {
+                case AppLang.FR:
+                case AppLang.PT: // pt-BR
+                    return a <= 1 ? "one" : "other";
+                case AppLang.PL:
+                    if (a == 1) return "one";
+                    return m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? "few" : "many";
+                case AppLang.RU:
+                case AppLang.UK:
+                    if (m10 == 1 && m100 != 11) return "one";
+                    return m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? "few" : "many";
+                case AppLang.ZH:
+                case AppLang.JA:
+                case AppLang.KO:
+                    return "other";
+                default: // en, es, de, it, nl, tr
+                    return a == 1 ? "one" : "other";
+            }
+        }
+
+        private static string SafeFormat(string format, string key, object[] args)
+        {
+            if (args == null || args.Length == 0) return format;
+            // Dates and numbers inside a text follow the app language ("{2:d MMM}" → "3 Nov" / "3 нояб." / "11月3日").
+            try { return string.Format(Culture, format, args); }
+            catch (FormatException ex)
+            {
+                Log.Warn(ex, "Bad placeholders in text " + key);
+                return format;
+            }
+        }
+
+        /// <summary>
+        /// Former inline form (fr, en, es, de, it, pt), kept for compatibility. Prefer <see cref="S"/> with a key in
+        /// Locales: languages added later only exist there, and get the English text here.
+        /// </summary>
         public static string L(string fr, string en, string es, string de, string it, string pt)
         {
             switch (Current)
@@ -149,8 +308,8 @@ namespace WinCrashDoctor
         }
 
         /// <summary>
-        /// FR/EN engine text. For ES/DE/IT/PT the English text is looked up in the translation table
-        /// (I18nTable); dynamic strings that are not in the table stay in English.
+        /// FR/EN engine text built at run time. Other languages look the English text up in
+        /// Locales/&lt;code&gt;.engine.json (I18nTable); texts not listed there stay in English.
         /// </summary>
         public static string T(string fr, string en)
         {
@@ -159,57 +318,26 @@ namespace WinCrashDoctor
             return I18nTable.Translate(en, Current) ?? en;
         }
 
-        /// <summary>Culture matching the app language (dates follow the UI, not the Windows locale).</summary>
-        public static CultureInfo Culture
-        {
-            get
-            {
-                switch (Current)
-                {
-                    case AppLang.FR: return CultureInfo.GetCultureInfo("fr-FR");
-                    case AppLang.ES: return CultureInfo.GetCultureInfo("es-ES");
-                    case AppLang.DE: return CultureInfo.GetCultureInfo("de-DE");
-                    case AppLang.IT: return CultureInfo.GetCultureInfo("it-IT");
-                    case AppLang.PT: return CultureInfo.GetCultureInfo("pt-BR");
-                    default:         return CultureInfo.GetCultureInfo("en-US");
-                }
-            }
-        }
-
-        public static string LanguageDisplayName(AppLang lang)
-        {
-            switch (lang)
-            {
-                case AppLang.FR: return "Français";
-                case AppLang.EN: return "English";
-                case AppLang.ES: return "Español";
-                case AppLang.DE: return "Deutsch";
-                case AppLang.IT: return "Italiano";
-                case AppLang.PT: return "Português";
-                default:         return "English";
-            }
-        }
-
         public static string CategoryName(CrashCategory cat)
         {
             switch (cat)
             {
                 case CrashCategory.BSOD:
-                    return L("Écran bleu (BSOD)", "Blue Screen (BSOD)", "Pantalla azul (BSOD)", "Bluescreen (BSOD)", "Schermata blu (BSOD)", "Tela azul (BSOD)");
+                    return Localizer.S("localizer.blue_screen_bsod");
                 case CrashCategory.GpuDriver:
-                    return L("Pilote GPU", "GPU Driver", "Controlador GPU", "GPU-Treiber", "Driver GPU", "Driver GPU");
+                    return Localizer.S("localizer.gpu_driver");
                 case CrashCategory.StorageNvme:
-                    return L("Stockage NVMe", "NVMe Storage", "Almacenamiento NVMe", "NVMe-Speicher", "Archiviazione NVMe", "Armazenamento NVMe");
+                    return Localizer.S("localizer.nvme_storage");
                 case CrashCategory.HardwareWhea:
-                    return L("Matériel (WHEA)", "Hardware (WHEA)", "Hardware (WHEA)", "Hardware (WHEA)", "Hardware (WHEA)", "Hardware (WHEA)");
+                    return Localizer.S("localizer.hardware_whea");
                 case CrashCategory.MemoryExhaustion:
-                    return L("Mémoire / RAM", "Memory / RAM", "Memoria / RAM", "Speicher / RAM", "Memoria / RAM", "Memória / RAM");
+                    return Localizer.S("localizer.memory_ram");
                 case CrashCategory.BrowserGpu:
-                    return L("Navigateur GPU", "Browser GPU", "Navegador GPU", "Browser-GPU", "Browser GPU", "Navegador GPU");
+                    return Localizer.S("localizer.browser_gpu");
                 case CrashCategory.AppCrash:
-                    return L("Application", "App Crash", "Aplicación", "Anwendung", "Applicazione", "Aplicativo");
+                    return Localizer.S("localizer.app_crash");
                 case CrashCategory.UnexpectedReboot:
-                    return L("Arrêt imprévu", "Abrupt Reboot", "Reinicio abrupto", "Unerwarteter Neustart", "Riavvio imprevisto", "Reinício inesperado");
+                    return Localizer.S("localizer.abrupt_reboot");
                 default:
                     return "Info";
             }
@@ -220,15 +348,15 @@ namespace WinCrashDoctor
             switch (g)
             {
                 case FixGroup.Gpu:
-                    return L("Carte graphique", "Graphics (GPU)", "Tarjeta gráfica", "Grafikkarte", "Scheda grafica", "Placa de vídeo");
+                    return Localizer.S("localizer.graphics_gpu");
                 case FixGroup.BrowserApps:
-                    return L("Navigateurs & Discord", "Browsers & Discord", "Navegadores y Discord", "Browser & Discord", "Browser e Discord", "Navegadores e Discord");
+                    return Localizer.S("localizer.browsers_discord");
                 case FixGroup.StoragePcie:
-                    return L("NVMe, PCIe & USB", "NVMe, PCIe & USB", "NVMe, PCIe y USB", "NVMe, PCIe & USB", "NVMe, PCIe e USB", "NVMe, PCIe e USB");
+                    return Localizer.S("localizer.nvme_pcie_usb");
                 case FixGroup.SystemMaint:
-                    return L("Système & Réparation", "System & Repair", "Sistema y reparación", "System & Reparatur", "Sistema e riparazione", "Sistema e reparo");
+                    return Localizer.S("localizer.system_repair");
                 default:
-                    return L("Tous", "All", "Todos", "Alle", "Tutti", "Todos");
+                    return Localizer.S("localizer.all");
             }
         }
 
@@ -237,13 +365,13 @@ namespace WinCrashDoctor
             switch (status)
             {
                 case FixStatus.Applied:
-                    return L("Actif", "Active", "Activo", "Aktiv", "Attivo", "Ativo");
+                    return Localizer.S("system_health_scanner.active");
                 case FixStatus.Recommended:
-                    return L("Recommandé", "Recommended", "Recomendado", "Empfohlen", "Consigliato", "Recomendado");
+                    return Localizer.S("localizer.recommended");
                 case FixStatus.Optional:
-                    return L("Optionnel", "Optional", "Opcional", "Optional", "Opzionale", "Opcional");
+                    return Localizer.S("localizer.optional");
                 default:
-                    return L("Outil", "Tool", "Herramienta", "Werkzeug", "Strumento", "Ferramenta");
+                    return Localizer.S("localizer.tool");
             }
         }
 
@@ -252,11 +380,11 @@ namespace WinCrashDoctor
             switch (lvl)
             {
                 case HealthLevel.Good:
-                    return L("Optimal", "Healthy", "Óptimo", "Optimal", "Ottimale", "Ideal");
+                    return Localizer.S("localizer.healthy");
                 case HealthLevel.Warning:
-                    return L("À vérifier", "Check", "Revisar", "Prüfen", "Verifica", "Verificar");
+                    return Localizer.S("localizer.check");
                 case HealthLevel.Critical:
-                    return L("Critique", "Critical", "Crítico", "Kritisch", "Critico", "Crítico");
+                    return Localizer.S("localizer.critical");
                 default:
                     return "Info";
             }

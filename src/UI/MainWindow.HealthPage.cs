@@ -100,8 +100,8 @@ namespace WinCrashDoctor
 
             SetToast(
                 _sentinelEnabled
-                    ? Localizer.L("Sentinelle activée : surveillance en arrière-plan dans la barre d'état.", "Sentinel enabled: background tray monitoring active.", "Centinela activado en la bandeja del sistema.", "Wächter in der Taskleiste aktiviert.", "Sentinella attivata nella barra di stato.", "Sentinela ativada na bandeja do sistema.")
-                    : Localizer.L("Sentinelle désactivée.", "Sentinel disabled.", "Centinela desactivado.", "Wächter deaktiviert.", "Sentinella disattivata.", "Sentinela desativada."),
+                    ? Localizer.S("health.sentinel_enabled_background_tray_monitor")
+                    : Localizer.S("health.sentinel_disabled"),
                 _sentinelEnabled ? "SuccessFg" : "TextMuted");
         }
 
@@ -110,8 +110,8 @@ namespace WinCrashDoctor
             if (_btnSentinelToggle == null) return;
 
             string label = _sentinelEnabled
-                ? Localizer.L("● Sentinelle : Active", "● Sentinel: Active", "● Centinela: Activo", "● Wächter: Aktiv", "● Sentinella: Attiva", "● Sentinela: Ativa")
-                : Localizer.L("○ Sentinelle : Désactivée", "○ Sentinel: Off", "○ Centinela: Inactivo", "○ Wächter: Aus", "○ Sentinella: Spenta", "○ Sentinela: Desativada");
+                ? Localizer.S("health.sentinel_active")
+                : Localizer.S("health.sentinel_off");
 
             _btnSentinelToggle.Content = label;
             _btnSentinelToggle.SetResourceReference(Button.BackgroundProperty, _sentinelEnabled ? "SuccessSoftBg" : "BgCard");
@@ -239,29 +239,17 @@ namespace WinCrashDoctor
         {
             if (_lblHealthTitle == null) return;
 
-            _lblHealthTitle.Text = Localizer.L("Matériel", "Hardware", "Hardware", "Hardware", "Hardware", "Hardware");
-            _lblHealthSub.Text = Localizer.L(
-                "BIOS, mémoire, lien PCIe, SSD, conflits logiciels — et un test de stabilité pour le vérifier sous charge.",
-                "BIOS, memory, PCIe link, SSD, software conflicts — and a stability test to check it under load.",
-                "BIOS, memoria, enlace PCIe, SSD, conflictos — y una prueba de estabilidad bajo carga.",
-                "BIOS, Speicher, PCIe-Link, SSD, Konflikte — und ein Stabilitätstest unter Last.",
-                "BIOS, memoria, link PCIe, SSD, conflitti — e un test di stabilità sotto carico.",
-                "BIOS, memória, link PCIe, SSD, conflitos — e um teste de estabilidade sob carga.");
+            _lblHealthTitle.Text = Localizer.S("main_window.hardware");
+            _lblHealthSub.Text = Localizer.S("health.bios_memory_pcie_link_ssd_software");
 
-            _btnHealthSubHw.Content = Localizer.L("Matériel & BIOS", "Hardware & BIOS", "Hardware y BIOS", "Hardware & BIOS", "Hardware e BIOS", "Hardware e BIOS");
-            _btnHealthSubConf.Content = Localizer.L("Conflits & Pilotes", "Conflicts & Drivers", "Conflictos y drivers", "Konflikte & Treiber", "Conflitti e driver", "Conflitos e drivers");
+            _btnHealthSubHw.Content = Localizer.S("health.hardware_bios");
+            _btnHealthSubConf.Content = Localizer.S("health.conflicts_drivers");
 
-            _btnHealthSubStress.Content = Localizer.L("Test de stabilité", "Stability test", "Prueba de estabilidad", "Stabilitätstest", "Test di stabilità", "Teste de estabilidade");
+            _btnHealthSubStress.Content = Localizer.S("health.stability_test");
 
-            _lblHwAdminHint.Text = Localizer.L(
-                "Débloquez la lecture approfondie SMART NVMe (température °C, usure %) et l'accès au dossier C:\\Windows\\Minidump en 1 clic.",
-                "Unlock deep NVMe SMART telemetry (temperature °C, wear %) and C:\\Windows\\Minidump access in 1 click.",
-                "Desbloquee la telemetría SMART NVMe (°C, desgaste %) y la carpeta C:\\Windows\\Minidump en 1 clic.",
-                "Tiefgehende NVMe-SMART-Werte (°C, Verschleiß %) und C:\\Windows\\Minidump mit 1 Klick freischalten.",
-                "Sblocca i dati SMART NVMe avanzati (°C, usura %) e C:\\Windows\\Minidump in 1 clic.",
-                "Desbloqueie dados SMART NVMe avançados (°C, desgaste %) e C:\\Windows\\Minidump em 1 clique.");
+            _lblHwAdminHint.Text = Localizer.S("health.unlock_deep_nvme_smart_telemetry_tempera");
 
-            _btnHwAdminScan.Content = Localizer.L("Scan SMART & Minidumps (Admin)", "Admin SMART & Minidump Scan", "Escaneo Admin SMART y Dumps", "Admin SMART- & Dump-Scan", "Scansione Admin SMART e Dump", "Scan Admin SMART e Dumps");
+            _btnHwAdminScan.Content = Localizer.S("health.admin_smart_minidump_scan");
         }
 
         private void RenderHealthAndDumps(ScanResult res)
@@ -404,7 +392,7 @@ namespace WinCrashDoctor
                         VerticalAlignment = VerticalAlignment.Center,
                         Child = ResFg(new TextBlock
                         {
-                            Text = Localizer.L("✓ Optimisé in-app", "✓ Optimized in-app", "✓ Optimizado in-app", "✓ In-App optimiert", "✓ Ottimizzato in-app", "✓ Otimizado in-app"),
+                            Text = Localizer.S("health.optimized_in_app"),
                             FontSize = 11,
                             FontWeight = FontWeights.SemiBold
                         }, "SuccessFg")
@@ -414,7 +402,7 @@ namespace WinCrashDoctor
                 else if (hasInAppFix)
                 {
                     Button btnFix = CreateFlatButton(
-                        item.InAppFixLabel ?? Localizer.L("⚡ Corriger in-app", "⚡ Fix In-App", "⚡ Corregir in-app", "⚡ In-App reparieren", "⚡ Correggi in-app", "⚡ Corrigir in-app"),
+                        item.InAppFixLabel ?? Localizer.S("health.fix_in_app"),
                         "Accent", "OnAccent", "Accent",
                         new Thickness(12, 6, 12, 6), 11.5);
                     btnFix.FontWeight = FontWeights.SemiBold;
@@ -429,7 +417,7 @@ namespace WinCrashDoctor
                 if (hasGuide)
                 {
                     btnGuide = CreateFlatButton(
-                        Localizer.L("📖 En savoir plus ▾", "📖 Learn more ▾", "📖 Más detalles ▾", "📖 Mehr erfahren ▾", "📖 Ulteriori dettagli ▾", "📖 Saiba mais ▾"),
+                        Localizer.S("health.learn_more"),
                         "BgSubtle", "TextPrimary", "BorderCard",
                         new Thickness(11, 6, 11, 6), 11.5);
                     btnGuide.FontWeight = FontWeights.SemiBold;
@@ -472,8 +460,8 @@ namespace WinCrashDoctor
                         isExpanded = !isExpanded;
                         guideDrawer.Visibility = isExpanded ? Visibility.Visible : Visibility.Collapsed;
                         btnGuide.Content = isExpanded
-                            ? Localizer.L("📖 Masquer le guide ▴", "📖 Hide guide ▴", "📖 Ocultar guía ▴", "📖 Anleitung ausblenden ▴", "📖 Nascondi guida ▴", "📖 Ocultar guia ▴")
-                            : Localizer.L("📖 En savoir plus ▾", "📖 Learn more ▾", "📖 Más detalles ▾", "📖 Mehr erfahren ▾", "📖 Ulteriori dettagli ▾", "📖 Saiba mais ▾");
+                            ? Localizer.S("health.hide_guide")
+                            : Localizer.S("health.learn_more");
                     };
 
                     actionsRow.Children.Add(btnGuide);
@@ -514,7 +502,7 @@ namespace WinCrashDoctor
                 AppSettings st = Localizer.CachedSettings ?? Localizer.LoadSettings();
                 st.BiosLatestAck = item.InAppFixOp.Substring(SystemHealthScanner.BiosAckOp.Length);
                 Localizer.SaveFullSettings(st);
-                SetToast(Localizer.L("Noté : l'alerte BIOS reviendra seulement si la version change.", "Noted: the BIOS warning only comes back if the version changes.", "Anotado: el aviso de BIOS solo volverá si cambia la versión.", "Notiert: Die BIOS-Warnung erscheint nur wieder, wenn sich die Version ändert.", "Annotato: l'avviso BIOS tornerà solo se la versione cambia.", "Anotado: o aviso da BIOS só volta se a versão mudar."), "SuccessFg");
+                SetToast(Localizer.S("health.noted_the_bios_warning_only_comes"), "SuccessFg");
                 RunScanAsync();
                 return;
             }
@@ -597,7 +585,7 @@ namespace WinCrashDoctor
             }
             catch (Exception ex)
             {
-                SetToast(Localizer.L("Impossible d'ouvrir l'action : ", "Unable to open action: ", "No se pudo abrir: ", "Aktion konnte nicht geöffnet werden: ", "Impossibile aprire l'azione: ", "Não foi possível abrir: ") + ex.Message, "DangerFg");
+                SetToast(Localizer.S("health.unable_to_open_action") + ex.Message, "DangerFg");
             }
         }
 
@@ -612,13 +600,13 @@ namespace WinCrashDoctor
             {
                 string path = ofd.FileName;
                 MinidumpReportItem item;
-                using (BeginBusy(Localizer.L("Analyse du dump…", "Analyzing dump…", "Analizando volcado…", "Dump wird analysiert…", "Analisi del dump…", "Analisando dump…")))
+                using (BeginBusy(Localizer.S("health.analyzing_dump")))
                 {
                     item = await Task.Run(() => MinidumpAnalyzer.AnalyzeDumpFile(path));
                 }
                 if (item == null)
                 {
-                    SetToast(Localizer.L("Impossible de décoder ce fichier .dmp.", "Could not decode this .dmp file.", "No se pudo decodificar este archivo .dmp.", "Diese .dmp-Datei konnte nicht gelesen werden.", "Impossibile decodificare il file .dmp.", "Não foi possível decodificar este arquivo .dmp."), "DangerFg");
+                    SetToast(Localizer.S("health.could_not_decode_this_dmp_file"), "DangerFg");
                     return;
                 }
 
@@ -633,13 +621,7 @@ namespace WinCrashDoctor
                     if (entry != null) OpenCrash(entry.Key);
                 }
                 SetToast(
-                    Localizer.L(
-                        "✓ Fichier analysé : module mis en cause -> " + item.PrimaryCulpritModule + " (" + item.BugCheckOrException + ")",
-                        "✓ Dump decoded: culprit module -> " + item.PrimaryCulpritModule + " (" + item.BugCheckOrException + ")",
-                        "✓ Volcado analizado: módulo -> " + item.PrimaryCulpritModule,
-                        "✓ Dump analysiert: Modul -> " + item.PrimaryCulpritModule,
-                        "✓ Dump analizzato: modulo -> " + item.PrimaryCulpritModule,
-                        "✓ Dump analisado: módulo -> " + item.PrimaryCulpritModule),
+                    Localizer.F("health.dump_decoded_culprit_module", item.PrimaryCulpritModule, item.BugCheckOrException),
                     "SuccessFg");
             }
         }
@@ -675,7 +657,7 @@ namespace WinCrashDoctor
 
             if (!ok)
             {
-                SetToast(Localizer.L("Scan Administrateur annulé.", "Administrator scan cancelled.", "Escaneo Admin cancelado.", "Admin-Scan abgebrochen.", "Scansione Admin annullata.", "Scan Admin cancelado."), "WarnFg");
+                SetToast(Localizer.S("health.administrator_scan_cancelled"), "WarnFg");
                 return;
             }
 
@@ -709,7 +691,7 @@ namespace WinCrashDoctor
 
                     // A rescan may have replaced the result during the hardware probe.
                     if (ReferenceEquals(res, _lastResult)) RenderScanResult(res);
-                    SetToast(Localizer.L("✓ Données SMART approfondies et C:\\Windows\\Minidump chargés !", "✓ Deep SMART telemetry and C:\\Windows\\Minidump loaded!", "✓ ¡Datos SMART y C:\\Windows\\Minidump cargados!", "✓ SMART-Daten und C:\\Windows\\Minidump geladen!", "✓ Dati SMART e C:\\Windows\\Minidump caricati!", "✓ Dados SMART e C:\\Windows\\Minidump carregados!"), "SuccessFg");
+                    SetToast(Localizer.S("health.deep_smart_telemetry_and_c_windows"), "SuccessFg");
                 }
             }
             catch (Exception ex)
@@ -728,13 +710,7 @@ namespace WinCrashDoctor
             if (hasSnap)
             {
                 string dt = BackupManager.GetSnapshotDateDisplay();
-                _btnRestoreSnapshot.ToolTip = Localizer.L(
-                    "Restaurer les clés Registre initiales sauvegardées le " + dt,
-                    "Restore initial Registry keys backed up on " + dt,
-                    "Restaurar copia inicial del Registro (" + dt + ")",
-                    "Ursprüngliche Registry-Werte wiederherstellen (" + dt + ")",
-                    "Ripristina backup iniziale del Registro (" + dt + ")",
-                    "Restaurar backup inicial do Registro (" + dt + ")");
+                _btnRestoreSnapshot.ToolTip = Localizer.F("health.restore_initial_registry_keys_backed_up", dt);
             }
         }
 
@@ -744,7 +720,7 @@ namespace WinCrashDoctor
             using (IDisposable fixLock = TryBeginFix(_btnCreateRestorePt))
             {
                 if (fixLock == null) return;
-                SetToast(Localizer.L("Création d'un point de restauration Windows en cours...", "Creating Windows System Restore Point...", "Creando punto de restauración de Windows...", "Windows-Wiederherstellungspunkt wird erstellt...", "Creazione punto di ripristino Windows...", "Criando ponto de restauração do Windows..."), "AccentText");
+                SetToast(Localizer.S("health.creating_windows_system_restore_point"), "AccentText");
 
                 string mFr = "", mEn = "";
                 bool ok = await Task.Run(() => DiagnosticsEngine.ExecuteFixOperation("create_restore_point", out mFr, out mEn));
@@ -758,13 +734,7 @@ namespace WinCrashDoctor
             if (!BackupManager.HasSnapshot()) return;
             string dt = BackupManager.GetSnapshotDateDisplay();
             var ans = MessageBox.Show(this,
-                Localizer.L(
-                    "Restaurer toutes les clés du Registre à leur état initial sauvegardé (" + dt + ") ?",
-                    "Restore all Registry keys to their original backed-up state (" + dt + ")?",
-                    "¿Restaurar todas las claves del Registro a su estado original (" + dt + ")?",
-                    "Alle Registry-Werte auf den gesicherten Ausgangszustand (" + dt + ") zurücksetzen?",
-                    "Ripristinare tutte le chiavi di Registro allo stato iniziale (" + dt + ")?",
-                    "Restaurar todas as chaves do Registro ao estado original (" + dt + ")?"),
+                Localizer.F("health.restore_all_registry_keys_to_their", dt),
                 "Dump Finder", MessageBoxButton.YesNo, MessageBoxImage.Question);
 
             if (ans != MessageBoxResult.Yes) return;
