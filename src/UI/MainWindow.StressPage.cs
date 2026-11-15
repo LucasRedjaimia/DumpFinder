@@ -744,7 +744,8 @@ namespace WinCrashDoctor
                     var b = CreateFlatButton(Localizer.S("stress.fix") + (fix != null ? fix.Title : id),
                                              "BgSubtle", "AccentText", "BorderCard", new Thickness(10, 5, 10, 5), 12);
                     b.Margin = new Thickness(0, 0, 6, 4);
-                    b.Click += (s, e) => SwitchTab(TabFixes);
+                    string fixId = id;
+                    b.Click += (s, e) => OpenFix(fixId);
                     fixes.Children.Add(b);
                 }
                 col.Children.Add(fixes);

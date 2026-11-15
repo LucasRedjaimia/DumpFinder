@@ -50,13 +50,7 @@ namespace WinCrashDoctor
                     last.Title + (severe.Count > 1 ? Localizer.F("sentinel.more", (severe.Count - 1)) : "")
                         + "\n" + Localizer.S("sentinel.click_to_see_the_analysis"),
                     true,
-                    () => Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        Show();
-                        if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
-                        Activate();
-                        OpenCrash(key);
-                    })));
+                    () => NavigateFromTray("nav:crash:" + key));
             }
             catch (Exception ex)
             {

@@ -81,7 +81,8 @@ namespace WinCrashDoctor
                 {
                     _forceExit = true;
                     Close();
-                })));
+                })),
+                onNavigate: NavigateFromTray);
 
             if (_sentinelEnabled)
             {
@@ -536,6 +537,9 @@ namespace WinCrashDoctor
         {
             try
             {
+                // In-app navigation: handled here, never passed to the shell (even when unknown).
+                if (TryNavigate(cmd)) return;
+
                 if (!string.IsNullOrEmpty(webQuery))
                 {
                     Process.Start(new ProcessStartInfo
