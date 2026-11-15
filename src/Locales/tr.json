@@ -1215,5 +1215,15 @@
   "engine.opt_cleanup.freed_gb": "✓ {0:0.00} GB boşaltıldı",
   "engine.opt_cleanup.files_in_use_left": " (kullanımda olduğu için bırakılan dosyalar: {0})",
   "engine.ai_assistant.could_not_reach_ollama": "http://127.0.0.1:11434 adresindeki Ollama'ya ulaşılamadı. \"ollama serve\" komutunu başlatın ve modeli indirin (\"ollama pull {0}\").",
-  "engine.minidump_analyzer.stop_name": "Durdurma kodu {0}."
+  "engine.minidump_analyzer.stop_name": "Durdurma kodu {0}.",
+  "engine.diagnostics_engine.bsod_without_dump": "Döküm dosyası olmayan mavi ekran: {0} ({1})",
+  "engine.diagnostics_engine.bsod_without_dump_details": "Windows bir mavi ekrandan sonra yeniden başladı, ancak hiçbir .dmp dosyası veya rapor yazılamadı. Sık görülen nedenler: disk belleği dosyasının çok küçük veya devre dışı olması, döküm kaydının kapalı olması ya da arızalı bir sistem sürücüsü. Bir sonrakinin analiz edilebilmesi için Donanım altında 'Mavi ekran kaydı' öğesini denetleyin.\n\nWindows İletisi:\n{0}",
+  "engine.diagnostics_engine.forced_power_off": "Zorla kapatma (güç düğmesi basılı tutuldu)",
+  "engine.diagnostics_engine.forced_power_off_details": "PC, güç düğmesi basılı tutularak kapatıldı; bunun nedeni genellikle donmuş olmasıdır (siyah ekran, donmuş görüntü, yanıt yok). Asıl arıza donmadır: hemen öncesindeki çökmelere (grafik sürücüsü, SSD) bakın ve bir kararlılık testi çalıştırın.\n\nWindows İletisi:\n{0}",
+  "engine.diagnostics_engine.power_lost_during_sleep": "Uykuya geçerken veya uykudan çıkarken güç kesintisi",
+  "engine.diagnostics_engine.power_lost_during_sleep_details": "PC bir uyku geçişi sırasında durdu. Sık görülen nedenler: uykuyu kötü yöneten bir sürücü (çoğu zaman grafik veya ağ), Windows Hızlı başlangıç ya da aşırı agresif PCIe (ASPM) / USB güç tasarrufu.\n\nWindows İletisi:\n{0}",
+  "stress_advice.stopped_cpu_overheat": "Aşırı ısınma nedeniyle durduruldu: işlemci {1} sn boyunca {0} °C veya üzerinde kaldı.",
+  "stress_advice.stopped_gpu_overheat": "Aşırı ısınma nedeniyle durduruldu: ekran kartı {1} sn boyunca {0} °C veya üzerinde kaldı.",
+  "stress_advice.cpu_cooling_advice": "Hatalı sonuç yok, ancak soğutma yetişemiyor. Soğutucunun veya AIO'nun düzgün takıldığını ve pompasının çalıştığını, termal macunu (birkaç yıllıksa yenileyin), tozu ve kasa hava akışını denetleyin. BIOS'ta hız aşırtmayı veya kötü ayarlanmış PBO / undervolt ayarını kaldırın ya da güç sınırlarını düşürün.",
+  "stress_advice.gpu_cooling_advice": "Hatalı sonuç yok, ancak ekran kartı çok ısınıyor. Tozunu alın, fanlarının döndüğünü ve kasa hava akışını denetleyin; daha agresif bir fan eğrisi (MSI Afterburner) veya biraz daha düşük bir güç sınırı işe yarar. Bu yetmezse termal macunun ve pedlerin yenilenmesi gerekir."
 }

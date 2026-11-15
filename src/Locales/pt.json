@@ -1215,5 +1215,15 @@
   "engine.opt_cleanup.freed_gb": "✓ {0:0.00} GB liberados",
   "engine.opt_cleanup.files_in_use_left": " (arquivos em uso mantidos: {0})",
   "engine.ai_assistant.could_not_reach_ollama": "Não foi possível conectar ao Ollama em http://127.0.0.1:11434. Execute \"ollama serve\" e baixe o modelo (\"ollama pull {0}\").",
-  "engine.minidump_analyzer.stop_name": "Código de parada {0}."
+  "engine.minidump_analyzer.stop_name": "Código de parada {0}.",
+  "engine.diagnostics_engine.bsod_without_dump": "Tela azul sem arquivo de dump: {0} ({1})",
+  "engine.diagnostics_engine.bsod_without_dump_details": "O Windows reiniciou após uma tela azul, mas nenhum arquivo .dmp nem relatório pôde ser gravado. Causas comuns: arquivo de paginação pequeno demais ou desativado, registro de dumps desligado ou disco do sistema com falha. Verifique «Registro das telas azuis» em Hardware para que a próxima possa ser analisada.\n\nMensagem do Windows:\n{0}",
+  "engine.diagnostics_engine.forced_power_off": "Desligamento forçado (botão de energia mantido pressionado)",
+  "engine.diagnostics_engine.forced_power_off_details": "O PC foi desligado mantendo o botão de energia pressionado, geralmente porque tinha travado (tela preta, imagem congelada, sem resposta). O travamento é a falha real: veja as falhas logo antes dele (driver gráfico, SSD) e execute um teste de estabilidade.\n\nMensagem do Windows:\n{0}",
+  "engine.diagnostics_engine.power_lost_during_sleep": "Queda de energia ao entrar ou sair da suspensão",
+  "engine.diagnostics_engine.power_lost_during_sleep_details": "O PC parou durante uma transição de suspensão. Causas comuns: um driver que lida mal com a suspensão (muitas vezes o gráfico ou o de rede), a Inicialização rápida do Windows ou uma economia de energia PCIe (ASPM) / USB agressiva demais.\n\nMensagem do Windows:\n{0}",
+  "stress_advice.stopped_cpu_overheat": "Interrompido por superaquecimento: o processador ficou a {0} °C ou mais por {1} s.",
+  "stress_advice.stopped_gpu_overheat": "Interrompido por superaquecimento: a placa de vídeo ficou a {0} °C ou mais por {1} s.",
+  "stress_advice.cpu_cooling_advice": "Nenhum resultado errado, mas a refrigeração não está dando conta. Verifique se o cooler ou o AIO está bem fixado e se a bomba funciona, a pasta térmica (troque se tiver vários anos), a poeira e o fluxo de ar do gabinete. Na BIOS, remova um overclock ou um ajuste de PBO / undervolt mal calibrado, ou reduza os limites de potência.",
+  "stress_advice.gpu_cooling_advice": "Nenhum resultado errado, mas a placa de vídeo está esquentando demais. Tire a poeira dela, verifique se as ventoinhas giram e o fluxo de ar do gabinete; uma curva de ventilação mais agressiva (MSI Afterburner) ou um limite de potência um pouco menor ajuda. Se não bastar, é preciso trocar a pasta e os pads térmicos."
 }

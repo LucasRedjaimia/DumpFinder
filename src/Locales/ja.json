@@ -1215,5 +1215,15 @@
   "engine.opt_cleanup.freed_gb": "✓ {0:0.00} GB を解放しました",
   "engine.opt_cleanup.files_in_use_left": " （使用中のため残したファイル: {0}）",
   "engine.ai_assistant.could_not_reach_ollama": "http://127.0.0.1:11434 の Ollama に接続できませんでした。「ollama serve」を起動し、モデルを取得してください（「ollama pull {0}」）。",
-  "engine.minidump_analyzer.stop_name": "停止コード {0}。"
+  "engine.minidump_analyzer.stop_name": "停止コード {0}。",
+  "engine.diagnostics_engine.bsod_without_dump": "ダンプ ファイルのないブルースクリーン：{0}（{1}）",
+  "engine.diagnostics_engine.bsod_without_dump_details": "ブルースクリーンの後に Windows が再起動しましたが、.dmp ファイルもレポートも書き込めませんでした。よくある原因は、ページング ファイルが小さすぎるか無効になっている、ダンプの記録がオフになっている、またはシステム ドライブの故障です。次回分析できるように、「ハードウェア」で「ブルースクリーンの記録」を確認してください。\n\nWindows メッセージ:\n{0}",
+  "engine.diagnostics_engine.forced_power_off": "強制電源オフ（電源ボタンの長押し）",
+  "engine.diagnostics_engine.forced_power_off_details": "電源ボタンの長押しで PC の電源が切られました。通常は PC がフリーズしていたためです（黒い画面、画面の静止、応答なし）。本当の問題はフリーズのほうです。その直前のクラッシュ（グラフィックス ドライバー、SSD）を確認し、安定性テストを実行してください。\n\nWindows メッセージ:\n{0}",
+  "engine.diagnostics_engine.power_lost_during_sleep": "スリープの開始中または解除中の電源断",
+  "engine.diagnostics_engine.power_lost_during_sleep_details": "スリープへの移行中または復帰中に PC が停止しました。よくある原因は、スリープをうまく処理できないドライバー（多くはグラフィックスまたはネットワーク）、Windows の高速スタートアップ、または過度な PCIe（ASPM）/USB の省電力設定です。\n\nWindows メッセージ:\n{0}",
+  "stress_advice.stopped_cpu_overheat": "過熱のため停止しました。CPU の温度が {0} °C 以上の状態が {1} 秒間続きました。",
+  "stress_advice.stopped_gpu_overheat": "過熱のため停止しました。グラフィックス カードの温度が {0} °C 以上の状態が {1} 秒間続きました。",
+  "stress_advice.cpu_cooling_advice": "計算エラーはありませんが、冷却が追いついていません。CPU クーラーまたは AIO がしっかり取り付けられていてポンプが動いているか、サーマルペースト（数年経っている場合は塗り直してください）、ほこり、ケース内のエアフローを確認してください。BIOS では、オーバークロックや調整の不十分な PBO / 低電圧化を解除するか、電力制限を下げてください。",
+  "stress_advice.gpu_cooling_advice": "計算エラーはありませんが、グラフィックス カードが熱くなりすぎています。ほこりを取り除き、ファンが回っているか、ケース内のエアフローを確認してください。より積極的なファン カーブ（MSI Afterburner）や、少し低めの電力制限が効果的です。それでも足りない場合は、サーマルペーストとサーマルパッドの交換が必要です。"
 }

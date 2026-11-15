@@ -1215,5 +1215,15 @@
   "engine.opt_cleanup.freed_gb": "✓ {0:0.00} Go libérés",
   "engine.opt_cleanup.files_in_use_left": " (fichiers en cours d'utilisation laissés en place : {0})",
   "engine.ai_assistant.could_not_reach_ollama": "Impossible de joindre Ollama sur http://127.0.0.1:11434. Lance « ollama serve » et télécharge le modèle (« ollama pull {0} »).",
-  "engine.minidump_analyzer.stop_name": "Arrêt {0}."
+  "engine.minidump_analyzer.stop_name": "Arrêt {0}.",
+  "engine.diagnostics_engine.bsod_without_dump": "Écran bleu sans fichier dump : {0} ({1})",
+  "engine.diagnostics_engine.bsod_without_dump_details": "Windows a redémarré après un écran bleu, mais aucun fichier .dmp ni rapport n'a pu être écrit. Causes fréquentes : fichier d'échange trop petit ou désactivé, enregistrement des dumps coupé, ou disque système en erreur. Vérifie « Enregistrement des écrans bleus » dans Matériel pour que le prochain soit analysable.\n\nMessage Windows :\n{0}",
+  "engine.diagnostics_engine.forced_power_off": "Arrêt forcé (bouton d'alimentation maintenu)",
+  "engine.diagnostics_engine.forced_power_off_details": "Le PC a été éteint en maintenant le bouton d'alimentation, en général parce qu'il était figé (écran noir, image gelée, plus aucune réponse). Le gel est la vraie panne : regarde les crashs juste avant (pilote graphique, SSD) et lance un test de stabilité.\n\nMessage Windows :\n{0}",
+  "engine.diagnostics_engine.power_lost_during_sleep": "Coupure pendant la mise en veille ou la sortie de veille",
+  "engine.diagnostics_engine.power_lost_during_sleep_details": "Le PC s'est arrêté pendant une transition de veille. Causes fréquentes : un pilote qui gère mal la veille (souvent graphique ou réseau), le démarrage rapide de Windows, ou des économies d'énergie PCIe (ASPM) / USB trop agressives.\n\nMessage Windows :\n{0}",
+  "stress_advice.stopped_cpu_overheat": "Arrêté pour surchauffe : le processeur est resté à {0} °C ou plus pendant {1} s.",
+  "stress_advice.stopped_gpu_overheat": "Arrêté pour surchauffe : la carte graphique est restée à {0} °C ou plus pendant {1} s.",
+  "stress_advice.cpu_cooling_advice": "Aucun calcul faux, mais le refroidissement ne suit pas. Vérifie que le ventirad ou l'AIO est bien serré et que sa pompe tourne, la pâte thermique (à refaire si elle a plusieurs années), la poussière et le flux d'air du boîtier. Dans le BIOS, retire un overclock ou un réglage PBO / undervolt mal ajusté, ou baisse les limites de puissance.",
+  "stress_advice.gpu_cooling_advice": "Aucun calcul faux, mais la carte graphique chauffe trop. Dépoussière-la, vérifie que ses ventilateurs tournent et le flux d'air du boîtier ; une courbe de ventilation plus agressive (MSI Afterburner) ou une limite de puissance un peu plus basse aide. Si ça ne suffit pas, la pâte et les pads thermiques sont à refaire."
 }

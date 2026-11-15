@@ -194,6 +194,31 @@ namespace WinCrashDoctor.Stress
                 "nvme_hmb", "pcie_aspm");
         }
 
+        /// <summary>
+        /// Stage stopped by the thermal watchdog. A computation error found before the stop stays the verdict (Failed);
+        /// otherwise the stage is a Warning: no wrong result, but the cooling cannot hold the load.
+        /// </summary>
+        public static StressStageResult Overheated(StageContext ctx, StressStageResult r)
+        {
+            bool cpu = ctx.Overheat == OverheatPart.Cpu;
+            string note = Localizer.Ref(cpu ? "stress_advice.stopped_cpu_overheat" : "stress_advice.stopped_gpu_overheat",
+                                        Math.Round(ctx.OverheatTempC), StressRunner.OverheatSustainSec);
+            string advice = Localizer.Ref(cpu ? "stress_advice.cpu_cooling_advice" : "stress_advice.gpu_cooling_advice");
+            if (r != null && r.Outcome == StressOutcome.Failed)
+            {
+                r.Summary = ((r.Summary ?? "") + " " + note).Trim();
+                return r;
+            }
+            return R(ctx, StressOutcome.Warning, note, advice);
+        }
+
+        /// <summary>Log line written when the watchdog stops a stage.</summary>
+        public static string OverheatLog(OverheatPart part, double tempC)
+        {
+            return Localizer.F(part == OverheatPart.Cpu ? "stress_advice.stopped_cpu_overheat" : "stress_advice.stopped_gpu_overheat",
+                               Math.Round(tempC), StressRunner.OverheatSustainSec);
+        }
+
         public static StressStageResult InternalError(StageContext ctx, Exception ex)
         {
             return R(ctx, StressOutcome.Warning,

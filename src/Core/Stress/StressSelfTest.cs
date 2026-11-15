@@ -43,6 +43,7 @@ namespace WinCrashDoctor.Stress
                 lock (samples)
                     foreach (var l in samples.Where(x => x.LogLine != null)) sb.AppendLine("       log : " + l.LogLine);
                 StressFaults.Cpu = StressFaults.Gpu = StressFaults.Ram = StressFaults.Disk = StressFaults.Vram = 0;
+                StressFaults.HotCpuC = 0;
             };
 
             if (parts.Contains("cpu"))
@@ -50,6 +51,11 @@ namespace WinCrashDoctor.Stress
                 check("CPU tous cœurs", new StressStage { Kind = StressStageKind.CpuAllCore, DurationSec = 8 }, null, StressOutcome.Passed);
                 check("CPU tous cœurs + faute injectée", new StressStage { Kind = StressStageKind.CpuAllCore, DurationSec = 8 }, () => StressFaults.Cpu = 1, StressOutcome.Failed);
                 check("CPU cœur par cœur (3 s/cœur)", new StressStage { Kind = StressStageKind.CpuPerCore, PerCoreSec = 3, DurationSec = 3 * StressPlanner.PhysicalCores }, null, StressOutcome.Passed);
+                // Thermal cutoff: a simulated 101 °C held for 15 s must stop the stage (Warning) well before its 40 s.
+                var hotWatch = System.Diagnostics.Stopwatch.StartNew();
+                check("CPU + surchauffe simulée (101 °C)", new StressStage { Kind = StressStageKind.CpuAllCore, DurationSec = 40 }, () => StressFaults.HotCpuC = 101, StressOutcome.Warning);
+                sb.AppendLine((hotWatch.Elapsed.TotalSeconds < 30 ? "[OK]   " : "[FAIL] ") + "coupure thermique avant la fin de l'étape (" + (int)hotWatch.Elapsed.TotalSeconds + " s)");
+                if (hotWatch.Elapsed.TotalSeconds >= 30) failures++;
             }
             if (parts.Contains("cputemp"))
                 checkT("CPU tous cœurs + température (autorisation Windows)", new StressStage { Kind = StressStageKind.CpuAllCore, DurationSec = 12 }, null, StressOutcome.Passed, true);

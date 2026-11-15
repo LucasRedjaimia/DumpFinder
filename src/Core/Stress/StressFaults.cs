@@ -10,6 +10,9 @@ namespace WinCrashDoctor.Stress
     {
         public static int Cpu, Gpu, Ram, Disk, Vram;
 
+        /// <summary>Simulated CPU temperature (°C) for the thermal cutoff check; 0 = use the real sensor.</summary>
+        public static double HotCpuC;
+
         /// <summary>True once per armed flag.</summary>
         public static bool Take(ref int flag) { return flag != 0 && Interlocked.Exchange(ref flag, 0) != 0; }
     }

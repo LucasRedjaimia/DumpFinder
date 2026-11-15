@@ -24,6 +24,9 @@ namespace WinCrashDoctor.Stress
         public CpuTempFeed CpuTemp;
         public Func<OpenClDevice> GpuDevice;
         public volatile bool Abort;
+        /// <summary>Set by the thermal watchdog: which part overheated (stage stopped), and its temperature.</summary>
+        public volatile OverheatPart Overheat;
+        public double OverheatTempC;
 
         public StageContext(StressRunner runner, Action<StressSample> emit)
         {
@@ -263,8 +266,28 @@ namespace WinCrashDoctor.Stress
             StressStageKind kind = ctx.Stage.Kind;
             bool gpuStage = kind == StressStageKind.GpuCompute || kind == StressStageKind.Vram || kind == StressStageKind.Transient;
 
+            int hotCpuSec = 0, hotGpuSec = 0;
+            object thermalLock = new object();
             using (var timer = new Timer(_ =>
             {
+                // Thermal safety net: stop the stage when a part stays this hot. Modern CPUs and GPUs throttle and
+                // eventually shut down on their own; this stops the load first and tells the user why.
+                lock (thermalLock)
+                {
+                    double cpuT = StressFaults.HotCpuC > 0 ? StressFaults.HotCpuC : ctx.CpuTempValue;
+                    double gpuT = ctx.Gpu != null ? ctx.Gpu.TempC : double.NaN;
+                    hotCpuSec = !double.IsNaN(cpuT) && cpuT >= CpuCutoffC ? hotCpuSec + WatchPeriodSec : 0;
+                    hotGpuSec = !double.IsNaN(gpuT) && gpuT >= GpuCutoffC ? hotGpuSec + WatchPeriodSec : 0;
+                    if (ctx.Overheat == OverheatPart.None && (hotCpuSec >= OverheatSustainSec || hotGpuSec >= OverheatSustainSec))
+                    {
+                        bool cpu = hotCpuSec >= OverheatSustainSec;
+                        ctx.OverheatTempC = cpu ? cpuT : gpuT;
+                        ctx.Overheat = cpu ? OverheatPart.Cpu : OverheatPart.Gpu;
+                        ctx.Log(StressAdvice.OverheatLog(ctx.Overheat, ctx.OverheatTempC));
+                        ctx.Abort = true;
+                    }
+                }
+
                 var evs = watch.Poll();
                 if (evs.Count == 0) return;
                 ctx.AddEvents(evs);
@@ -277,7 +300,7 @@ namespace WinCrashDoctor.Stress
                                   || (e.Kind == LiveEventKind.GpuDriver && gpuStage)
                                   || (e.Kind == LiveEventKind.Disk && kind == StressStageKind.Disk))))
                     ctx.Abort = true;
-            }, null, 2000, 2000))
+            }, null, WatchPeriodSec * 1000, WatchPeriodSec * 1000))
             {
                 StressStageResult res;
                 try
@@ -299,9 +322,18 @@ namespace WinCrashDoctor.Stress
                     res = StressAdvice.InternalError(ctx, ex);
                 }
                 ctx.AddEvents(watch.Poll());
+                if (ctx.Overheat != OverheatPart.None) res = StressAdvice.Overheated(ctx, res);
                 return StressAdvice.MergeEvents(ctx, res, ctx.Events);
             }
         }
+
+        /// <summary>
+        /// Thermal cutoff. CPU: 100 °C (Ryzen 7000/9000 run at 95 °C by design under load, Intel throttles at 100 °C).
+        /// GPU: 95 °C on the reported GPU temperature (NVIDIA / AMD edge sensor; not the hot spot). Held for 15 s.
+        /// </summary>
+        internal const double CpuCutoffC = 100, GpuCutoffC = 95;
+        internal const int OverheatSustainSec = 15;
+        private const int WatchPeriodSec = 2;
 
         /// <summary>
         /// Called at startup: if the marker of a running test is still there, the PC went down during that stage.

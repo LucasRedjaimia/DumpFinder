@@ -1215,5 +1215,15 @@
   "engine.opt_cleanup.freed_gb": "✓ {0:0.00} GB liberati",
   "engine.opt_cleanup.files_in_use_left": " (file in uso lasciati intatti: {0})",
   "engine.ai_assistant.could_not_reach_ollama": "Impossibile raggiungere Ollama su http://127.0.0.1:11434. Avvia \"ollama serve\" e scarica il modello (\"ollama pull {0}\").",
-  "engine.minidump_analyzer.stop_name": "Codice di arresto {0}."
+  "engine.minidump_analyzer.stop_name": "Codice di arresto {0}.",
+  "engine.diagnostics_engine.bsod_without_dump": "Schermata blu senza file di dump: {0} ({1})",
+  "engine.diagnostics_engine.bsod_without_dump_details": "Windows si è riavviato dopo una schermata blu, ma non è stato possibile scrivere alcun file .dmp né rapporto. Cause frequenti: file di paging troppo piccolo o disattivato, registrazione dei dump disattivata o disco di sistema difettoso. Controlla «Registrazione delle schermate blu» in Hardware, così la prossima potrà essere analizzata.\n\nMessaggio di Windows:\n{0}",
+  "engine.diagnostics_engine.forced_power_off": "Spegnimento forzato (pulsante di accensione tenuto premuto)",
+  "engine.diagnostics_engine.forced_power_off_details": "Il PC è stato spento tenendo premuto il pulsante di accensione, di solito perché si era bloccato (schermo nero, immagine congelata, nessuna risposta). Il blocco è il vero guasto: guarda i crash subito prima (driver grafico, SSD) e avvia un test di stabilità.\n\nMessaggio di Windows:\n{0}",
+  "engine.diagnostics_engine.power_lost_during_sleep": "Interruzione durante l'entrata o l'uscita dalla sospensione",
+  "engine.diagnostics_engine.power_lost_during_sleep_details": "Il PC si è fermato durante una transizione di sospensione. Cause frequenti: un driver che gestisce male la sospensione (spesso grafico o di rete), l'Avvio rapido di Windows o un risparmio energetico PCIe (ASPM) / USB troppo aggressivo.\n\nMessaggio di Windows:\n{0}",
+  "stress_advice.stopped_cpu_overheat": "Interrotto per surriscaldamento: il processore è rimasto a {0} °C o più per {1} s.",
+  "stress_advice.stopped_gpu_overheat": "Interrotto per surriscaldamento: la scheda video è rimasta a {0} °C o più per {1} s.",
+  "stress_advice.cpu_cooling_advice": "Nessun risultato errato, ma il raffreddamento non tiene il passo. Controlla che il dissipatore o l'AIO sia ben fissato e che la pompa giri, la pasta termica (rifalla se ha qualche anno), la polvere e il flusso d'aria del case. Nel BIOS, rimuovi un overclock o un'impostazione PBO / undervolt mal regolata, oppure abbassa i limiti di potenza.",
+  "stress_advice.gpu_cooling_advice": "Nessun risultato errato, ma la scheda video scalda troppo. Spolverala, controlla che le ventole girino e il flusso d'aria del case; una curva delle ventole più aggressiva (MSI Afterburner) o un limite di potenza un po' più basso aiuta. Se non basta, vanno rifatti la pasta e i pad termici."
 }

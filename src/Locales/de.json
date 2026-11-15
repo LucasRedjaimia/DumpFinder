@@ -1215,5 +1215,15 @@
   "engine.opt_cleanup.freed_gb": "✓ {0:0.00} GB freigegeben",
   "engine.opt_cleanup.files_in_use_left": " (verwendete Dateien übersprungen: {0})",
   "engine.ai_assistant.could_not_reach_ollama": "Ollama unter http://127.0.0.1:11434 nicht erreichbar. Starte \"ollama serve\" und lade das Modell herunter (\"ollama pull {0}\").",
-  "engine.minidump_analyzer.stop_name": "Stoppcode {0}."
+  "engine.minidump_analyzer.stop_name": "Stoppcode {0}.",
+  "engine.diagnostics_engine.bsod_without_dump": "Bluescreen ohne Dump-Datei: {0} ({1})",
+  "engine.diagnostics_engine.bsod_without_dump_details": "Windows wurde nach einem Bluescreen neu gestartet, aber es konnte weder eine .dmp-Datei noch ein Bericht geschrieben werden. Häufige Ursachen: Auslagerungsdatei zu klein oder deaktiviert, Dump-Aufzeichnung abgeschaltet oder ein fehlerhaftes Systemlaufwerk. Prüfe „Aufzeichnung von Bluescreens“ unter Hardware, damit der nächste analysiert werden kann.\n\nWindows-Meldung:\n{0}",
+  "engine.diagnostics_engine.forced_power_off": "Erzwungenes Ausschalten (Netzschalter gedrückt gehalten)",
+  "engine.diagnostics_engine.forced_power_off_details": "Der PC wurde durch Gedrückthalten des Netzschalters ausgeschaltet, meist weil er eingefroren war (schwarzer Bildschirm, stehendes Bild, keine Reaktion). Das Einfrieren ist der eigentliche Fehler: Sieh dir die Abstürze direkt davor an (Grafiktreiber, SSD) und starte einen Stabilitätstest.\n\nWindows-Meldung:\n{0}",
+  "engine.diagnostics_engine.power_lost_during_sleep": "Stromverlust beim Wechsel in den oder aus dem Ruhezustand",
+  "engine.diagnostics_engine.power_lost_during_sleep_details": "Der PC ist während eines Wechsels in den oder aus dem Ruhezustand ausgegangen. Häufige Ursachen: ein Treiber, der mit dem Ruhezustand schlecht umgeht (oft Grafik oder Netzwerk), der Windows-Schnellstart oder zu aggressives Energiesparen bei PCIe (ASPM) / USB.\n\nWindows-Meldung:\n{0}",
+  "stress_advice.stopped_cpu_overheat": "Wegen Überhitzung gestoppt: Die CPU lag {1} s lang bei {0} °C oder mehr.",
+  "stress_advice.stopped_gpu_overheat": "Wegen Überhitzung gestoppt: Die Grafikkarte lag {1} s lang bei {0} °C oder mehr.",
+  "stress_advice.cpu_cooling_advice": "Kein falsches Ergebnis, aber die Kühlung kommt nicht hinterher. Prüfe, ob der CPU-Kühler oder die AIO fest sitzt und die Pumpe läuft, außerdem die Wärmeleitpaste (erneuere sie, wenn sie mehrere Jahre alt ist), Staub und den Luftstrom im Gehäuse. Entferne im BIOS eine Übertaktung oder eine schlecht abgestimmte PBO- / Undervolt-Einstellung oder senke die Leistungslimits.",
+  "stress_advice.gpu_cooling_advice": "Kein falsches Ergebnis, aber die Grafikkarte wird zu heiß. Entstaube sie, prüfe, ob ihre Lüfter drehen, und den Luftstrom im Gehäuse; eine aggressivere Lüfterkurve (MSI Afterburner) oder ein etwas niedrigeres Leistungslimit hilft. Reicht das nicht, müssen Wärmeleitpaste und Wärmeleitpads erneuert werden."
 }

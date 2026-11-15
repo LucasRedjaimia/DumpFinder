@@ -1215,5 +1215,15 @@
   "engine.opt_cleanup.freed_gb": "✓ {0:0.00} GB liberados",
   "engine.opt_cleanup.files_in_use_left": " (archivos en uso sin tocar: {0})",
   "engine.ai_assistant.could_not_reach_ollama": "No se pudo conectar con Ollama en http://127.0.0.1:11434. Ejecuta \"ollama serve\" y descarga el modelo (\"ollama pull {0}\").",
-  "engine.minidump_analyzer.stop_name": "Código de detención {0}."
+  "engine.minidump_analyzer.stop_name": "Código de detención {0}.",
+  "engine.diagnostics_engine.bsod_without_dump": "Pantalla azul sin archivo de volcado: {0} ({1})",
+  "engine.diagnostics_engine.bsod_without_dump_details": "Windows se reinició tras una pantalla azul, pero no se pudo escribir ningún archivo .dmp ni informe. Causas habituales: archivo de paginación demasiado pequeño o desactivado, registro de volcados desactivado o disco del sistema con fallos. Revisa «Registro de pantallas azules» en Hardware para que la próxima se pueda analizar.\n\nMensaje de Windows:\n{0}",
+  "engine.diagnostics_engine.forced_power_off": "Apagado forzado (botón de encendido mantenido pulsado)",
+  "engine.diagnostics_engine.forced_power_off_details": "El PC se apagó manteniendo pulsado el botón de encendido, normalmente porque se había bloqueado (pantalla negra, imagen congelada, sin respuesta). El bloqueo es la verdadera avería: revisa los fallos justo anteriores (controlador gráfico, SSD) y ejecuta una prueba de estabilidad.\n\nMensaje de Windows:\n{0}",
+  "engine.diagnostics_engine.power_lost_during_sleep": "Corte de energía al entrar o salir de la suspensión",
+  "engine.diagnostics_engine.power_lost_during_sleep_details": "El PC se detuvo durante una transición de suspensión. Causas habituales: un controlador que gestiona mal la suspensión (a menudo el gráfico o el de red), el Inicio rápido de Windows o un ahorro de energía PCIe (ASPM) / USB demasiado agresivo.\n\nMensaje de Windows:\n{0}",
+  "stress_advice.stopped_cpu_overheat": "Detenido por sobrecalentamiento: el procesador se mantuvo a {0} °C o más durante {1} s.",
+  "stress_advice.stopped_gpu_overheat": "Detenido por sobrecalentamiento: la tarjeta gráfica se mantuvo a {0} °C o más durante {1} s.",
+  "stress_advice.cpu_cooling_advice": "Ningún resultado erróneo, pero la refrigeración no da abasto. Comprueba que el disipador o la AIO estén bien sujetos y que su bomba funcione, la pasta térmica (cámbiala si tiene varios años), el polvo y el flujo de aire de la caja. En la BIOS, quita un overclock o un ajuste de PBO / undervolt mal hecho, o baja los límites de potencia.",
+  "stress_advice.gpu_cooling_advice": "Ningún resultado erróneo, pero la tarjeta gráfica se calienta demasiado. Quítale el polvo, comprueba que sus ventiladores giren y el flujo de aire de la caja; una curva de ventilación más agresiva (MSI Afterburner) o un límite de potencia algo más bajo ayuda. Si no basta, hay que cambiar la pasta y los pads térmicos."
 }
