@@ -19,6 +19,8 @@ namespace WinCrashDoctor.Detection
             Try(list, () => GpuDriverVersion(hw));
             Try(list, () => DumpCapture());
             Try(list, () => LiveKernelReports());
+            try { list.AddRange(RiskyDrivers.WarningItems()); } // drivers only the downloaded data knows (read-only)
+            catch (Exception ex) { Log.Warn(ex); }
             return list;
         }
 
@@ -76,22 +78,28 @@ namespace WinCrashDoctor.Detection
             return double.TryParse(v, NumberStyles.Float, CultureInfo.InvariantCulture, out d) ? d : 0;
         }
 
-        /// <summary>NVIDIA releases with a documented problem, and what to do instead.</summary>
+        /// <summary>
+        /// NVIDIA releases with a documented problem, and what to do instead (data/detection.json, nvidia section:
+        /// exact problem releases first, then minimum releases per GPU family).
+        /// </summary>
         private static string NvidiaProblem(string version, string gpuName)
         {
-            switch (version)
-            {
-                case "595.59":
-                    return Localizer.S("detection_checks.release_pulled_by_nvidia_in_february");
-                case "621.01":
-                    return Localizer.S("detection_checks.release_causing_video_freezes_and_black");
-            }
-            bool rtx50 = gpuName != null && System.Text.RegularExpressions.Regex.IsMatch(gpuName, @"RTX\s*50\d0");
+            DetectionData data = DetectionData.Current;
+            DetectionData.NvidiaProblem bad = data.NvidiaProblems.FirstOrDefault(p => p.Version == version);
+            if (bad != null) return Localizer.S(bad.ReasonKey);
+
             double v = Ver(version);
-            if (rtx50 && v > 0 && v < 572.83)
-                return Localizer.S("detection_checks.driver_older_than_the_rtx_50");
+            string gpu = NoSpaces(gpuName);
+            foreach (DetectionData.NvidiaMinimum m in data.NvidiaMinimums)
+            {
+                bool family = gpu.Length > 0 && m.GpuNames.Any(n => gpu.IndexOf(NoSpaces(n), StringComparison.OrdinalIgnoreCase) >= 0);
+                if (family && v > 0 && v < Ver(m.MinVersion)) return Localizer.S(m.ReasonKey);
+            }
             return null;
         }
+
+        /// <summary>"RTX 5080" and "RTX5080" compare equal.</summary>
+        private static string NoSpaces(string s) { return new string((s ?? "").Where(c => !char.IsWhiteSpace(c)).ToArray()); }
 
         public static ConflictCheckItem GpuDriverVersion(HardwareSummary hw)
         {

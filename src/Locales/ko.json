@@ -60,6 +60,8 @@
   "risky_drivers.disable_the_driver": "{0} 드라이버 사용 안 함({1})",
   "risky_drivers.disable": "사용 안 함",
   "risky_drivers.re_enable": "다시 사용",
+  "risky_drivers.driver_with_a_known_record": "알려진 문제가 있는 커널 드라이버: {0} ({1})",
+  "risky_drivers.update_or_uninstall_the_software": "Dump Finder는 이 드라이버를 직접 비활성화하지 않습니다. 이를 설치한 소프트웨어를 업데이트하거나 제거하세요.",
   "windows_release.home": "Home",
   "diagnostics_engine.since": "{0} 이후",
   "diagnostics_engine.across_all_history": "전체 기록 기준",

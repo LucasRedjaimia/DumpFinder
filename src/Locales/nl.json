@@ -60,6 +60,8 @@
   "risky_drivers.disable_the_driver": "Driver {0} uitschakelen ({1})",
   "risky_drivers.disable": "Uitschakelen",
   "risky_drivers.re_enable": "Weer inschakelen",
+  "risky_drivers.driver_with_a_known_record": "Kernelstuurprogramma met bekende problemen: {0} ({1})",
+  "risky_drivers.update_or_uninstall_the_software": "Dump Finder schakelt dit stuurprogramma niet zelf uit: werk de software die het installeert bij of verwijder die.",
   "windows_release.home": "Home",
   "diagnostics_engine.since": "sinds {0}",
   "diagnostics_engine.across_all_history": "over de hele geschiedenis",

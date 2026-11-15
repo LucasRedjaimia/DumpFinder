@@ -15,6 +15,11 @@ namespace WinCrashDoctor.Detection
             int bad = 0;
             Action<string, bool> expect = (label, ok) => { if (!ok) bad++; sb.AppendLine((ok ? "[OK]   " : "[FAIL] ") + label); };
 
+            // Detection tables (data/detection.json): the embedded copy, or a newer validated cache
+            DetectionData data = DetectionData.Current;
+            expect("tables de détection : version " + data.Version + " (" + data.Source + ", intégrée " + DetectionData.Embedded.Version + ")",
+                   DetectionData.Embedded.Version >= 1 && DetectionData.Embedded.RiskyDrivers.Count > 0 && data.Version >= DetectionData.Embedded.Version);
+
             // Version mapping (Windows → NVIDIA numbering)
             expect("32.0.15.9559 → 595.59", DetectionChecks.NvidiaVersion("32.0.15.9559") == "595.59");
             expect("32.0.16.2114 → 621.14", DetectionChecks.NvidiaVersion("32.0.16.2114") == "621.14");

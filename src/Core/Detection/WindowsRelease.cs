@@ -83,8 +83,8 @@ namespace WinCrashDoctor.Detection
         }
 
         /// <summary>
-        /// Last day of updates for this build and edition (Microsoft lifecycle), or null when still supported
-        /// with no announced date in this table. LTSC releases are not tracked.
+        /// Last day of updates for this build and edition (Microsoft lifecycle, dates in data/detection.json), or null
+        /// when still supported with no announced date in the table. LTSC and Server releases are not tracked.
         /// </summary>
         public DateTime? EndOfServicing
         {
@@ -92,22 +92,14 @@ namespace WinCrashDoctor.Detection
             {
                 if (IsLtsc || IsServer) return null; // separate lifecycles, not tracked here
                 bool ent = IsEnterpriseLike;
-                switch (Build)
-                {
-                    case 19045:
-                        // Consumer ESU runs one year (to Oct 2026); commercial ESU can be bought for up to three, so the
-                        // end date of an enrolled business PC is unknown here.
-                        if (ReceivesExtendedSecurityUpdates) return ent ? (DateTime?)null : new DateTime(2026, 10, 13);
-                        return new DateTime(2025, 10, 14);                                           // Windows 10 22H2
-                    case 22000: return ent ? new DateTime(2024, 10, 8) : new DateTime(2023, 10, 10);  // 11 21H2
-                    case 22621: return ent ? new DateTime(2025, 10, 14) : new DateTime(2024, 10, 8);  // 11 22H2
-                    case 22631: return ent ? new DateTime(2026, 11, 10) : new DateTime(2025, 11, 11); // 11 23H2
-                    case 26100: return ent ? new DateTime(2027, 10, 12) : new DateTime(2026, 10, 13); // 11 24H2
-                    case 26200: return ent ? new DateTime(2028, 10, 10) : new DateTime(2027, 10, 12); // 11 25H2
-                    default:
-                        if (Build < 19045) return new DateTime(2025, 10, 14);
-                        return null;
-                }
+                DetectionData data = DetectionData.Current;
+                DetectionData.WindowsEnd r;
+                if (!data.WindowsReleases.TryGetValue(Build, out r))
+                    return Build < 19045 ? data.OlderWindowsEnd : (DateTime?)null;
+                // Windows 10 22H2 on ESU: consumer ESU runs one year; commercial ESU can be bought for up to three,
+                // so the end date of an enrolled business PC is unknown here.
+                if (ReceivesExtendedSecurityUpdates && r.ConsumerEsu.HasValue) return ent ? (DateTime?)null : r.ConsumerEsu.Value;
+                return ent ? r.Enterprise : r.Consumer;
             }
         }
 

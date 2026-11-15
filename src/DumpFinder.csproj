@@ -38,6 +38,8 @@
     <!-- UI texts, one file per language (key → text), and engine texts keyed by their English version.
          Embedded as "Locales.<name>.json": the app stays a single exe. -->
     <EmbeddedResource Include="Locales\*.json" LogicalName="Locales.%(Filename).json" />
+    <!-- Detection tables (data only), the default until a newer validated copy is downloaded. See README. -->
+    <EmbeddedResource Include="..\data\detection.json" LogicalName="Data.detection.json" Link="Data\detection.json" />
   </ItemGroup>
 
   <ItemGroup>

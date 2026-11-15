@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Management;
-using System.Text.RegularExpressions;
 
 namespace WinCrashDoctor.Detection
 {
@@ -11,10 +11,8 @@ namespace WinCrashDoctor.Detection
     /// </summary>
     public static class NvmeDrives
     {
-        public const int HmbIssueBuild = 26100;
-
-        // DRAM-less models known to rely on the Host Memory Buffer.
-        private static readonly Regex DramLess = new Regex(@"(P3|SN770|SN580|SN570|NM790|NM710|MP44|MP33|NV2|NV3)", RegexOptions.IgnoreCase);
+        /// <summary>First Windows build with the HMB issue (data/detection.json, nvme.hmbIssueBuild).</summary>
+        public static int HmbIssueBuild { get { return DetectionData.Current.HmbIssueBuild; } }
 
         private static List<string> _models;
 
@@ -28,7 +26,12 @@ namespace WinCrashDoctor.Detection
             }
         }
 
-        public static bool IsDramLess(string model) { return !string.IsNullOrEmpty(model) && DramLess.IsMatch(model); }
+        /// <summary>DRAM-less models known to rely on the Host Memory Buffer (data/detection.json, nvme.dramLessModels).</summary>
+        public static bool IsDramLess(string model)
+        {
+            return !string.IsNullOrEmpty(model)
+                && DetectionData.Current.DramLessModels.Any(t => model.IndexOf(t, StringComparison.OrdinalIgnoreCase) >= 0);
+        }
 
         public static bool WindowsHasHmbIssue { get { return WindowsRelease.Current.Build >= HmbIssueBuild; } }
 

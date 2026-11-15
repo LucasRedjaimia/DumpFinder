@@ -43,10 +43,16 @@ namespace WinCrashDoctor
 
         public static string CurrentVersionText { get { return CurrentVersion.ToString(3); } }
 
-        /// <summary>The latest release when it is newer than this exe, otherwise null.</summary>
+        /// <summary>
+        /// Launch-time check (runs only when "check for updates at launch" is on): the latest release when it is newer
+        /// than this exe, otherwise null. Also starts the background refresh of the detection tables
+        /// (data/detection.json), which shares the same on/off switch.
+        /// </summary>
         public static async Task<UpdateInfo> CheckAsync(CancellationToken ct)
         {
+            Task refresh = Detection.DetectionData.RefreshAsync(); // never throws; own 10 s timeout
             UpdateInfo latest = await GetLatestAsync(ct).ConfigureAwait(false);
+            await refresh.ConfigureAwait(false);
             return latest != null && latest.Version > CurrentVersion ? latest : null;
         }
 
@@ -128,11 +134,14 @@ namespace WinCrashDoctor
             return new Version(v.Major, v.Minor, Math.Max(0, v.Build));
         }
 
-        /// <summary>Only links into this repository are ever opened.</summary>
+        /// <summary>Raw files of this repository (data/detection.json).</summary>
+        public const string RawPrefix = "https://raw.githubusercontent.com/" + Owner + "/" + Repo + "/";
+
+        /// <summary>Only links into this repository (pages, or its raw files) are ever opened or downloaded.</summary>
         public static bool IsOwnUrl(string url)
         {
             return !string.IsNullOrEmpty(url) &&
-                   url.StartsWith(RepoUrl + "/", StringComparison.OrdinalIgnoreCase) &&
+                   (url.StartsWith(RepoUrl + "/", StringComparison.OrdinalIgnoreCase) || url.StartsWith(RawPrefix, StringComparison.OrdinalIgnoreCase)) &&
                    Uri.IsWellFormedUriString(url, UriKind.Absolute);
         }
 

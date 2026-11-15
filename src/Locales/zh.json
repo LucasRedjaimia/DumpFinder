@@ -60,6 +60,8 @@
   "risky_drivers.disable_the_driver": "禁用 {0} 驱动（{1}）",
   "risky_drivers.disable": "禁用",
   "risky_drivers.re_enable": "重新启用",
+  "risky_drivers.driver_with_a_known_record": "存在已知问题的内核驱动程序：{0}（{1}）",
+  "risky_drivers.update_or_uninstall_the_software": "Dump Finder 不会自行禁用此驱动程序：请更新或卸载安装它的软件。",
   "windows_release.home": "家庭版",
   "diagnostics_engine.since": "自 {0} 起",
   "diagnostics_engine.across_all_history": "全部历史记录",

@@ -42,6 +42,16 @@ To add a language: add a value to `AppLang` (`src/Core/Models.cs`, append only),
 
 Several translations (Polish, Dutch, Turkish, Russian, Ukrainian, Chinese, Japanese, Korean) were machine-assisted: corrections from native speakers are welcome.
 
+## Detection data
+
+`data/detection.json` holds the detection tables: NVIDIA driver releases with a known problem (and minimum releases per GPU family), DRAM-less NVMe models and the Windows build affected by the HMB issue, Windows end-of-servicing dates per build and edition, and the catalog of risky kernel drivers.
+
+- It is **data only**: version numbers, model tokens, dates, driver file names, and Locales keys (`detection_checks.*`, `risky_drivers.*`) for every explanation, never free text. Every field is validated; a file that does not match the schema is ignored as a whole.
+- The copy in the repository is embedded in the exe as the default. When "check for updates at launch" is on (Settings › Updates), the app also downloads `https://raw.githubusercontent.com/LucasRedjaimia/DumpFinder/main/data/detection.json` (10 s timeout, 256 KB max) and uses it only if it is valid and its `version` is higher; it is cached in `%LOCALAPPDATA%\DumpFinder\data`.
+- It cannot widen what the app acts on: only drivers of the **embedded** catalog can be disabled or reverted. A driver added by a downloaded copy is shown as a warning under Hardware › Conflicts, without a fix button.
+
+To update it: edit the file, increase `version` by one and set `updated` (`yyyy-MM-dd`), add any new explanation as a key in all `src/Locales/<code>.json` files (a key that does not exist in `en.json` makes the file invalid), run `--update-selftest`, then merge to `main`. Installed apps pick it up at their next launch; a new key or a new disableable driver needs a new release of the app.
+
 ## Publish a new version
 
 Requirements: [GitHub CLI](https://cli.github.com/), signed in (`gh auth login`).
