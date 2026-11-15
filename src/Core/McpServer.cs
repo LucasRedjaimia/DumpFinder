@@ -487,7 +487,7 @@ namespace WinCrashDoctor
                             sb.AppendLine("Primary Culprit Module: " + item.PrimaryCulpritModule);
                             sb.AppendLine("Process: " + item.ProcessName);
                             sb.AppendLine("Related Modules: " + item.RelatedModules);
-                            sb.AppendLine("Analysis: " + item.HumanExplanationEn);
+                            sb.AppendLine("Analysis: " + Localizer.RenderEn(item.HumanExplanationEn));
                         }
                         else
                         {
@@ -498,7 +498,7 @@ namespace WinCrashDoctor
                             {
                                 sb.AppendLine(string.Format("- [{0:yyyy-MM-dd HH:mm}] {1} | {2} | Culprit: {3} | Process: {4}",
                                     d.CrashTime, d.FileName, d.BugCheckOrException, d.PrimaryCulpritModule, d.ProcessName));
-                                sb.AppendLine("  Analysis: " + d.HumanExplanationEn);
+                                sb.AppendLine("  Analysis: " + Localizer.RenderEn(d.HumanExplanationEn));
                             }
                         }
                         return MakeToolTextResult(sb.ToString(), false);
@@ -583,9 +583,9 @@ namespace WinCrashDoctor
             }
 
             var answer = System.Windows.Forms.MessageBox.Show(
-                Localizer.T("Un agent IA connecté par MCP demande à modifier votre PC :\n\n", "An AI agent connected through MCP asks to change your PC:\n\n") + action +
-                "\n\n" + fix.RegPathDisplay + "\n" + Localizer.T("Valeur actuelle : ", "Current value: ") + fix.CurrentValue +
-                "\n\n" + Localizer.T("La valeur actuelle est sauvegardée : vous pourrez annuler depuis Dump Finder (Outils › Historique).\n\nAutoriser ?", "The current value is saved: you can undo it from Dump Finder (Tools > History).\n\nAllow?"),
+                Localizer.S("engine.mcp_server.an_ai_agent_connected_through_mcp") + action +
+                "\n\n" + fix.RegPathDisplay + "\n" + Localizer.S("engine.mcp_server.current_value") + fix.CurrentValue +
+                "\n\n" + Localizer.S("engine.mcp_server.the_current_value_is_saved_you"),
                 "Dump Finder — MCP", System.Windows.Forms.MessageBoxButtons.YesNo, System.Windows.Forms.MessageBoxIcon.Warning,
                 System.Windows.Forms.MessageBoxDefaultButton.Button2, System.Windows.Forms.MessageBoxOptions.DefaultDesktopOnly);
             if (answer != System.Windows.Forms.DialogResult.Yes)
@@ -603,7 +603,7 @@ namespace WinCrashDoctor
                 }
             });
             bool undoable = result.Ok && FixRunner.IsReversible(opCode, result.Changes);
-            return MakeToolTextResult((result.Ok ? "[SUCCESS] " : "[FAILED] ") + result.MessageEn +
+            return MakeToolTextResult((result.Ok ? "[SUCCESS] " : "[FAILED] ") + Localizer.RenderEn(result.MessageEn) +
                 (undoable ? "\nRecorded in the change journal (" + result.Changes.Count + " value(s)); undoable from Dump Finder." :
                  result.Ok ? "\nRecorded in the change journal; no previous value was captured, so it cannot be undone automatically." : ""), !result.Ok);
         }
@@ -689,7 +689,7 @@ namespace WinCrashDoctor
                 sb.AppendLine();
                 sb.AppendLine(string.Format("[RECENT CRASH EVENTS (Top {0} of {1})]", Math.Min(20, res.Events.Count), res.Events.Count));
                 foreach (var ev in res.Events.Take(20))
-                    sb.AppendLine(string.Format("- [{0}] [{1}] {2}: {3}", ev.DisplayTime, ev.Category, ev.CodeOrId, ev.SummaryEn));
+                    sb.AppendLine(string.Format("- [{0}] [{1}] {2}: {3}", ev.DisplayTime, ev.Category, ev.CodeOrId, Localizer.RenderEn(ev.SummaryEn)));
             }
 
             var recFixes = res.Fixes.Where(f => f.Status == FixStatus.Recommended).ToList();

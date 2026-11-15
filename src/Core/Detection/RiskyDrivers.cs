@@ -173,8 +173,8 @@ namespace WinCrashDoctor.Detection
             Found f = FindDisableable(Scan(), service);
             if (f == null)
             {
-                messageFr = "Pilote inconnu ou absent : " + service;
-                messageEn = "Unknown or missing driver: " + service;
+                messageFr = Localizer.Ref("engine.risky_drivers.unknown_or_missing_driver", service);
+                messageEn = messageFr;
                 return false;
             }
 
@@ -183,7 +183,7 @@ namespace WinCrashDoctor.Detection
             using (var bk = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
             using (var k = bk.OpenSubKey(sub, true))
             {
-                if (k == null) { messageFr = "Clé de service introuvable."; messageEn = "Service key not found."; return false; }
+                if (k == null) { messageFr = Localizer.Ref("engine.risky_drivers.service_key_not_found"); messageEn = messageFr; return false; }
                 k.SetValue("Start", apply ? 4 : StartBeforeDisable(f.Service), RegistryValueKind.DWord);
             }
             if (apply)
@@ -194,13 +194,13 @@ namespace WinCrashDoctor.Detection
                         if (sc.Status == ServiceControllerStatus.Running) sc.Stop();
                 }
                 catch (Exception ex) { Log.Warn(ex); }
-                messageFr = "✓ Pilote " + f.File + " désactivé (Start = 4). Redémarre le PC pour qu'il ne soit plus chargé.";
-                messageEn = "✓ Driver " + f.File + " disabled (Start = 4). Reboot so it is no longer loaded.";
+                messageFr = Localizer.Ref("engine.risky_drivers.driver_disabled_start_4_reboot_so", f.File);
+                messageEn = messageFr;
             }
             else
             {
-                messageFr = "Pilote " + f.File + " réactivé (démarrage à la demande).";
-                messageEn = "Driver " + f.File + " re-enabled (demand start).";
+                messageFr = Localizer.Ref("engine.risky_drivers.driver_re_enabled_demand_start", f.File);
+                messageEn = messageFr;
             }
             return true;
         }

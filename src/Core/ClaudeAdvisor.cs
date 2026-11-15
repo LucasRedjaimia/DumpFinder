@@ -69,9 +69,7 @@ namespace WinCrashDoctor
                 return new AiReply
                 {
                     Ok = false,
-                    Text = Localizer.T(
-                        "Claude a refusé de répondre à cette demande. Reformulez la question ou utilisez « Copier pour forum ».",
-                        "Claude declined this request. Rephrase the question or use \"Copy for forum\".")
+                    Text = Localizer.S("engine.claude_advisor.claude_declined_this_request_rephrase_th")
                 };
             }
             return new AiReply { Ok = text.Length > 0, Text = text.ToString().Trim() };

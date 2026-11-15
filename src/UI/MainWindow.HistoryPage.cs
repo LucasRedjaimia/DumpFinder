@@ -224,7 +224,7 @@ namespace WinCrashDoctor
             t.Children.Add(ResFg(new TextBlock { Text = j.Title, FontSize = 13, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis }, "TextPrimary"));
             int n = j.Changes != null ? j.Changes.Count : 0;
             string sub = j.Time.ToString("g", CultureInfo.CurrentUICulture) + "  ·  "
-                + (j.Ok ? Localizer.F("history.value_s_changed", n) : j.Message);
+                + (j.Ok ? Localizer.F("history.value_s_changed", n) : Localizer.Render(j.Message));
             if (reverted)
                 sub += "  ·  " + Localizer.S("history.undone_on") + j.RevertedAt.Value.ToString("g", CultureInfo.CurrentUICulture);
             t.Children.Add(ResFg(new TextBlock { Text = sub, FontSize = 11, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 2, 0, 0) }, "TextMuted"));

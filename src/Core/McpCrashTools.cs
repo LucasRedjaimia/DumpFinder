@@ -52,7 +52,7 @@ namespace WinCrashDoctor
             if (e.Event != null)
             {
                 sb.AppendLine("Event: " + e.Event.Source + " / " + e.Event.CodeOrId);
-                sb.AppendLine("Windows message: " + Privacy.Redact(e.Event.DetailsEn));
+                sb.AppendLine("Windows message: " + Privacy.Redact(Localizer.RenderEn(e.Event.DetailsEn)));
             }
             if (e.Dump != null)
             {
@@ -62,7 +62,7 @@ namespace WinCrashDoctor
                 sb.AppendLine("Stop code: " + d.BugCheckOrException);
                 if (d.BugCheckParameters != null) sb.AppendLine("Parameters: " + string.Join(", ", d.BugCheckParameters));
                 sb.AppendLine("Faulting module: " + d.PrimaryCulpritModule);
-                if (!string.IsNullOrEmpty(d.CulpritEvidenceEn)) sb.AppendLine("Evidence: " + d.CulpritEvidenceEn);
+                if (!string.IsNullOrEmpty(d.CulpritEvidenceEn)) sb.AppendLine("Evidence: " + Localizer.RenderEn(d.CulpritEvidenceEn));
                 if (d.StackModules != null && d.StackModules.Count > 0) sb.AppendLine("Drivers on the raw stack: " + string.Join(" -> ", d.StackModules));
                 var drv = DriverInventory.FindByImage(res.Drivers, d.PrimaryCulpritModule);
                 if (drv != null) sb.AppendLine("Installed driver: " + drv.DeviceName + " - " + drv.Provider + " " + drv.Version + (drv.Date.HasValue ? " (" + drv.Date.Value.ToString("yyyy-MM-dd") + ")" : ""));

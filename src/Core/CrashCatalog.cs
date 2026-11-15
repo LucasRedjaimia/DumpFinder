@@ -83,7 +83,7 @@ namespace WinCrashDoctor
             foreach (var ev in res.Events ?? new List<CrashEventItem>())
             {
                 var entry = new CrashEntry { Event = ev };
-                string text = (ev.DetailsFr ?? "") + " " + (ev.DetailsEn ?? "");
+                string text = Localizer.RenderEn(ev.DetailsEn ?? ev.DetailsFr ?? "");
 
                 MinidumpReportItem match = dumps.FirstOrDefault(d => !used.Contains(d)
                     && !string.IsNullOrEmpty(d.FileName)
@@ -258,7 +258,7 @@ namespace WinCrashDoctor
             var sb = new StringBuilder();
             sb.Append(Localizer.S("crash_catalog.focus_on_this_specific_crash_explain"));
             sb.Append("Crash: ").Append(e.Title).Append(" @ ").Append(e.Time.ToString("yyyy-MM-dd HH:mm")).Append(". ");
-            if (e.Event != null) sb.Append("Event ").Append(e.Event.Source).Append(" / ").Append(e.Event.CodeOrId).Append(". ").Append(e.Event.DetailsEn).Append(" ");
+            if (e.Event != null) sb.Append("Event ").Append(e.Event.Source).Append(" / ").Append(e.Event.CodeOrId).Append(". ").Append(Localizer.RenderEn(e.Event.DetailsEn)).Append(" ");
             if (e.Dump != null)
             {
                 sb.Append("Dump ").Append(e.Dump.FileName).Append(" (").Append(e.Dump.DumpType).Append("), code ")
