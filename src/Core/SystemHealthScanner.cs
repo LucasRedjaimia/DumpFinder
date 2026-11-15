@@ -46,7 +46,7 @@ namespace WinCrashDoctor
 
                 if (TestBiosDate.HasValue) biosDate = TestBiosDate.Value;
                 bool oldBios = (biosDate != DateTime.MinValue && (DateTime.Now - biosDate).TotalDays > 540);
-                string dateStr = biosDate != DateTime.MinValue ? biosDate.ToString("dd/MM/yyyy") : "-";
+                string dateStr = biosDate != DateTime.MinValue ? biosDate.ToString("d", Localizer.Culture) : "-";
                 // The app cannot know whether a newer BIOS exists: the user can confirm this one is the latest.
                 string biosAckKey = BiosAckKey(hw.BoardName, biosVer);
                 bool biosAcked = oldBios && Localizer.CachedSettings != null && Localizer.CachedSettings.BiosLatestAck == biosAckKey;

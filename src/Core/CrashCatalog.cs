@@ -129,16 +129,26 @@ namespace WinCrashDoctor
             return m.Success && uint.TryParse(m.Groups[1].Value, System.Globalization.NumberStyles.HexNumber, null, out code) ? code : 0;
         }
 
+        /// <summary>VIDEO_TDR_FAILURE, VIDEO_TDR_TIMEOUT_DETECTED, VIDEO_DXGKRNL_FATAL_ERROR, VIDEO_ENGINE_TIMEOUT_DETECTED.</summary>
+        private static readonly HashSet<uint> GpuStopCodes = new HashSet<uint> { 0x116, 0x117, 0x113, 0x119, 0x141 };
+        /// <summary>CRITICAL_PROCESS_DIED, KERNEL_DATA_INPAGE_ERROR, KERNEL_STACK_INPAGE_ERROR, CRITICAL_OBJECT_TERMINATION, UNEXPECTED_STORE_EXCEPTION.</summary>
+        private static readonly HashSet<uint> StorageStopCodes = new HashSet<uint> { 0xEF, 0x7A, 0x77, 0xF4, 0x154 };
+        /// <summary>MEMORY_MANAGEMENT, SYSTEM_SERVICE_EXCEPTION, PAGE_FAULT_IN_NONPAGED_AREA.</summary>
+        private static readonly HashSet<uint> MemoryStopCodes = new HashSet<uint> { 0x1A, 0x3B, 0x50 };
+
         public static List<string> RelatedFixIds(CrashEntry e)
         {
             var ids = new List<string>();
             var bc = BugCheckCatalog.Get(StopCode(e));
             if (bc != null) ids.AddRange(bc.FixIds);
-            string code = ((e.Event != null ? e.Event.CodeOrId : "") + " " + (e.Dump != null ? e.Dump.BugCheckOrException : "")).ToLowerInvariant();
+            // Compare the numeric stop code, not substrings of its text: "0x000000ef" never contained "0xef",
+            // and "50" / "1a" also matched unrelated codes such as 0x150 or 0x11A.
+            uint stop = StopCode(e);
             string module = (e.Dump != null ? e.Dump.PrimaryCulpritModule ?? "" : "").ToLowerInvariant();
-            bool gpuCode = code.Contains("116") || code.Contains("117") || code.Contains("119") || code.Contains("141")
+            bool gpuCode = GpuStopCodes.Contains(stop)
                            || module.Contains("nvlddmkm") || module.Contains("amdkmdag") || module.Contains("atikmdag") || module.Contains("igdkmd") || module.Contains("dxgkrnl");
-            bool storageCode = code.Contains("0xef") || code.Contains("129") || code.Contains("153") || module.Contains("stornvme") || module.Contains("storport");
+            bool storageCode = StorageStopCodes.Contains(stop) || module.Contains("stornvme") || module.Contains("storport");
+            bool memoryCode = MemoryStopCodes.Contains(stop);
 
             switch (e.Category)
             {
@@ -148,7 +158,7 @@ namespace WinCrashDoctor
                 case CrashCategory.BSOD:
                     if (gpuCode) ids.AddRange(new[] { "mpo", "tdr", "wu_driver_lock", "amd_ulps", "hags" });
                     else if (storageCode) ids.AddRange(new[] { "nvme_hmb", "pcie_aspm" });
-                    else if (code.Contains("1a") || code.Contains("3b") || code.Contains("50")) ids.AddRange(new[] { "pagefile_auto", "sfc_repair" });
+                    else if (memoryCode) ids.AddRange(new[] { "pagefile_auto", "sfc_repair" });
                     else ids.AddRange(new[] { "sfc_repair", "fast_startup" });
                     break;
                 case CrashCategory.UnexpectedReboot:

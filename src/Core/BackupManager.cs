@@ -37,7 +37,15 @@ namespace WinCrashDoctor
                 if (!File.Exists(SnapshotPath)) return "";
                 var ser = new JavaScriptSerializer();
                 var data = ser.Deserialize<RegistryBackupData>(File.ReadAllText(SnapshotPath, Encoding.UTF8));
-                return data != null ? (data.CreatedAt ?? "") : "";
+                if (data == null || string.IsNullOrEmpty(data.CreatedAt)) return "";
+                // Stored as ISO 8601 since v6.1 and shown in the app language; older files kept "dd/MM/yyyy HH:mm".
+                DateTime t;
+                if (DateTime.TryParseExact(data.CreatedAt, "yyyy-MM-ddTHH:mm:ss", System.Globalization.CultureInfo.InvariantCulture,
+                                           System.Globalization.DateTimeStyles.None, out t) ||
+                    DateTime.TryParseExact(data.CreatedAt, "dd/MM/yyyy HH:mm", System.Globalization.CultureInfo.InvariantCulture,
+                                           System.Globalization.DateTimeStyles.None, out t))
+                    return t.ToString("g", Localizer.Culture);
+                return data.CreatedAt;
             }
             catch (Exception ex) { Log.Warn(ex); return ""; }
         }
@@ -71,7 +79,7 @@ namespace WinCrashDoctor
 
                 var payload = new RegistryBackupData
                 {
-                    CreatedAt = DateTime.Now.ToString("dd/MM/yyyy HH:mm"),
+                    CreatedAt = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss", System.Globalization.CultureInfo.InvariantCulture),
                     Values = dict
                 };
 

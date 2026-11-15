@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.ServiceProcess;
@@ -201,7 +202,7 @@ namespace WinCrashDoctor.Detection
             using (var k = bk.OpenSubKey(sub, true))
             {
                 if (k == null) { messageFr = "Clé de service introuvable."; messageEn = "Service key not found."; return false; }
-                k.SetValue("Start", apply ? 4 : 3, RegistryValueKind.DWord);
+                k.SetValue("Start", apply ? 4 : StartBeforeDisable(f.Service), RegistryValueKind.DWord);
             }
             if (apply)
             {
@@ -220,6 +221,30 @@ namespace WinCrashDoctor.Detection
                 messageEn = "Driver " + f.File + " re-enabled (demand start).";
             }
             return true;
+        }
+
+        /// <summary>
+        /// Startup type the driver had before Dump Finder disabled it, read from the change journal (a driver that
+        /// loaded at boot, Start 0/1/2, must not come back as "demand start"). 3 when unknown.
+        /// </summary>
+        private static int StartBeforeDisable(string service)
+        {
+            try
+            {
+                string keyPath = @"HKEY_LOCAL_MACHINE\" + ServicesKey + "\\" + service;
+                foreach (JournalEntry j in History.Journal()) // newest first
+                {
+                    if (!j.Ok || j.Changes == null || !string.Equals(j.Op, IdPrefix + service + "_apply", StringComparison.OrdinalIgnoreCase)) continue;
+                    ChangeRecord c = j.Changes.FirstOrDefault(x => x.Kind == "reg" && x.Existed
+                        && string.Equals(x.KeyPath, keyPath, StringComparison.OrdinalIgnoreCase)
+                        && string.Equals(x.ValueName, "Start", StringComparison.OrdinalIgnoreCase));
+                    int start;
+                    if (c != null && int.TryParse(c.Data, NumberStyles.Integer, CultureInfo.InvariantCulture, out start) && start >= 0 && start <= 3)
+                        return start;
+                }
+            }
+            catch (Exception ex) { Log.Warn(ex); }
+            return 3;
         }
 
         /// <summary>Lets ChangeRecorder undo a change to a catalog driver's service key (and nothing else).</summary>

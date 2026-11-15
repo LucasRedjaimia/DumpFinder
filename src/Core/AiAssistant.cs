@@ -112,7 +112,9 @@ namespace WinCrashDoctor
         {
             try
             {
-                ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
+                // .NET 4.8 defaults to SystemDefault (TLS 1.2 + 1.3 per Windows); OR-ing Tls12 into it would pin TLS 1.2 only.
+                if (ServicePointManager.SecurityProtocol != SecurityProtocolType.SystemDefault)
+                    ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
                 switch (provider)
                 {
                     case AiProviderType.Claude:

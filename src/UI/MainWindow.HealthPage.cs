@@ -792,13 +792,13 @@ namespace WinCrashDoctor
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("========================================================================");
             sb.AppendLine("  DUMP FINDER 6 — FULL SYSTEM DIAGNOSTIC REPORT");
-            sb.AppendLine("  Date        : " + DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"));
+            sb.AppendLine("  Date        : " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture)); // unambiguous in an English report
             sb.AppendLine("========================================================================");
             sb.AppendLine("CPU           : " + res.Hardware.CpuName);
             sb.AppendLine("GPU           : " + res.Hardware.GpuName + " (" + res.Hardware.GpuDriver + ")");
             sb.AppendLine("Motherboard   : " + res.Hardware.BoardName);
             sb.AppendLine("OS            : " + res.Hardware.OsVersion);
-            sb.AppendLine("Last Boot     : " + res.Hardware.LastBoot.ToString("dd/MM/yyyy HH:mm:ss"));
+            sb.AppendLine("Last Boot     : " + res.Hardware.LastBoot.ToString("yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture));
             sb.AppendLine();
 
             sb.AppendLine("[SMART DIAGNOSIS]");

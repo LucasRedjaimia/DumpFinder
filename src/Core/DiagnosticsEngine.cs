@@ -48,6 +48,7 @@ namespace WinCrashDoctor
                 hw.HasAmdCpu = _cachedHw.HasAmdCpu;
                 hw.HasIntelCpu = _cachedHw.HasIntelCpu;
                 hw.HasAmdGpu = _cachedHw.HasAmdGpu;
+                hw.IsAmdRx7000 = _cachedHw.IsAmdRx7000; // was lost from the 2nd scan on (RDNA3 diagnosis title)
                 hw.HasNvidiaGpu = _cachedHw.HasNvidiaGpu;
                 hw.HasIntelArcGpu = _cachedHw.HasIntelArcGpu;
                 hw.IsIntel13Or14Gen = _cachedHw.IsIntel13Or14Gen;
@@ -77,40 +78,71 @@ namespace WinCrashDoctor
 
                 try
                 {
+                    // The GPU shown and checked is the most relevant discrete card, whatever order WMI lists them in:
+                    // NVIDIA > AMD Radeon RX/Pro > Intel Arc A/B > integrated graphics. An integrated GPU (Ryzen
+                    // "AMD Radeon(TM) Graphics", Core Ultra "Intel(R) Arc(TM) Graphics") no longer overwrites the
+                    // discrete card's driver version, nor turns on AMD / Arc specific checks next to another card.
+                    int bestRank = -1;
+                    bool amdIntegrated = false, amdDiscrete = false;
                     using (var s = Wmi.Searcher("SELECT Name, DriverVersion FROM Win32_VideoController"))
                     {
                         foreach (ManagementObject mo in s.Get())
                         {
                             string name = Convert.ToString(mo["Name"]).Trim();
-                            if (name.IndexOf("spacedesk", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                                name.IndexOf("Remote", StringComparison.OrdinalIgnoreCase) >= 0)
+                            if (name.Length == 0 ||
+                                name.IndexOf("spacedesk", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                name.IndexOf("Remote", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                name.IndexOf("Basic Display", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                name.IndexOf("Virtual", StringComparison.OrdinalIgnoreCase) >= 0)
                                 continue;
 
-                            if (name.IndexOf("AMD", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                                name.IndexOf("Radeon", StringComparison.OrdinalIgnoreCase) >= 0)
+                            int rank = 0;
+                            bool isAmd = name.IndexOf("AMD", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                         name.IndexOf("Radeon", StringComparison.OrdinalIgnoreCase) >= 0;
+                            if (isAmd)
                             {
-                                hw.HasAmdGpu = true;
-                                if (Regex.IsMatch(name, @"RX\s*7[6789]\d{2}", RegexOptions.IgnoreCase))
-                                    hw.IsAmdRx7000 = true;
+                                bool discrete = Regex.IsMatch(name, @"\b(RX|Pro\s+W|FirePro|Instinct)\b", RegexOptions.IgnoreCase);
+                                if (discrete)
+                                {
+                                    amdDiscrete = true;
+                                    rank = 3;
+                                    if (Regex.IsMatch(name, @"RX\s*7[6789]\d{2}", RegexOptions.IgnoreCase))
+                                        hw.IsAmdRx7000 = true;
+                                }
+                                else
+                                {
+                                    amdIntegrated = true;
+                                    rank = 1;
+                                }
                             }
 
                             if (name.IndexOf("NVIDIA", StringComparison.OrdinalIgnoreCase) >= 0)
-                                hw.HasNvidiaGpu = true;
-
-                            if (name.IndexOf("Intel", StringComparison.OrdinalIgnoreCase) >= 0 &&
-                                name.IndexOf("Arc", StringComparison.OrdinalIgnoreCase) >= 0)
-                                hw.HasIntelArcGpu = true;
-
-                            if (hw.GpuName == "Unknown GPU" ||
-                                name.IndexOf("NVIDIA", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                                name.IndexOf("Radeon RX", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                                name.IndexOf("Arc", StringComparison.OrdinalIgnoreCase) >= 0)
                             {
+                                hw.HasNvidiaGpu = true;
+                                rank = 4;
+                            }
+
+                            if (name.IndexOf("Intel", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                // Discrete Arc cards carry a model number (A380, A770, B580…); the iGPU is just "Arc Graphics".
+                                if (Regex.IsMatch(name, @"\bArc(\(TM\))?\s+(Pro\s+)?[AB]\d{2,3}", RegexOptions.IgnoreCase))
+                                {
+                                    hw.HasIntelArcGpu = true;
+                                    rank = 2;
+                                }
+                                else rank = 1;
+                            }
+
+                            if (rank > bestRank)
+                            {
+                                bestRank = rank;
                                 hw.GpuName = name;
                                 hw.GpuDriver = Convert.ToString(mo["DriverVersion"]).Trim();
                             }
                         }
                     }
+                    // A Ryzen iGPU only counts as "the AMD GPU" when no other graphics card is installed.
+                    hw.HasAmdGpu = amdDiscrete || (amdIntegrated && !hw.HasNvidiaGpu && !hw.HasIntelArcGpu);
                 }
                 catch (Exception ex) { Log.Warn(ex); }
 
@@ -689,7 +721,7 @@ namespace WinCrashDoctor
         public static void BuildSmartDiagnosis(ScanResult res)
         {
             DateTime? startTime = res.FilterStartTime;
-            string pDate = startTime.HasValue ? startTime.Value.ToString("dd/MM/yyyy HH:mm") : "";
+            string pDate = startTime.HasValue ? startTime.Value.ToString("g", Localizer.Culture) : "";
             string period = startTime.HasValue
                 ? Localizer.L("depuis le " + pDate, "since " + pDate, "desde el " + pDate, "seit " + pDate, "dal " + pDate, "desde " + pDate)
                 : Localizer.L("sur tout l'historique", "across all history", "en todo el historial", "im gesamten Verlauf", "in tutta la cronologia", "em todo o histórico");
@@ -2013,9 +2045,26 @@ namespace WinCrashDoctor
                 using (RegistryKey mk = bk.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management", false))
                 {
                     if (mk == null) return true;
+                    object auto = mk.GetValue("AutomaticManagedPagefile");
+                    if (auto is int && (int)auto == 1) return true;
                     string[] pf = mk.GetValue("PagingFiles") as string[];
                     if (pf == null || pf.Length == 0) return false;
-                    return pf.Any(s => !string.IsNullOrWhiteSpace(s) && s.IndexOf("pagefile.sys", StringComparison.OrdinalIgnoreCase) >= 0);
+                    // Entries: "?:\pagefile.sys" (all drives, system managed), "C:\pagefile.sys 0 0" (system managed size)
+                    // or "C:\pagefile.sys <initial MB> <max MB>" (fixed). A tiny fixed one (e.g. 16 MB) is exactly the
+                    // "pagefile restricted" case this check exists for, so it no longer counts as OK.
+                    const int MinFixedMaxMb = 4096;
+                    foreach (string entry in pf)
+                    {
+                        if (string.IsNullOrWhiteSpace(entry) || entry.IndexOf("pagefile.sys", StringComparison.OrdinalIgnoreCase) < 0) continue;
+                        string[] parts = entry.Trim().Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                        if (parts.Length < 3) return true; // no sizes: system managed
+                        int initMb, maxMb;
+                        if (!int.TryParse(parts[parts.Length - 2], NumberStyles.Integer, CultureInfo.InvariantCulture, out initMb) ||
+                            !int.TryParse(parts[parts.Length - 1], NumberStyles.Integer, CultureInfo.InvariantCulture, out maxMb))
+                            return true; // unknown format: do not raise a false alarm
+                        if (maxMb == 0 || maxMb >= MinFixedMaxMb) return true;
+                    }
+                    return false;
                 }
             }
             catch (Exception ex) { Log.Warn(ex); return true; }

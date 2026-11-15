@@ -15,8 +15,27 @@ namespace WinCrashDoctor.Detection
         public string DisplayVersion { get; private set; }
         public string Edition { get; private set; }
 
-        public bool IsWindows11 { get { return Build >= 22000; } }
-        public string ProductName { get { return IsWindows11 ? "Windows 11" : "Windows 10"; } }
+        /// <summary>"Client", "Server" or "Server Core" (registry InstallationType).</summary>
+        public string InstallationType { get; private set; }
+
+        /// <summary>Windows Server shares build numbers with client releases (17763, 20348, 26100…) but not their lifecycle.</summary>
+        public bool IsServer
+        {
+            get
+            {
+                return (InstallationType ?? "").StartsWith("Server", StringComparison.OrdinalIgnoreCase)
+                    || (Edition ?? "").StartsWith("Server", StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        public bool IsWindows11 { get { return !IsServer && Build >= 22000; } }
+        public string ProductName { get { return IsServer ? "Windows Server" : (IsWindows11 ? "Windows 11" : "Windows 10"); } }
+
+        /// <summary>
+        /// Windows 10 22H2 still installing monthly updates after its end of support (October 2025, build 19045.6456):
+        /// the PC is enrolled in Extended Security Updates.
+        /// </summary>
+        public bool ReceivesExtendedSecurityUpdates { get { return Build == 19045 && Ubr > 6456; } }
 
         /// <summary>Enterprise / Education / IoT get one more year on most releases.</summary>
         public bool IsEnterpriseLike
@@ -52,6 +71,7 @@ namespace WinCrashDoctor.Detection
                             w.Ubr = ubr is int ? (int)ubr : 0;
                             w.DisplayVersion = Convert.ToString(k.GetValue("DisplayVersion") ?? k.GetValue("ReleaseId") ?? "");
                             w.Edition = Convert.ToString(k.GetValue("EditionID") ?? "");
+                            w.InstallationType = Convert.ToString(k.GetValue("InstallationType") ?? "");
                         }
                     }
                 }
@@ -70,15 +90,20 @@ namespace WinCrashDoctor.Detection
         {
             get
             {
-                if (IsLtsc) return null;
+                if (IsLtsc || IsServer) return null; // separate lifecycles, not tracked here
                 bool ent = IsEnterpriseLike;
                 switch (Build)
                 {
-                    case 19045: return new DateTime(2025, 10, 14);                                   // Windows 10 22H2 (all editions; ESU aside)
+                    case 19045:
+                        // Consumer ESU runs one year (to Oct 2026); commercial ESU can be bought for up to three, so the
+                        // end date of an enrolled business PC is unknown here.
+                        if (ReceivesExtendedSecurityUpdates) return ent ? (DateTime?)null : new DateTime(2026, 10, 13);
+                        return new DateTime(2025, 10, 14);                                           // Windows 10 22H2
                     case 22000: return ent ? new DateTime(2024, 10, 8) : new DateTime(2023, 10, 10);  // 11 21H2
                     case 22621: return ent ? new DateTime(2025, 10, 14) : new DateTime(2024, 10, 8);  // 11 22H2
                     case 22631: return ent ? new DateTime(2026, 11, 10) : new DateTime(2025, 11, 11); // 11 23H2
                     case 26100: return ent ? new DateTime(2027, 10, 12) : new DateTime(2026, 10, 13); // 11 24H2
+                    case 26200: return ent ? new DateTime(2028, 10, 10) : new DateTime(2027, 10, 12); // 11 25H2
                     default:
                         if (Build < 19045) return new DateTime(2025, 10, 14);
                         return null;

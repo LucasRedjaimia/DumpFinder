@@ -100,7 +100,7 @@ namespace WinCrashDoctor
         public string DetailsFr { get; set; }
         public string DetailsEn { get; set; }
 
-        public string DisplayTime { get { return Timestamp.ToString("dd/MM/yyyy HH:mm"); } }
+        public string DisplayTime { get { return Timestamp.ToString("g", Localizer.Culture); } } // follows the app language
     }
 
     public class RegistryFixItem
