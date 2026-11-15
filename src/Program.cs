@@ -65,6 +65,8 @@ namespace WinCrashDoctor
                     return WinCrashDoctor.Optimize.OptimizeSelfTest.Run(args[1]);
                 if (args[0] == "--detect-selftest" && args.Length >= 2)
                     return WinCrashDoctor.Detection.DetectionSelfTest.Run(args[1]);
+                if (args[0] == "--parse-selftest" && args.Length >= 2)
+                    return ParseSelfTest.Run(args[1]);
                 if (args[0] == "--update-selftest" && args.Length >= 2)
                     return UpdateSelfTest.Run(args[1]);
                 if (args[0] == "--stress-selftest" && args.Length >= 2)
