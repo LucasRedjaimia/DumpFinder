@@ -1225,5 +1225,8 @@
   "stress_advice.stopped_cpu_overheat": "Arrêté pour surchauffe : le processeur est resté à {0} °C ou plus pendant {1} s.",
   "stress_advice.stopped_gpu_overheat": "Arrêté pour surchauffe : la carte graphique est restée à {0} °C ou plus pendant {1} s.",
   "stress_advice.cpu_cooling_advice": "Aucun calcul faux, mais le refroidissement ne suit pas. Vérifie que le ventirad ou l'AIO est bien serré et que sa pompe tourne, la pâte thermique (à refaire si elle a plusieurs années), la poussière et le flux d'air du boîtier. Dans le BIOS, retire un overclock ou un réglage PBO / undervolt mal ajusté, ou baisse les limites de puissance.",
-  "stress_advice.gpu_cooling_advice": "Aucun calcul faux, mais la carte graphique chauffe trop. Dépoussière-la, vérifie que ses ventilateurs tournent et le flux d'air du boîtier ; une courbe de ventilation plus agressive (MSI Afterburner) ou une limite de puissance un peu plus basse aide. Si ça ne suffit pas, la pâte et les pads thermiques sont à refaire."
+  "stress_advice.gpu_cooling_advice": "Aucun calcul faux, mais la carte graphique chauffe trop. Dépoussière-la, vérifie que ses ventilateurs tournent et le flux d'air du boîtier ; une courbe de ventilation plus agressive (MSI Afterburner) ou une limite de puissance un peu plus basse aide. Si ça ne suffit pas, la pâte et les pads thermiques sont à refaire.",
+  "system_health_scanner.smart_summary": "  •  {0} °C  •  Usure : {1} %  •  Erreurs : {2}",
+  "system_health_scanner.rebar_unknown": "Non déterminé",
+  "system_health_scanner.rebar_unknown_detail": "Windows n'indique pas la taille de cette fenêtre sans l'outil du fabricant. Vérifie dans AMD Software (Smart Access Memory) ou Intel Arc Control (Resizable BAR) ; si elle est désactivée, active « Above 4G Decoding » et « Re-Size BAR » dans le BIOS."
 }

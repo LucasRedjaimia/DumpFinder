@@ -104,6 +104,29 @@ namespace WinCrashDoctor.Detection
             SystemHealthScanner.TestBiosDate = null;
             sb.AppendLine("Entrées de la base de connaissances : " + KnowledgeBase.GetEntries().Count);
             sb.AppendLine("0x18B expliqué : " + (BugCheckCatalog.Get(0x18B) != null && BugCheckCatalog.Get(0x18B).ExplanationFr != null));
+
+            // Report JSON: an escaped backslash before a closing quote must not break the indentation.
+            var ser = new System.Web.Script.Serialization.JavaScriptSerializer();
+            var sample = new System.Collections.Generic.Dictionary<string, object>
+            {
+                { "path", @"C:\" }, { "quote", "a\"b\\" }, { "list", new[] { "x\\", "y" } }, { "n", 1 }
+            };
+            string compact = ser.Serialize(sample);
+            string pretty = ReportBuilder.PrettyJson(compact);
+            var back = ser.Deserialize<System.Collections.Generic.Dictionary<string, object>>(pretty);
+            expect("JSON indenté relisible avec des \\ en fin de chaîne", back != null && (string)back["path"] == @"C:\" && (string)back["quote"] == "a\"b\\" && pretty.Contains("\n  \"n\": 1"));
+
+            // Crash keys: UTC, and the former local-time keys are recognised (no wave of "new" crashes).
+            var t = new DateTime(2026, 3, 29, 1, 30, 0, DateTimeKind.Local);
+            string legacy = "ev|" + t.Ticks + "|Event 41";
+            expect("ancienne clé de crash convertie en UTC", History.MigrateCrashKey(legacy) == "evu|" + t.ToUniversalTime().Ticks + "|Event 41");
+            expect("clé invalide ignorée", History.MigrateCrashKey("ev|abc|x") == null && History.MigrateCrashKey("dmp|C:\\x.dmp") == null);
+
+            // ReBAR: only the graphics card's own memory ranges count.
+            long bar = SystemHealthScanner.DetectGpuBar1Mib(DiagnosticsEngine.GetHardwareSummary().GpuName);
+            sb.AppendLine("Fenêtre BAR du GPU : " + bar + " Mo");
+            expect("fenêtre BAR lue ou inconnue (≥ 512 Mo, ou -1 sans nvidia-smi), jamais une fausse valeur", bar >= 512 || bar == -1);
+
             sb.AppendLine();
             sb.AppendLine(bad == 0 ? "TOUT EST CONFORME" : bad + " ÉCART(S)");
             System.IO.File.WriteAllText(outPath, sb.ToString(), new UTF8Encoding(false));

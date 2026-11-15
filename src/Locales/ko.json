@@ -1225,5 +1225,8 @@
   "stress_advice.stopped_cpu_overheat": "과열로 중지됨: CPU가 {1}초 동안 {0} °C 이상을 유지했어요.",
   "stress_advice.stopped_gpu_overheat": "과열로 중지됨: 그래픽 카드가 {1}초 동안 {0} °C 이상을 유지했어요.",
   "stress_advice.cpu_cooling_advice": "계산 오류는 없지만 냉각이 따라가지 못해요. CPU 쿨러나 AIO가 제대로 장착되어 있고 펌프가 돌아가는지, 서멀 페이스트(몇 년 됐다면 다시 바르세요), 먼지, 케이스 공기 흐름을 확인하세요. BIOS에서 오버클럭이나 잘못 조정된 PBO / 언더볼트를 해제하거나 전력 제한을 낮추세요.",
-  "stress_advice.gpu_cooling_advice": "계산 오류는 없지만 그래픽 카드가 너무 뜨거워요. 먼지를 청소하고 팬이 돌아가는지, 케이스 공기 흐름을 확인하세요. 더 공격적인 팬 커브(MSI Afterburner)나 조금 낮춘 전력 제한이 도움이 돼요. 그래도 부족하면 서멀 페이스트와 서멀 패드를 다시 작업해야 해요."
+  "stress_advice.gpu_cooling_advice": "계산 오류는 없지만 그래픽 카드가 너무 뜨거워요. 먼지를 청소하고 팬이 돌아가는지, 케이스 공기 흐름을 확인하세요. 더 공격적인 팬 커브(MSI Afterburner)나 조금 낮춘 전력 제한이 도움이 돼요. 그래도 부족하면 서멀 페이스트와 서멀 패드를 다시 작업해야 해요.",
+  "system_health_scanner.smart_summary": "  •  {0} °C  •  마모: {1}%  •  오류: {2}",
+  "system_health_scanner.rebar_unknown": "확인할 수 없음",
+  "system_health_scanner.rebar_unknown_detail": "제조사 도구가 없으면 Windows는 이 창의 크기를 알려 주지 않아요. AMD Software(Smart Access Memory) 또는 Intel Arc Control(Resizable BAR)에서 확인하세요. 꺼져 있다면 BIOS에서 'Above 4G Decoding'과 'Re-Size BAR'를 켜세요."
 }

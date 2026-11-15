@@ -1225,5 +1225,8 @@
   "stress_advice.stopped_cpu_overheat": "Wegen Überhitzung gestoppt: Die CPU lag {1} s lang bei {0} °C oder mehr.",
   "stress_advice.stopped_gpu_overheat": "Wegen Überhitzung gestoppt: Die Grafikkarte lag {1} s lang bei {0} °C oder mehr.",
   "stress_advice.cpu_cooling_advice": "Kein falsches Ergebnis, aber die Kühlung kommt nicht hinterher. Prüfe, ob der CPU-Kühler oder die AIO fest sitzt und die Pumpe läuft, außerdem die Wärmeleitpaste (erneuere sie, wenn sie mehrere Jahre alt ist), Staub und den Luftstrom im Gehäuse. Entferne im BIOS eine Übertaktung oder eine schlecht abgestimmte PBO- / Undervolt-Einstellung oder senke die Leistungslimits.",
-  "stress_advice.gpu_cooling_advice": "Kein falsches Ergebnis, aber die Grafikkarte wird zu heiß. Entstaube sie, prüfe, ob ihre Lüfter drehen, und den Luftstrom im Gehäuse; eine aggressivere Lüfterkurve (MSI Afterburner) oder ein etwas niedrigeres Leistungslimit hilft. Reicht das nicht, müssen Wärmeleitpaste und Wärmeleitpads erneuert werden."
+  "stress_advice.gpu_cooling_advice": "Kein falsches Ergebnis, aber die Grafikkarte wird zu heiß. Entstaube sie, prüfe, ob ihre Lüfter drehen, und den Luftstrom im Gehäuse; eine aggressivere Lüfterkurve (MSI Afterburner) oder ein etwas niedrigeres Leistungslimit hilft. Reicht das nicht, müssen Wärmeleitpaste und Wärmeleitpads erneuert werden.",
+  "system_health_scanner.smart_summary": "  •  {0} °C  •  Verschleiß: {1} %  •  Fehler: {2}",
+  "system_health_scanner.rebar_unknown": "Nicht ermittelt",
+  "system_health_scanner.rebar_unknown_detail": "Ohne das Tool des Herstellers meldet Windows die Größe dieses Fensters nicht. Prüfe es in AMD Software (Smart Access Memory) oder Intel Arc Control (Resizable BAR); ist es aus, aktiviere 'Above 4G Decoding' und 'Re-Size BAR' im BIOS."
 }

@@ -1225,5 +1225,8 @@
   "stress_advice.stopped_cpu_overheat": "Interrotto per surriscaldamento: il processore è rimasto a {0} °C o più per {1} s.",
   "stress_advice.stopped_gpu_overheat": "Interrotto per surriscaldamento: la scheda video è rimasta a {0} °C o più per {1} s.",
   "stress_advice.cpu_cooling_advice": "Nessun risultato errato, ma il raffreddamento non tiene il passo. Controlla che il dissipatore o l'AIO sia ben fissato e che la pompa giri, la pasta termica (rifalla se ha qualche anno), la polvere e il flusso d'aria del case. Nel BIOS, rimuovi un overclock o un'impostazione PBO / undervolt mal regolata, oppure abbassa i limiti di potenza.",
-  "stress_advice.gpu_cooling_advice": "Nessun risultato errato, ma la scheda video scalda troppo. Spolverala, controlla che le ventole girino e il flusso d'aria del case; una curva delle ventole più aggressiva (MSI Afterburner) o un limite di potenza un po' più basso aiuta. Se non basta, vanno rifatti la pasta e i pad termici."
+  "stress_advice.gpu_cooling_advice": "Nessun risultato errato, ma la scheda video scalda troppo. Spolverala, controlla che le ventole girino e il flusso d'aria del case; una curva delle ventole più aggressiva (MSI Afterburner) o un limite di potenza un po' più basso aiuta. Se non basta, vanno rifatti la pasta e i pad termici.",
+  "system_health_scanner.smart_summary": "  •  {0} °C  •  Usura: {1}%  •  Errori: {2}",
+  "system_health_scanner.rebar_unknown": "Non determinato",
+  "system_health_scanner.rebar_unknown_detail": "Senza lo strumento del produttore Windows non indica la dimensione di questa finestra. Controlla in AMD Software (Smart Access Memory) o Intel Arc Control (Resizable BAR); se è disattivata, attiva 'Above 4G Decoding' e 'Re-Size BAR' nel BIOS."
 }

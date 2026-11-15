@@ -1225,5 +1225,8 @@
   "stress_advice.stopped_cpu_overheat": "Zatrzymano z powodu przegrzania: temperatura procesora utrzymywała się na poziomie {0} °C lub wyższym przez {1} s.",
   "stress_advice.stopped_gpu_overheat": "Zatrzymano z powodu przegrzania: temperatura karty graficznej utrzymywała się na poziomie {0} °C lub wyższym przez {1} s.",
   "stress_advice.cpu_cooling_advice": "Żadnych błędnych wyników, ale chłodzenie nie nadąża. Sprawdź, czy chłodzenie CPU lub AIO jest dobrze zamocowane, a jego pompa pracuje, a także pastę termoprzewodzącą (wymień ją, jeśli ma kilka lat), kurz i przepływ powietrza w obudowie. W BIOS usuń podkręcenie lub źle dobrane ustawienie PBO / undervoltingu albo obniż limity mocy.",
-  "stress_advice.gpu_cooling_advice": "Żadnych błędnych wyników, ale karta graficzna za bardzo się grzeje. Odkurz ją, sprawdź, czy jej wentylatory się kręcą, oraz przepływ powietrza w obudowie; pomaga bardziej agresywna krzywa wentylatorów (MSI Afterburner) lub nieco niższy limit mocy. Jeśli to nie wystarczy, trzeba wymienić pastę i termopady."
+  "stress_advice.gpu_cooling_advice": "Żadnych błędnych wyników, ale karta graficzna za bardzo się grzeje. Odkurz ją, sprawdź, czy jej wentylatory się kręcą, oraz przepływ powietrza w obudowie; pomaga bardziej agresywna krzywa wentylatorów (MSI Afterburner) lub nieco niższy limit mocy. Jeśli to nie wystarczy, trzeba wymienić pastę i termopady.",
+  "system_health_scanner.smart_summary": "  •  {0} °C  •  Zużycie: {1}%  •  Błędy: {2}",
+  "system_health_scanner.rebar_unknown": "Nie ustalono",
+  "system_health_scanner.rebar_unknown_detail": "Bez narzędzia producenta Windows nie podaje rozmiaru tego okna. Sprawdź w AMD Software (Smart Access Memory) lub Intel Arc Control (Resizable BAR); jeśli jest wyłączone, włącz 'Above 4G Decoding' i 'Re-Size BAR' w BIOS-ie."
 }

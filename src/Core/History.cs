@@ -143,8 +143,32 @@ namespace WinCrashDoctor
         public static List<string> PeekNewCrashes(IEnumerable<string> currentKeys)
         {
             if (!File.Exists(SeenFile)) return new List<string>();
-            var seen = new HashSet<string>(Load<List<string>>(SeenFile) ?? new List<string>());
+            var seen = LoadSeen();
             return currentKeys.Where(k => !seen.Contains(k)).Distinct().ToList();
+        }
+
+        /// <summary>
+        /// Seen crash keys. Keys written before 6.2 used local time ("ev|ticks|code"): they are converted to the UTC
+        /// form ("evu|…") with this PC's time zone rules for that date, so known crashes stay known.
+        /// </summary>
+        private static HashSet<string> LoadSeen()
+        {
+            var seen = new HashSet<string>(Load<List<string>>(SeenFile) ?? new List<string>());
+            foreach (string k in seen.Where(x => x.StartsWith("ev|", StringComparison.Ordinal)).ToList())
+            {
+                string utc = MigrateCrashKey(k);
+                if (utc != null) seen.Add(utc);
+            }
+            return seen;
+        }
+
+        internal static string MigrateCrashKey(string legacy)
+        {
+            string[] p = legacy.Split(new[] { '|' }, 3);
+            long ticks;
+            if (p.Length < 3 || p[0] != "ev" || !long.TryParse(p[1], out ticks) || ticks <= 0 || ticks > DateTime.MaxValue.Ticks) return null;
+            try { return "evu|" + new DateTime(ticks, DateTimeKind.Local).ToUniversalTime().Ticks + "|" + p[2]; }
+            catch (ArgumentException) { return null; }
         }
 
         /// <summary>
@@ -156,7 +180,7 @@ namespace WinCrashDoctor
             using (HistoryLock.Take())
             {
                 bool firstRun = !File.Exists(SeenFile);
-                var seen = new HashSet<string>(Load<List<string>>(SeenFile) ?? new List<string>());
+                var seen = LoadSeen();
                 var fresh = currentKeys.Where(k => !seen.Contains(k)).Distinct().ToList();
                 foreach (var k in fresh) seen.Add(k);
                 Save(SeenFile, seen.Skip(Math.Max(0, seen.Count - 5000)).ToList());
