@@ -75,6 +75,21 @@ public partial class MainWindow : Window, IPlatform
         };
     }
 
+    /// <summary>
+    /// Title bar drag (the buttons handle their own clicks, so they never get here): move the window, or zoom it on a
+    /// double-click, like the native macOS title bar.
+    /// </summary>
+    void OnTitleBarPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
+    {
+        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+        if (e.ClickCount == 2)
+        {
+            WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+            return;
+        }
+        BeginMoveDrag(e);
+    }
+
     /// <summary>⌘Q or the menu bar Quit: closing the window then really quits.</summary>
     public void AllowExit()
     {

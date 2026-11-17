@@ -6,7 +6,7 @@
 # The version is read from mac/src/DumpFinder.Mac/DumpFinder.Mac.csproj (<Version>): the Mac app has its
 # own version line, independent of the Windows exe.
 #
-# Signing: ad-hoc by default (runs on this Mac; a downloaded copy needs right-click › Open the first time).
+# Signing: ad-hoc by default (runs on this Mac; a downloaded copy needs System Settings › Privacy & Security › Open Anyway the first time).
 # With a "Developer ID Application" certificate, set DEVELOPER_ID="Developer ID Application: Name (TEAMID)";
 # add NOTARY_PROFILE=<keychain profile created with `xcrun notarytool store-credentials`> to notarize too.
 set -euo pipefail
@@ -96,7 +96,7 @@ if [[ "$IDENTITY" != "-" && -n "${NOTARY_PROFILE:-}" ]]; then
     rm -f "$ZIP" && ditto -c -k --keepParent "$APP" "$ZIP"
     echo "Notarized."
 elif [[ "$IDENTITY" == "-" ]]; then
-    echo "Ad-hoc signed (not notarized): a downloaded copy needs right-click › Open the first time."
+    echo "Ad-hoc signed (not notarized): a downloaded copy needs System Settings › Privacy & Security › Open Anyway the first time."
 fi
 
 echo "Built: $APP"

@@ -17,6 +17,11 @@ Apple Silicon version of Dump Finder: it explains why a Mac crashes or restarts 
 
 The rules and their texts live in [`data/mac-detection.json`](data/mac-detection.json) (data only, like `data/detection.json` on Windows): panic patterns, shutdown codes, kext vendor categories, thresholds, supported macOS versions.
 
+## Install
+
+1. Unzip `DumpFinder-mac-<version>.zip` from the [releases](https://github.com/LucasRedjaimia/DumpFinder/releases) (the `mac-v*` ones) and move **Dump Finder.app** to Applications. Open at login and the MCP server need it there: macOS runs an app opened from Downloads from a temporary copy.
+2. Open it. The app is not notarized yet, so macOS blocks it the first time: open **System Settings › Privacy & Security**, scroll down and click **Open Anyway**, then confirm. Only once. (On macOS 14, right-click the app › Open also works.)
+
 ## Build and run
 
 Requirements: [.NET 10 SDK](https://dotnet.microsoft.com/download), an Apple Silicon Mac.
@@ -45,7 +50,7 @@ The Mac app has its own version (`<Version>` in `src/DumpFinder.Mac/DumpFinder.M
 ```bash
 mac/build.sh
 ```
-Runs the self-test, then writes `mac/out/Dump Finder.app` (self-contained: no .NET needed on the user's Mac) and `mac/out/DumpFinder-mac-<version>.zip`. It is signed ad hoc, so a downloaded copy needs right-click › Open the first time. With an Apple Developer account, set `DEVELOPER_ID="Developer ID Application: Name (TEAMID)"` to sign it properly, plus `NOTARY_PROFILE=<profile>` (created with `xcrun notarytool store-credentials`) to notarize it.
+Runs the self-test, then writes `mac/out/Dump Finder.app` (self-contained: no .NET needed on the user's Mac) and `mac/out/DumpFinder-mac-<version>.zip`. It is signed ad hoc, so macOS blocks a downloaded copy the first time: open System Settings › Privacy & Security and click "Open Anyway" (macOS 14 also accepts right-click › Open; macOS 15 and later do not). With an Apple Developer account, set `DEVELOPER_ID="Developer ID Application: Name (TEAMID)"` to sign it properly, plus `NOTARY_PROFILE=<profile>` (created with `xcrun notarytool store-credentials`) to notarize it.
 
 ```bash
 mac/release.sh 0.2.0
