@@ -22,3 +22,6 @@ design/captures*/
 PLAN_REFONTE.md
 design/
 branding/logo-concepts.html
+
+# Mac app bundle and zip (mac/build.sh)
+mac/out/

@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DumpFinder.Mac.Core/DumpFinder.Mac.Core.csproj" />
+    <Project Path="src/DumpFinder.Mac/DumpFinder.Mac.csproj" />
+  </Folder>
+</Solution>

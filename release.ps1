@@ -31,7 +31,7 @@ if (-not (Test-Path $notes)) {
     exit 1
 }
 
-# 2. The version must be newer than every existing tag
+# 2. The version must be newer than every existing Windows tag (v*; the Mac app has its own mac-v* tags)
 $current = [version]$Version
 $tags = git tag --list "v*" | ForEach-Object { try { [version]($_.TrimStart('v')) } catch { $null } } | Where-Object { $_ }
 $latest = $tags | Sort-Object -Descending | Select-Object -First 1
@@ -67,7 +67,9 @@ git push origin "v$Version"
 if ($LASTEXITCODE -ne 0) { throw "git push failed" }
 
 # 6. GitHub release with the exe
-$ghArgs = @("release", "create", "v$Version", $exe, "--title", "Dump Finder $Version", "--notes-file", $notes, "--verify-tag")
+# --latest: installed Windows apps read /releases/latest, so it must always be a Windows release
+# (Mac releases are published with --latest=false by mac/release.sh).
+$ghArgs = @("release", "create", "v$Version", $exe, "--title", "Dump Finder $Version", "--notes-file", $notes, "--verify-tag", "--latest")
 if ($Draft) { $ghArgs += "--draft" }
 & $gh @ghArgs
 if ($LASTEXITCODE -ne 0) { throw "gh release create failed" }
