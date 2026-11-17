@@ -6,6 +6,8 @@ Dump Finder helps you understand why a Windows PC crashes (blue screens, GPU tim
 
 **[Download the latest version](https://github.com/LucasRedjaimia/DumpFinder/releases/latest)**: a single `DumpFinder.exe`, no installation needed (Windows 10 / 11, 64-bit).
 
+**Mac (preview)**: [Dump Finder for Mac](mac/README.md) for Apple Silicon is in early development, with its own versions: [Mac releases](https://github.com/LucasRedjaimia/DumpFinder/releases?q=mac-v&expanded=true).
+
 ## Features
 
 - **Crashes**: reads the Windows event logs and crash dumps (minidumps), identifies the driver or component involved and explains its common causes.
@@ -77,6 +79,15 @@ Several translations (Polish, Dutch, Turkish, Russian, Ukrainian, Chinese, Japan
 To update it: edit the file, increase `version` by one and set `updated` (`yyyy-MM-dd`), add any new explanation as a key in all `src/Locales/<code>.json` files (a key that does not exist in `en.json` makes the file invalid), run `--update-selftest`, then merge to `main`. Installed apps pick it up at their next launch; a new key or a new disableable driver needs a new release of the app.
 
 ## Publish a new version
+
+The Windows and Mac apps have **separate version numbers** and tags, because they are at different stages:
+
+| App | Tags | Release title | Script |
+|---|---|---|---|
+| Windows | `v6.2.0` | Dump Finder 6.2.0 | `release.ps1` (below) |
+| Mac | `mac-v0.1.0` | Dump Finder for Mac 0.1.0 | `mac/release.sh` (see [mac/README.md](mac/README.md)) |
+
+The Windows release is always the one marked **Latest** on GitHub: installed Windows apps check `/releases/latest` for updates. `release.ps1` passes `--latest` and `mac/release.sh` passes `--latest=false`; a Mac release must never be marked Latest by hand either.
 
 Requirements: [GitHub CLI](https://cli.github.com/), signed in (`gh auth login`).
 

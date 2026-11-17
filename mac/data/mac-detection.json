@@ -1,0 +1,103 @@
+{
+  "version": 1,
+  "updated": "2026-11-17",
+  "supportedMacOSMajors": [14, 15, 26],
+  "thresholds": {
+    "recentDays": 30,
+    "repeatedCrashes": 3,
+    "batteryMaxCapacityPct": 80,
+    "batteryCycles": 1000,
+    "diskFreeWarnPct": 10,
+    "diskFreeCriticalPct": 5,
+    "longUptimeDays": 30
+  },
+  "panicPatterns": [
+    {
+      "id": "watchdog",
+      "match": ["userspace watchdog timeout", "watchdog timeout: no successful checkins"],
+      "title": "System hang (watchdog)",
+      "explanation": "A core system process stopped responding for several minutes, so macOS restarted the kernel. The process is named after \"no successful checkins from\" in the report.",
+      "advice": "If it is WindowServer, suspect graphics: external displays, docks and adapters, screen recording or window-management apps. Unplug accessories and update or remove such apps."
+    },
+    {
+      "id": "sleep_wake",
+      "match": ["sleep transition timed out", "sleep wake failure", "sleepwake"],
+      "title": "Sleep / wake failure",
+      "explanation": "The Mac failed to go to sleep or wake up in time.",
+      "advice": "Disconnect USB / Thunderbolt accessories and docks before sleeping, then retest. Apps that keep devices busy (backup, sync, VPN) can block sleep."
+    },
+    {
+      "id": "gpu",
+      "match": ["agx", "gpu panic", "gpu restart", "gpu hang"],
+      "title": "Graphics processor (GPU)",
+      "explanation": "The panic was raised by the graphics driver.",
+      "advice": "Update macOS, then test without external displays and without GPU-heavy apps (games, 3D, video export). If it repeats on a clean system, contact Apple support."
+    },
+    {
+      "id": "storage",
+      "match": ["applenvme", "ans2", "ionvme", "applenvmecontroller"],
+      "title": "Internal storage (SSD controller)",
+      "explanation": "The panic involves the SSD controller.",
+      "advice": "Check free space (keep at least 10 %), back up now, and run First Aid in Disk Utility. Repeated storage panics on Apple Silicon need Apple support."
+    },
+    {
+      "id": "kernel_memory",
+      "match": ["zone_map_exhausted", "zalloc", "kalloc", "zone map"],
+      "title": "Kernel memory exhausted",
+      "explanation": "The kernel ran out of memory for its own structures, usually because a kernel or system extension leaks memory.",
+      "advice": "Look at third-party kernel and system extensions (security, VPN, file systems) and update or remove them."
+    },
+    {
+      "id": "thunderbolt_usb",
+      "match": ["iothunderbolt", "applethunderbolt", "appleusb", "usb host"],
+      "title": "USB / Thunderbolt accessory",
+      "explanation": "The panic involves the USB or Thunderbolt stack.",
+      "advice": "Test without docks, hubs and adapters, then reconnect them one at a time. Update the dock firmware if the vendor offers one."
+    },
+    {
+      "id": "data_abort",
+      "match": ["kernel data abort", "kernel instruction fetch abort"],
+      "title": "Invalid memory access in the kernel",
+      "explanation": "Kernel code read or ran from an invalid address. This is usually a bug in a kernel extension, more rarely a hardware fault.",
+      "advice": "If a non-Apple extension appears in the backtrace, update or uninstall it. Otherwise update macOS and watch for repeats."
+    },
+    {
+      "id": "thermal",
+      "match": ["thermal"],
+      "title": "Overheating",
+      "explanation": "The panic mentions a thermal event.",
+      "advice": "Keep the vents clear, use the Mac on a hard surface and check which apps load the CPU or GPU in Activity Monitor."
+    }
+  ],
+  "shutdownTokens": [
+    { "token": "wdog", "meaning": "a hardware watchdog reset (the system had stopped responding)", "abnormal": true },
+    { "token": "btn_rst", "meaning": "a forced restart with the power button (long press)", "abnormal": true },
+    { "token": "crash", "meaning": "a crash was recorded before the restart", "abnormal": true }
+  ],
+  "kextVendors": [
+    { "prefix": "com.paragon-software.", "category": "File system driver (NTFS, ext…)" },
+    { "prefix": "com.tuxera.", "category": "File system driver (NTFS, ext…)" },
+    { "prefix": "com.vmware.", "category": "Virtualization" },
+    { "prefix": "org.virtualbox.", "category": "Virtualization" },
+    { "prefix": "com.parallels.", "category": "Virtualization" },
+    { "prefix": "com.displaylink.", "category": "Display adapter" },
+    { "prefix": "com.sophos.", "category": "Security / antivirus" },
+    { "prefix": "com.symantec.", "category": "Security / antivirus" },
+    { "prefix": "com.mcafee.", "category": "Security / antivirus" },
+    { "prefix": "com.kaspersky.", "category": "Security / antivirus" },
+    { "prefix": "com.eset.", "category": "Security / antivirus" },
+    { "prefix": "com.bitdefender.", "category": "Security / antivirus" },
+    { "prefix": "com.avast.", "category": "Security / antivirus" },
+    { "prefix": "com.trendmicro.", "category": "Security / antivirus" },
+    { "prefix": "com.cisco.", "category": "VPN / network" },
+    { "prefix": "com.rogueamoeba.", "category": "Audio routing" },
+    { "prefix": "com.Cycling74.", "category": "Audio routing" },
+    { "prefix": "com.motu.", "category": "Audio interface" },
+    { "prefix": "com.focusrite.", "category": "Audio interface" },
+    { "prefix": "com.uaudio.", "category": "Audio interface" },
+    { "prefix": "com.logitech.", "category": "Input device" },
+    { "prefix": "com.razer.", "category": "Input device" },
+    { "prefix": "com.softraid.", "category": "Storage" },
+    { "prefix": "com.highpoint-tech.", "category": "Storage controller" }
+  ]
+}

@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>DumpFinder.Mac.Core</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Detection tables (data only), embedded as the default copy. Same idea as data/detection.json on Windows. -->
+    <EmbeddedResource Include="..\..\data\mac-detection.json" LogicalName="Data.mac-detection.json" Link="Data\mac-detection.json" />
+  </ItemGroup>
+
+</Project>

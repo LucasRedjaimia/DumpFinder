@@ -1,0 +1,129 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:DumpFinder.Mac"
+        x:Class="DumpFinder.Mac.MainWindow"
+        x:DataType="local:MainViewModel"
+        Title="Dump Finder"
+        Width="980" Height="720" MinWidth="640" MinHeight="480"
+        Background="{DynamicResource PageBrush}">
+
+  <Window.Resources>
+    <DataTemplate x:Key="LineTemplate" x:DataType="local:LineRow">
+      <Border Classes="card" Padding="12,8">
+        <StackPanel Spacing="2">
+          <SelectableTextBlock Text="{Binding Primary}" FontWeight="SemiBold" TextWrapping="Wrap" />
+          <SelectableTextBlock Text="{Binding Secondary}" Classes="muted" TextWrapping="Wrap" IsVisible="{Binding HasSecondary}" />
+        </StackPanel>
+      </Border>
+    </DataTemplate>
+  </Window.Resources>
+
+  <Window.KeyBindings>
+    <KeyBinding Gesture="Cmd+R" Command="{Binding RescanCommand}" />
+    <KeyBinding Gesture="F5" Command="{Binding RescanCommand}" />
+    <KeyBinding Gesture="Cmd+Shift+C" Command="{Binding CopyCommand}" />
+  </Window.KeyBindings>
+
+  <Window.Styles>
+    <Style Selector="Border.card">
+      <Setter Property="Background" Value="{DynamicResource CardBrush}" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Padding" Value="14,12" />
+      <Setter Property="Margin" Value="0,0,0,10" />
+      <Setter Property="BorderThickness" Value="4,0,0,0" />
+      <Setter Property="BorderBrush" Value="{DynamicResource InfoBrush}" />
+    </Style>
+    <Style Selector="Border.card.critical"><Setter Property="BorderBrush" Value="{DynamicResource CriticalBrush}" /></Style>
+    <Style Selector="Border.card.warning"><Setter Property="BorderBrush" Value="{DynamicResource WarningBrush}" /></Style>
+    <Style Selector="Border.card.ok"><Setter Property="BorderBrush" Value="{DynamicResource OkBrush}" /></Style>
+    <Style Selector="TextBlock.badge"><Setter Property="Foreground" Value="{DynamicResource InfoBrush}" /></Style>
+    <Style Selector="TextBlock.badge.critical"><Setter Property="Foreground" Value="{DynamicResource CriticalBrush}" /></Style>
+    <Style Selector="TextBlock.badge.warning"><Setter Property="Foreground" Value="{DynamicResource WarningBrush}" /></Style>
+    <Style Selector="TextBlock.badge.ok"><Setter Property="Foreground" Value="{DynamicResource OkBrush}" /></Style>
+    <Style Selector="TextBlock.muted"><Setter Property="Foreground" Value="{DynamicResource MutedBrush}" /></Style>
+    <Style Selector="TextBlock.section">
+      <Setter Property="FontSize" Value="15" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Margin" Value="0,8,0,8" />
+    </Style>
+  </Window.Styles>
+
+  <DockPanel Margin="20,16,20,0">
+    <!-- Header -->
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,12">
+      <StackPanel Spacing="2">
+        <TextBlock Text="Dump Finder" FontSize="24" FontWeight="Bold" />
+        <TextBlock Text="{Binding MachineLine}" Classes="muted" TextWrapping="Wrap" />
+        <TextBlock Text="{Binding StatusLine}" Classes="muted" TextWrapping="Wrap" />
+      </StackPanel>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top">
+        <Button Content="Scan again" Command="{Binding RescanCommand}" IsEnabled="{Binding !IsScanning}"
+                AutomationProperties.Name="Scan again" ToolTip.Tip="⌘R" />
+        <Button Content="Copy report" Command="{Binding CopyCommand}" IsEnabled="{Binding HasResult}"
+                AutomationProperties.Name="Copy report" ToolTip.Tip="⇧⌘C" />
+      </StackPanel>
+    </Grid>
+
+    <ProgressBar DockPanel.Dock="Top" IsIndeterminate="True" IsVisible="{Binding IsScanning}" Margin="0,0,0,8" />
+
+    <TabControl x:Name="Tabs">
+      <TabItem Header="Findings">
+        <ScrollViewer>
+          <ItemsControl ItemsSource="{Binding Findings}" Margin="0,8,0,16">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="local:FindingRow">
+                <Border Classes="card" Classes.critical="{Binding IsCritical}" Classes.warning="{Binding IsWarning}" Classes.ok="{Binding IsOk}">
+                  <StackPanel Spacing="4">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Text="{Binding Badge}" FontWeight="Bold" Classes="badge"
+                                 Classes.critical="{Binding IsCritical}" Classes.warning="{Binding IsWarning}" Classes.ok="{Binding IsOk}" />
+                      <TextBlock Text="{Binding Category}" Classes="muted" />
+                    </StackPanel>
+                    <SelectableTextBlock Text="{Binding Title}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap" />
+                    <SelectableTextBlock Text="{Binding Detail}" TextWrapping="Wrap" />
+                    <SelectableTextBlock Text="{Binding Advice}" IsVisible="{Binding HasAdvice}" TextWrapping="Wrap" FontStyle="Italic" />
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+      </TabItem>
+
+      <TabItem Header="Crashes">
+        <ScrollViewer>
+          <StackPanel Margin="0,8,0,16">
+            <TextBlock Classes="section" Text="Kernel panics (90 days)" />
+            <TextBlock Classes="muted" Text="None." IsVisible="{Binding !Panics.Count}" />
+            <ItemsControl ItemsSource="{Binding Panics}" ItemTemplate="{StaticResource LineTemplate}" />
+            <TextBlock Classes="section" Text="App crashes and low-memory events (90 days)" />
+            <TextBlock Classes="muted" Text="None." IsVisible="{Binding !Crashes.Count}" />
+            <ItemsControl ItemsSource="{Binding Crashes}" ItemTemplate="{StaticResource LineTemplate}" />
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <TabItem Header="Extensions">
+        <ScrollViewer>
+          <StackPanel Margin="0,8,0,16">
+            <TextBlock Classes="muted" TextWrapping="Wrap"
+                       Text="Only non-Apple extensions are listed. Kernel extensions (kexts) run inside the kernel and are the usual suspects in kernel panics; system extensions run outside it." />
+            <TextBlock Classes="section" Text="Kernel extensions" />
+            <TextBlock Classes="muted" Text="None: only Apple's kernel extensions are present." IsVisible="{Binding !Kexts.Count}" />
+            <ItemsControl ItemsSource="{Binding Kexts}" ItemTemplate="{StaticResource LineTemplate}" />
+            <TextBlock Classes="section" Text="System extensions" />
+            <TextBlock Classes="muted" Text="None." IsVisible="{Binding !SysExts.Count}" />
+            <ItemsControl ItemsSource="{Binding SysExts}" ItemTemplate="{StaticResource LineTemplate}" />
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <TabItem Header="Hardware">
+        <ScrollViewer>
+          <ItemsControl ItemsSource="{Binding HardwareLines}" ItemTemplate="{StaticResource LineTemplate}" Margin="0,8,0,16" />
+        </ScrollViewer>
+      </TabItem>
+    </TabControl>
+  </DockPanel>
+
+</Window>
