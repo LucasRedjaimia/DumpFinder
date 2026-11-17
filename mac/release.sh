@@ -58,7 +58,8 @@ BUILT="$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$MAC/out
 
 # 5. Commit, tag, push (only the Mac folder: Windows files are released by release.ps1)
 git add -A mac
-git commit -m "Dump Finder for Mac $VERSION"
+# Nothing to commit when the version was already set (e.g. the first release): tag the current commit.
+git diff --cached --quiet -- mac || git commit -m "Dump Finder for Mac $VERSION"
 git tag -a "$TAG" -m "Dump Finder for Mac $VERSION"
 git push origin HEAD
 git push origin "$TAG"
