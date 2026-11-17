@@ -126,7 +126,8 @@ public static partial class SystemProbe
         var hw = new HardwareInfo();
         // -detailLevel mini leaves out serial numbers and other identifiers.
         var r = Proc.Run("/usr/sbin/system_profiler",
-            new[] { "-json", "-detailLevel", "mini", "SPHardwareDataType", "SPSoftwareDataType", "SPPowerDataType", "SPStorageDataType", "SPNVMeDataType" },
+            new[] { "-json", "-detailLevel", "mini", "SPHardwareDataType", "SPSoftwareDataType", "SPPowerDataType", "SPStorageDataType", "SPNVMeDataType",
+                    "SPDisplaysDataType", "SPMemoryDataType", "SPUSBDataType", "SPThunderboltDataType" },
             60000);
         if (r.TimedOut || r.ExitCode != 0) errors.Add("system_profiler failed: hardware details are incomplete.");
         else
@@ -142,7 +143,55 @@ public static partial class SystemProbe
         var gk = Proc.Run("/usr/sbin/spctl", new[] { "--status" }, 5000).Stdout;
         if (gk.Contains("assessments enabled", StringComparison.OrdinalIgnoreCase)) hw.GatekeeperEnabled = true;
         else if (gk.Contains("assessments disabled", StringComparison.OrdinalIgnoreCase)) hw.GatekeeperEnabled = false;
+
+        ReadLive(hw);
         return hw;
+    }
+
+    /// <summary>Cores, memory size, swap, memory pressure and thermal state (sysctl, memory_pressure, pmset).</summary>
+    static void ReadLive(HardwareInfo hw)
+    {
+        int.TryParse(Proc.Sysctl("hw.perflevel0.physicalcpu"), out var p);
+        int.TryParse(Proc.Sysctl("hw.perflevel1.physicalcpu"), out var e);
+        hw.PerformanceCores = p;
+        hw.EfficiencyCores = e;
+        if (long.TryParse(Proc.Sysctl("hw.memsize"), out var mem)) hw.MemoryBytes = mem;
+        hw.SwapUsedBytes = ParseSwapUsed(Proc.Sysctl("vm.swapusage"));
+        hw.MemoryFreePct = ParseMemoryFree(Proc.Run("/usr/bin/memory_pressure", new[] { "-Q" }, 10000).Stdout);
+        (hw.ThermalWarning, hw.ThermalText) = ParseTherm(Proc.Run("/usr/bin/pmset", new[] { "-g", "therm" }, 5000).Stdout);
+    }
+
+    /// <summary>"total = 2048.00M  used = 556.50M  free = …" → used bytes.</summary>
+    public static long ParseSwapUsed(string s)
+    {
+        var m = SwapUsedRx().Match(s);
+        if (!m.Success || !double.TryParse(m.Groups[1].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var v)) return 0;
+        return (long)(v * m.Groups[2].Value.ToUpperInvariant() switch { "K" => 1024d, "M" => 1024d * 1024, "G" => 1024d * 1024 * 1024, _ => 1 });
+    }
+
+    /// <summary>"System-wide memory free percentage: 91%" → 91.</summary>
+    public static int? ParseMemoryFree(string s)
+    {
+        var m = MemFreeRx().Match(s);
+        return m.Success ? int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture) : null;
+    }
+
+    /// <summary>
+    /// pmset -g therm: "Note: No thermal warning level has been recorded" when all is well. A recorded level
+    /// ("Thermal warning level set to 1") above 0, or a CPU_Speed_Limit / CPU_Scheduler_Limit under 100, means
+    /// macOS is slowing the chip down. CPU_Available_CPUs is a count, not a warning. Returns (warning, lines).
+    /// </summary>
+    public static (bool Warning, string Text) ParseTherm(string s)
+    {
+        var bad = new List<string>();
+        foreach (var line in s.Split('\n').Select(l => l.Trim()).Where(l => l.Length > 0 && !l.StartsWith("Note:", StringComparison.Ordinal)))
+        {
+            var level = ThermLevelRx().Match(line);
+            if (level.Success) { if (level.Groups[1].Value != "0") bad.Add(line); continue; }
+            var limit = ThermLimitRx().Match(line);
+            if (limit.Success && int.TryParse(limit.Groups[2].Value, out var v) && v < 100) bad.Add($"{limit.Groups[1].Value} = {v}");
+        }
+        return (bad.Count > 0, string.Join("; ", bad));
     }
 
     public static void FillFromProfiler(HardwareInfo hw, string json)
@@ -173,6 +222,31 @@ public static partial class SystemProbe
             var cap = DigitsRx().Match(S(health, "sppower_battery_health_maximum_capacity"));
             if (cap.Success) hw.BatteryMaxCapacityPct = int.Parse(cap.Value, CultureInfo.InvariantCulture);
         }
+        foreach (var gpu in Items(root, "SPDisplaysDataType"))
+        {
+            if (hw.GpuName.Length == 0)
+            {
+                hw.GpuName = S(gpu, "sppci_model") is { Length: > 0 } model ? model : S(gpu, "_name");
+                int.TryParse(S(gpu, "sppci_cores"), out var cores);
+                hw.GpuCores = cores;
+                var metal = S(gpu, "spdisplays_mtlgpufamilysupport");   // "spdisplays_metal4"
+                var mm = MetalRx().Match(metal);
+                hw.Metal = mm.Success ? "Metal " + mm.Groups[1].Value : "";
+            }
+            if (gpu.TryGetProperty("spdisplays_ndrvs", out var screens) && screens.ValueKind == JsonValueKind.Array)
+                foreach (var d in screens.EnumerateArray())
+                    hw.Displays.Add(new DisplayInfo(S(d, "_name"),
+                        S(d, "_spdisplays_resolution") is { Length: > 0 } res ? res : S(d, "spdisplays_resolution"),
+                        S(d, "spdisplays_connection_type") == "spdisplays_internal",
+                        S(d, "spdisplays_main") == "spdisplays_yes"));
+        }
+        foreach (var mem in Items(root, "SPMemoryDataType"))
+        {
+            hw.MemoryType = S(mem, "dimm_type");
+            hw.MemoryVendor = S(mem, "dimm_manufacturer");
+        }
+        foreach (var bus in Items(root, "SPUSBDataType")) CollectDevices(bus, "USB", hw.Peripherals);
+        foreach (var bus in Items(root, "SPThunderboltDataType")) CollectDevices(bus, "Thunderbolt", hw.Peripherals);
         foreach (var ctrl in Items(root, "SPNVMeDataType"))
             if (ctrl.TryGetProperty("_items", out var drives) && drives.ValueKind == JsonValueKind.Array)
                 foreach (var d in drives.EnumerateArray())
@@ -189,6 +263,19 @@ public static partial class SystemProbe
             if (vol.TryGetProperty("physical_drive", out var pd) && S(pd, "is_internal_disk") == "no" && S(pd, "smart_status") is { Length: > 0 } st
                 && hw.Drives.All(x => x.Name != S(pd, "device_name")))
                 hw.Drives.Add(new DriveInfo(S(pd, "device_name"), false, st));
+        }
+    }
+
+    /// <summary>Devices are the nested "_items" of a bus (hubs nest further). The bus itself is not a device.</summary>
+    static void CollectDevices(JsonElement node, string bus, List<PeripheralInfo> into)
+    {
+        if (!node.TryGetProperty("_items", out var items) || items.ValueKind != JsonValueKind.Array) return;
+        foreach (var d in items.EnumerateArray())
+        {
+            var name = S(d, "_name");
+            if (name.Length > 0 && !name.Contains("hub", StringComparison.OrdinalIgnoreCase))
+                into.Add(new PeripheralInfo(name, S(d, "manufacturer") is { Length: > 0 } v ? v : S(d, "vendor_name_key"), bus));
+            CollectDevices(d, bus, into);
         }
     }
 
@@ -218,4 +305,19 @@ public static partial class SystemProbe
 
     [GeneratedRegex(@"\d+")]
     private static partial Regex DigitsRx();
+
+    [GeneratedRegex(@"used\s*=\s*([\d.]+)([KMG])", RegexOptions.IgnoreCase)]
+    private static partial Regex SwapUsedRx();
+
+    [GeneratedRegex(@"free percentage:\s*(\d+)\s*%")]
+    private static partial Regex MemFreeRx();
+
+    [GeneratedRegex(@"warning level.*?(\d+)", RegexOptions.IgnoreCase)]
+    private static partial Regex ThermLevelRx();
+
+    [GeneratedRegex(@"^(CPU_\w*Limit)\s*=\s*(\d+)")]
+    private static partial Regex ThermLimitRx();
+
+    [GeneratedRegex(@"metal(\d+)", RegexOptions.IgnoreCase)]
+    private static partial Regex MetalRx();
 }

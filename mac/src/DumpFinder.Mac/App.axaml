@@ -11,16 +11,36 @@
         <ResourceInclude Source="avares://DumpFinder/Themes/Icons.axaml" />
       </ResourceDictionary.MergedDictionaries>
       <local:IconConverter x:Key="Icon" />
-      <!-- Icon · title · secondary line, separated rows inside a card -->
-      <DataTemplate x:Key="InfoRowTemplate" x:DataType="local:InfoRow">
-        <Border Classes="row" Classes.first="{Binding First}">
-          <Grid ColumnDefinitions="Auto,*">
-            <PathIcon Data="{Binding Icon, Converter={StaticResource Icon}}" Width="16" Height="16" Foreground="{DynamicResource TextSecondary}" Margin="0,0,14,0" />
-            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-              <SelectableTextBlock Text="{Binding Primary}" FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap" />
-              <SelectableTextBlock Text="{Binding Secondary}" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,1,0,0" IsVisible="{Binding HasSecondary}" />
-            </StackPanel>
-          </Grid>
+      <local:IndentConverter x:Key="Indent" />
+      <!-- Hardware card (Windows BuildHealthInfoCard): tag chip + title | badge, value (mono), detail,
+           then "Learn more" (guide drawer) and the quick action -->
+      <DataTemplate x:Key="HealthCardTemplate" x:DataType="local:HealthCardRow">
+        <Border Classes="hcard" Classes.warn="{Binding IsWarn}" Classes.danger="{Binding IsDanger}">
+          <StackPanel>
+            <Grid ColumnDefinitions="*,Auto">
+              <WrapPanel VerticalAlignment="Center">
+                <Border Classes="tagchip" Margin="0,0,10,0"><TextBlock Text="{Binding Tag}" /></Border>
+                <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap" VerticalAlignment="Center" />
+              </WrapPanel>
+              <Border Grid.Column="1" Classes="badge" Classes.success="{Binding IsSuccess}" Classes.warn="{Binding IsWarn}" Classes.danger="{Binding IsDanger}" Classes.accent="{Binding IsAccent}"
+                      VerticalAlignment="Top" Margin="10,0,0,0">
+                <TextBlock Text="{Binding Badge}" />
+              </Border>
+            </Grid>
+            <SelectableTextBlock Classes="mono" Text="{Binding Value}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap"
+                                 Margin="0,7,0,4" IsVisible="{Binding HasValue}" />
+            <SelectableTextBlock Text="{Binding Detail}" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" LineHeight="17" />
+            <WrapPanel Margin="0,11,0,0" IsVisible="{Binding HasActions}">
+              <Button Classes="flat" Content="{Binding GuideLabel}" Command="{Binding ToggleGuideCommand}" IsVisible="{Binding HasGuide}" Margin="0,0,8,0" />
+              <Button Classes="flat subtle" Content="{Binding ActionLabel}" Command="{Binding ActionCommand}" CommandParameter="{Binding ActionTarget}" IsVisible="{Binding HasAction}" />
+            </WrapPanel>
+            <Border Background="{DynamicResource BgSubtle}" CornerRadius="8" Padding="14,12" Margin="0,10,0,0" IsVisible="{Binding GuideOpen}">
+              <StackPanel Spacing="6">
+                <TextBlock Text="{Binding GuideTitle}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                <SelectableTextBlock Text="{Binding GuideSteps}" FontSize="12" LineHeight="18" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+          </StackPanel>
         </Border>
       </DataTemplate>
     </ResourceDictionary>

@@ -28,15 +28,28 @@ public partial class MainWindow : Window, IPlatform
         if (ScreenshotFolder is not null)
         {
             // Capture settings live in a copy: nothing is written back.
-            settings = new AppSettings { Language = ScreenshotLang ?? settings.Language, Theme = ScreenshotTheme switch { "dark" => 1, "light" => 2, _ => settings.Theme } };
+            settings = new AppSettings
+            {
+                Language = ScreenshotLang ?? settings.Language, Theme = ScreenshotTheme switch { "dark" => 1, "light" => 2, _ => settings.Theme },
+                HasCompletedTour = true, SeenTips = "tab1,tab2,tab5",
+            };
+            MainViewModel.Offline = true;
             if (ScreenshotLang is not null) Loc.SetLanguage(ScreenshotLang);
             App.ApplyTheme(settings.Theme);
         }
         _vm = new MainViewModel(settings, this);
         if (ScreenshotFolder is not null && ScreenshotCollapsed) _vm.SidebarCollapsed = true;
         DataContext = _vm;
+        // Introduction: Right / Enter = next, Left = back (Windows Onboarding keys); Escape is a key binding.
+        AddHandler(KeyDownEvent, (_, e) =>
+        {
+            if (!_vm.OnboardingVisible) return;
+            if (e.Key is Avalonia.Input.Key.Right or Avalonia.Input.Key.Enter) { _vm.OnboardingNextCommand.Execute(null); e.Handled = true; }
+            else if (e.Key == Avalonia.Input.Key.Left) { _vm.OnboardingBackCommand.Execute(null); e.Handled = true; }
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
         Opened += async (_, _) =>
         {
+            _ = _vm.StartupUpdateCheckAsync();
             await _vm.ScanAsync();
             if (ScreenshotFolder is { } folder) await CaptureAsync(folder);
         };
@@ -77,7 +90,8 @@ public partial class MainWindow : Window, IPlatform
     /// <summary>Opens a file, a folder (Finder) or an https link (default browser) with /usr/bin/open.</summary>
     public void Open(string pathOrUrl)
     {
-        bool url = pathOrUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
+        bool url = pathOrUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+                   || pathOrUrl.StartsWith("x-apple.systempreferences:", StringComparison.Ordinal);
         if (!url && !File.Exists(pathOrUrl) && !Directory.Exists(pathOrUrl)) return;
         try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("/usr/bin/open") { ArgumentList = { pathOrUrl }, UseShellExecute = false }); }
         catch (Exception e) { _vm.ShowToast("danger", e.Message); }
@@ -86,22 +100,33 @@ public partial class MainWindow : Window, IPlatform
     async Task CaptureAsync(string folder)
     {
         Directory.CreateDirectory(folder);
-        // Section, crash sub-tab, file name.
-        var shots = new (int Page, int CrashTab, string Name)[]
+        // Section, sub-tab (Crashes / Hardware / Tools), overlay (0 none, 1-3 introduction step, 4 update card), file name.
+        var shots = new (int Page, int Sub, int Overlay, string Name)[]
         {
-            (0, 0, "1-home"), (1, 0, "2-crashes"), (1, 1, "2b-common-crashes"), (2, 0, "3-hardware"), (3, 0, "4-fixes"), (6, 0, "7-settings"),
+            (0, 0, 0, "1-home"), (1, 0, 0, "2-crashes"), (1, 1, 0, "2b-common-crashes"),
+            (2, 0, 0, "3-hardware"), (2, 1, 0, "3b-conflicts"), (2, 2, 0, "3c-extensions"), (3, 0, 0, "4-fixes"),
+            (5, 0, 0, "6-tools"), (5, 1, 0, "6b-report"), (5, 2, 0, "6c-history"), (6, 0, 0, "7-settings"),
+            (0, 0, 1, "8-intro-1"), (0, 0, 2, "8-intro-2"), (0, 0, 3, "8-intro-3"), (0, 0, 4, "9-update"),
         };
-        foreach (var (page, crashTab, name) in shots)
+        foreach (var (page, sub, overlay, name) in shots)
         {
             _vm.Page = page;
-            _vm.CrashTab = crashTab;
+            if (page == 1) _vm.CrashTab = sub;
+            if (page == 2) _vm.HardwareTab = sub;
+            if (page == 5) _vm.ToolsTab = sub;
+            if (overlay is >= 1 and <= 3) { _vm.StartOnboarding(); _vm.OnboardingStep = overlay - 1; }
+            if (overlay == 4) { _vm.OnboardingEndCommand.Execute(null); _vm.PreviewUpdate(SampleUpdate()); }
             await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
             await Task.Delay(350);
             await SaveCapture(Path.Combine(folder, name + ".png"));
         }
-        _vm.CrashTab = 0;
         Close();
     }
+
+    /// <summary>A made-up release to render the update card (capture only, never offered).</summary>
+    static UpdateInfo SampleUpdate() => new(new Version(9, 9, 0), "mac-v9.9.0", "Dump Finder for Mac 9.9.0",
+        "## What's new\n- Sample release notes rendered as on Windows\n  - nested bullet\n- **Bold** and `code` are dropped, [links](https://example.com) keep their text\n\n## Fixes\n- Another line",
+        UpdateChecker.RepoUrl + "/releases", UpdateChecker.RepoUrl + "/releases", DateTime.Now);
 
     async Task SaveCapture(string path)
     {

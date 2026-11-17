@@ -4,6 +4,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="using:DumpFinder.Mac"
+        xmlns:core="using:DumpFinder.Mac.Core"
         xmlns:pages="using:DumpFinder.Mac.Pages"
         x:Class="DumpFinder.Mac.MainWindow"
         x:DataType="local:MainViewModel"
@@ -23,7 +24,7 @@
     <KeyBinding Gesture="Cmd+D7" Command="{Binding NavigateCommand}" CommandParameter="6" />
     <KeyBinding Gesture="Cmd+R" Command="{Binding ScanCommand}" />
     <KeyBinding Gesture="F5" Command="{Binding ScanCommand}" />
-    <KeyBinding Gesture="Escape" Command="{Binding CloseDetailCommand}" />
+    <KeyBinding Gesture="Escape" Command="{Binding EscapeCommand}" />
   </Window.KeyBindings>
 
   <Window.Styles>
@@ -146,6 +147,7 @@
             <pages:HomePage IsVisible="{Binding IsHome}" />
             <pages:CrashesPage IsVisible="{Binding IsCrashes}" />
             <pages:HardwarePage IsVisible="{Binding IsHardware}" />
+            <pages:ToolsPage IsVisible="{Binding IsTools}" />
             <pages:SoonPage IsVisible="{Binding IsSoon}" />
             <pages:SettingsPage IsVisible="{Binding IsSettings}" />
           </Panel>
@@ -174,5 +176,85 @@
         </DataTemplate>
       </ItemsControl.ItemTemplate>
     </ItemsControl>
+
+    <!-- ===== Introduction (Windows MainWindow.Onboarding.cs: 520 px card, 3 steps, dots, Skip · Back · Next) ===== -->
+    <Border Classes="scrim" IsVisible="{Binding OnboardingVisible}">
+      <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+      <Border Classes="overlayshadow" />
+      <Border Classes="overlaycard" Width="520" Padding="32,30,32,24">
+        <StackPanel>
+          <Panel Height="88" Margin="0,0,0,22">
+            <Image Source="{StaticResource BrandLogo}" Width="80" Height="80" HorizontalAlignment="Left" IsVisible="{Binding IsStep1}" />
+            <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center" IsVisible="{Binding IsStep2}">
+              <Border Width="56" Height="56" CornerRadius="16" Background="{DynamicResource AccentSoftBg}"><PathIcon Data="{StaticResource Icon.Document}" Width="22" Height="22" Foreground="{DynamicResource AccentText}" /></Border>
+              <Border Width="56" Height="56" CornerRadius="16" Background="{DynamicResource AccentSoftBg}"><PathIcon Data="{StaticResource Icon.Diagnostic}" Width="22" Height="22" Foreground="{DynamicResource AccentText}" /></Border>
+              <Border Width="56" Height="56" CornerRadius="16" Background="{DynamicResource AccentSoftBg}"><PathIcon Data="{StaticResource Icon.Component}" Width="22" Height="22" Foreground="{DynamicResource AccentText}" /></Border>
+              <Border Width="56" Height="56" CornerRadius="16" Background="{DynamicResource AccentSoftBg}"><PathIcon Data="{StaticResource Icon.Shield}" Width="22" Height="22" Foreground="{DynamicResource AccentText}" /></Border>
+            </StackPanel>
+            <Panel Width="84" Height="84" HorizontalAlignment="Left" IsVisible="{Binding IsStep3}">
+              <local:ScoreRing Value="86" StrokeWidth="8" TrackBrush="{DynamicResource BgSubtle}" FillBrush="{DynamicResource SuccessFg}" />
+              <TextBlock Text="86" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Panel>
+          </Panel>
+          <TextBlock Text="{Binding OnboardingKicker}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AccentText}" />
+          <TextBlock Text="{Binding OnboardingTitle}" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap" Margin="0,6,0,10" />
+          <TextBlock Text="{Binding OnboardingBody}" FontSize="14" LineHeight="21" MinHeight="84" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" />
+          <Grid ColumnDefinitions="*,Auto" Margin="0,22,0,0">
+            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+              <Border Classes="dot" Classes.active="{Binding IsStep1}" />
+              <Border Classes="dot" Classes.active="{Binding IsStep2}" />
+              <Border Classes="dot" Classes.active="{Binding IsStep3}" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+              <Button Classes="link" Content="{Binding L[onboarding.skip]}" Command="{Binding OnboardingEndCommand}" IsVisible="{Binding OnboardingCanSkip}" />
+              <Button Classes="flat" Content="{Binding L[onboarding.back]}" Command="{Binding OnboardingBackCommand}" IsVisible="{Binding OnboardingCanBack}" />
+              <Button Classes="primary" Content="{Binding OnboardingNextText}" Command="{Binding OnboardingNextCommand}" />
+            </StackPanel>
+          </Grid>
+        </StackPanel>
+      </Border>
+      </Grid>
+    </Border>
+
+    <!-- ===== New version (Windows MainWindow.Updates.cs: 580 px card, notes, GitHub · Skip · Later · Download) ===== -->
+    <Border Classes="scrim" IsVisible="{Binding UpdateVisible}">
+      <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+      <Border Classes="overlayshadow" />
+      <Border Classes="overlaycard" Width="580" Padding="30,26,30,22">
+        <StackPanel>
+          <TextBlock Text="{Binding L[updates.new_version_available]}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AccentText}" />
+          <TextBlock Text="{Binding UpdateTitle}" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" Margin="0,6,0,4" />
+          <TextBlock Text="{Binding UpdateSub}" FontSize="12.5" Foreground="{DynamicResource TextSecondary}" />
+          <Border Background="{DynamicResource BgSubtle}" CornerRadius="10" Padding="16,12" Margin="0,16,0,0">
+            <ScrollViewer MaxHeight="300">
+              <StackPanel>
+                <TextBlock Text="{Binding L[updates.no_description_for_this_release]}" FontSize="13" Foreground="{DynamicResource TextSecondary}" IsVisible="{Binding UpdateNoNotes}" />
+                <ItemsControl ItemsSource="{Binding UpdateNotes}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="core:NoteLine">
+                      <Panel>
+                        <Border Height="6" IsVisible="{Binding Spacer}" />
+                        <SelectableTextBlock Text="{Binding Text}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap" Margin="0,6,0,2" IsVisible="{Binding Heading}" />
+                        <SelectableTextBlock Text="{Binding Text}" FontSize="13" LineHeight="19" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap"
+                                             Padding="{Binding Indent, Converter={StaticResource Indent}}" IsVisible="{Binding IsBody}" />
+                      </Panel>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </ScrollViewer>
+          </Border>
+          <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,20,0,0">
+            <Button Classes="link" Content="{Binding L[updates.view_on_github]}" Command="{Binding UpdateGitHubCommand}" />
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+              <Button Classes="link" Content="{Binding L[updates.skip_this_version]}" Command="{Binding UpdateSkipCommand}" />
+              <Button Classes="flat" Content="{Binding L[updates.later]}" Command="{Binding UpdateLaterCommand}" />
+              <Button Classes="primary" Content="{Binding UpdateDownloadText}" Command="{Binding UpdateDownloadCommand}" />
+            </StackPanel>
+          </Grid>
+        </StackPanel>
+      </Border>
+      </Grid>
+    </Border>
   </Panel>
 </Window>

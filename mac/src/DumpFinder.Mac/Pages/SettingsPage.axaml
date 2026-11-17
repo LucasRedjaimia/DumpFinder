@@ -34,6 +34,29 @@
                         AutomationProperties.Name="{Binding L[settings.appearance]}" />
             </Grid>
           </Border>
+          <Border Classes="setting">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+              <PathIcon Data="{StaticResource Icon.Refresh}" Width="16" Height="16" Foreground="{DynamicResource TextSecondary}" Margin="0,0,16,0" />
+              <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,16,0">
+                <TextBlock Classes="strong" Text="{Binding L[updates.updates]}" />
+                <TextBlock Text="{Binding UpdateSettingText}" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,0" />
+              </StackPanel>
+              <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <Button Classes="flat" Content="{Binding L[updates.check_now]}" Command="{Binding CheckUpdateNowCommand}" />
+                <Button Classes="flat toggle" Classes.on="{Binding UpdateCheckOn}" MinWidth="120" Content="{Binding UpdateToggleText}" Command="{Binding ToggleUpdateCheckCommand}" />
+              </StackPanel>
+            </Grid>
+          </Border>
+          <Border Classes="setting">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+              <PathIcon Data="{StaticResource Icon.Lightbulb}" Width="16" Height="16" Foreground="{DynamicResource TextSecondary}" Margin="0,0,16,0" />
+              <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,16,0">
+                <TextBlock Classes="strong" Text="{Binding L[settings.app_introduction]}" />
+                <TextBlock Text="{Binding L[settings.replay_the_three_welcome_screens_and]}" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,0" />
+              </StackPanel>
+              <Button Grid.Column="2" Classes="flat" VerticalAlignment="Center" Content="{Binding L[settings.replay_introduction]}" Command="{Binding ReplayIntroCommand}" />
+            </Grid>
+          </Border>
         </StackPanel>
       </Border>
 

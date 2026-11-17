@@ -145,7 +145,7 @@
                     <TextBlock Text="{Binding DetailExtension}" FontSize="12" FontFamily="Menlo, monospace" TextWrapping="Wrap" Margin="0,3,0,0" />
                     <TextBlock Text="{Binding DetailExtensionInfo}" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,0" />
                   </StackPanel>
-                  <Button Grid.Column="1" Classes="flat accent" Margin="10,0,0,0" Command="{Binding SearchExtensionCommand}">
+                  <Button Grid.Column="1" Classes="flat accenttext" Margin="10,0,0,0" Command="{Binding SearchExtensionCommand}">
                     <StackPanel Orientation="Horizontal"><PathIcon Data="{StaticResource Icon.Search}" /><TextBlock Text="{Binding L[crashes.update]}" /></StackPanel>
                   </Button>
                 </Grid>

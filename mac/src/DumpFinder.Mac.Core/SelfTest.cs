@@ -32,6 +32,27 @@ public static class SelfTest
         "enabled\tactive\tteamID\tbundleID (version)\tname\t[state]\n" +
         "\t*\t*\tABCDE12345\tcom.example.vpn.extension (2.4.0/240)\tExample VPN\t[activated enabled]\n";
 
+    // system_profiler -json extract: a display serial number is present, as on a real Mac.
+    const string ProfilerJson = """
+        {"SPDisplaysDataType":[{"_name":"Apple M4 Pro","sppci_model":"Apple M4 Pro","sppci_cores":"20","spdisplays_mtlgpufamilysupport":"spdisplays_metal4",
+          "spdisplays_ndrvs":[{"_name":"Color LCD","_spdisplays_display-serial-number":"fd626d62","_spdisplays_resolution":"1728 x 1117 @ 120.00Hz","spdisplays_connection_type":"spdisplays_internal","spdisplays_main":"spdisplays_yes"},
+                              {"_name":"S24E390","_spdisplays_display-serial-number":"5a5a4751","_spdisplays_resolution":"1920 x 1080 @ 60.00Hz"}]}],
+         "SPMemoryDataType":[{"dimm_manufacturer":"Micron","dimm_type":"LPDDR5","SPMemoryDataType":"48 GB"}],
+         "SPUSBDataType":[{"_name":"USB31Bus","_items":[{"_name":"USB2.0 Hub","_items":[{"_name":"USB Keyboard","manufacturer":"Acme"}]}]}],
+         "SPThunderboltDataType":[{"_name":"thunderboltusb4_bus_0","device_name_key":"MacBook Pro","_items":[{"_name":"CalDigit TS4","vendor_name_key":"CalDigit, Inc."}]}]}
+        """;
+
+    // GitHub /releases list: a Windows release (latest), a draft and a pre-release Mac release, and the real one.
+    const string ReleasesJson = """
+        [{"tag_name":"v7.0.0","draft":false,"prerelease":false,"html_url":"https://github.com/LucasRedjaimia/DumpFinder/releases/tag/v7.0.0","assets":[{"name":"DumpFinder.exe","browser_download_url":"https://github.com/LucasRedjaimia/DumpFinder/releases/download/v7.0.0/DumpFinder.exe"}]},
+         {"tag_name":"mac-v0.9.0","draft":true,"prerelease":false},
+         {"tag_name":"mac-v0.3.0","draft":false,"prerelease":true},
+         {"tag_name":"mac-v0.2.0","name":"Dump Finder for Mac 0.2.0","body":"- notes","draft":false,"prerelease":false,"published_at":"2026-11-20T10:00:00Z",
+          "html_url":"https://github.com/LucasRedjaimia/DumpFinder/releases/tag/mac-v0.2.0",
+          "assets":[{"name":"DumpFinder-mac-0.2.0.zip","browser_download_url":"https://github.com/LucasRedjaimia/DumpFinder/releases/download/mac-v0.2.0/DumpFinder-mac-0.2.0.zip"}]},
+         {"tag_name":"mac-v0.1.0","draft":false,"prerelease":false}]
+        """;
+
     public static int Run(TextWriter log)
     {
         int failed = 0;
@@ -96,6 +117,32 @@ public static class SelfTest
         Check(!normal.Abnormal, "normal power-button start");
         Check(SystemProbe.ParseBootTime("{ sec = 1793357287, usec = 753465 } Fri Oct 30 11:48:07 2026")?.ToUnixTimeSeconds() == 1793357287, "kern.boottime parsing");
 
+        // Live readings and system_profiler (serial numbers must never reach the model)
+        Check(Math.Abs(SystemProbe.ParseSwapUsed("total = 2048.00M  used = 556.50M  free = 1491.50M  (encrypted)") - 556.5 * 1048576) < 1, "vm.swapusage parsing");
+        Check(SystemProbe.ParseMemoryFree("The system has 51539607552 (3145728 pages).\nSystem-wide memory free percentage: 91%") == 91, "memory_pressure parsing");
+        Check(!SystemProbe.ParseTherm("Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded").Warning
+              && !SystemProbe.ParseTherm("CPU_Scheduler_Limit \t= 100\nCPU_Available_CPUs \t= 8\nCPU_Speed_Limit \t= 100").Warning
+              && SystemProbe.ParseTherm("CPU_Scheduler_Limit \t= 100\nCPU_Available_CPUs \t= 8\nCPU_Speed_Limit \t= 70").Warning
+              && SystemProbe.ParseTherm("Thermal warning level set to 2.").Warning, "pmset -g therm parsing");
+        var prof = new HardwareInfo();
+        SystemProbe.FillFromProfiler(prof, ProfilerJson);
+        Check(prof.GpuName == "Apple M4 Pro" && prof.GpuCores == 20 && prof.Metal == "Metal 4" && prof.MemoryType == "LPDDR5"
+              && prof.Displays.Count == 2 && prof.Displays[0].BuiltIn && prof.Displays[1].Resolution == "1920 x 1080 @ 60.00Hz"
+              && prof.Peripherals.Select(x => x.Name).SequenceEqual(new[] { "USB Keyboard", "CalDigit TS4" }),
+              $"system_profiler displays, memory, USB and Thunderbolt (got {prof.Displays.Count} screens, {prof.Peripherals.Count} devices)");
+
+        // Update check: only mac-v* releases, newest published one, links of this repository only
+        Check(UpdateChecker.ParseVersion("mac-v0.2.0") == new Version(0, 2, 0) && UpdateChecker.ParseVersion("v6.1.0-beta") == new Version(6, 1, 0)
+              && UpdateChecker.ParseVersion("0.3") == new Version(0, 3, 0) && UpdateChecker.ParseVersion("latest") is null, "release tag parsing");
+        var latest = UpdateChecker.PickLatest(ReleasesJson);
+        Check(latest is not null && latest.Version == new Version(0, 2, 0) && latest.DownloadUrl.EndsWith("DumpFinder-mac-0.2.0.zip", StringComparison.Ordinal),
+              $"newest mac-v release, Windows / draft / pre-release ignored (got {latest?.Tag})");
+        Check(!UpdateChecker.IsOwnUrl("https://github.com/someone/DumpFinder/releases") && !UpdateChecker.IsOwnUrl(UpdateChecker.RepoUrl + ".evil.com/x")
+              && UpdateChecker.IsOwnUrl(UpdateChecker.RepoUrl + "/releases/tag/mac-v0.2.0"), "only links of this repository");
+        var notes = UpdateChecker.NoteLines("# New\n- one\n  - two\n\n**bold** [link](https://x) `code`\n\n");
+        Check(notes.Count == 5 && notes[0].Heading && notes[1].Text == "•  one" && notes[2].Indent == 16 && notes[3].Spacer && notes[4].Text == "bold link code",
+              "release notes rendering");
+
         // Rules
         var now = new DateTimeOffset(2026, 11, 17, 12, 0, 0, TimeSpan.FromHours(1));
         var scan = new ScanResult
@@ -110,6 +157,18 @@ public static class SelfTest
         Check(findings.Any(x => x.Id == "low_disk" && x.Severity == Severity.Critical), "4 % free → critical");
         var clean = DiagnosticsEngine.Analyze(new ScanResult { Hardware = new HardwareInfo { OsMajor = 26 } }, data, now);
         Check(clean.Count == 1 && clean[0].Id == "ok", "clean machine → a single OK finding");
+
+        // Hardware cards and extensions (levels follow the findings)
+        scan.Findings.AddRange(findings);
+        var cards = HardwareChecks.Build(scan, data, now);
+        Check(cards.Single(x => x.Id == "kexts").Level == HealthLevel.Critical && cards.Single(x => x.Id == "battery").Level == HealthLevel.Warning
+              && cards.Single(x => x.Id == "drive").Level == HealthLevel.Critical && cards.Single(x => x.Id == "sip").Tab == HardwareChecks.TabConflicts,
+              "hardware cards take the level of their finding");
+        var cleanScan = new ScanResult { Hardware = new HardwareInfo { OsMajor = 26, BootVolumeFree = 200_000_000_000, BootVolumeSize = 500_000_000_000, SipEnabled = true, GatekeeperEnabled = true } };
+        cleanScan.Findings.AddRange(DiagnosticsEngine.Analyze(cleanScan, data, now));
+        Check(HardwareChecks.Build(cleanScan, data, now).All(x => x.Level < HealthLevel.Warning), "clean machine → no card to check");
+        var ext = HardwareChecks.Extensions(scan);
+        Check(ext.Count == 1 && ext[0].Crashes == 1 && ext[0].Kernel, "extension blamed by a panic backtrace");
 
         // Privacy and exports
         var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
