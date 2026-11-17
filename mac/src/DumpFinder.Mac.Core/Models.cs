@@ -82,9 +82,36 @@ public sealed class HardwareInfo
     public List<DriveInfo> Drives { get; } = new();
     public long? BootVolumeFree { get; set; }
     public long? BootVolumeSize { get; set; }
+
+    // Processor, graphics, memory (Windows Hardware tab: CPU / GPU / RAM rows)
+    public int PerformanceCores { get; set; }
+    public int EfficiencyCores { get; set; }
+    public string GpuName { get; set; } = "";
+    public int GpuCores { get; set; }
+    /// <summary>"Metal 4", "Metal 3"… from spdisplays_mtlgpufamilysupport.</summary>
+    public string Metal { get; set; } = "";
+    public string MemoryType { get; set; } = "";
+    public string MemoryVendor { get; set; } = "";
+    public long MemoryBytes { get; set; }
+    public long SwapUsedBytes { get; set; }
+    /// <summary>System-wide memory free percentage (memory_pressure), null when unknown.</summary>
+    public int? MemoryFreePct { get; set; }
+    /// <summary>pmset -g therm: a thermal or performance warning was recorded since boot.</summary>
+    public bool ThermalWarning { get; set; }
+    public string ThermalText { get; set; } = "";
+
+    /// <summary>Screens and connected devices. Serial numbers are never read into the model.</summary>
+    public List<DisplayInfo> Displays { get; } = new();
+    public List<PeripheralInfo> Peripherals { get; } = new();
 }
 
 public sealed record DriveInfo(string Name, bool Internal, string SmartStatus);
+
+/// <summary>A screen: name, resolution "1920 x 1080 @ 60.00Hz", built-in or not, main screen.</summary>
+public sealed record DisplayInfo(string Name, string Resolution, bool BuiltIn, bool Main);
+
+/// <summary>A USB or Thunderbolt device. Bus is "USB" or "Thunderbolt".</summary>
+public sealed record PeripheralInfo(string Name, string Vendor, string Bus);
 
 public sealed class ScanResult
 {

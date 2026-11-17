@@ -47,6 +47,39 @@ public sealed class ScoreRing : Control
 }
 
 /// <summary>
+/// Score per day on a fixed 0–100 axis, 2 px line, no axes (Windows HistoryPage sparkline):
+/// x = 4 + i·(w−8)/(n−1), y = 4 + (1−score/100)·(h−8).
+/// </summary>
+public sealed class Sparkline : Control
+{
+    public static readonly StyledProperty<List<double>?> ValuesProperty = AvaloniaProperty.Register<Sparkline, List<double>?>(nameof(Values));
+    public static readonly StyledProperty<IBrush?> LineBrushProperty = AvaloniaProperty.Register<Sparkline, IBrush?>(nameof(LineBrush));
+
+    static Sparkline() => AffectsRender<Sparkline>(ValuesProperty, LineBrushProperty);
+
+    public List<double>? Values { get => GetValue(ValuesProperty); set => SetValue(ValuesProperty, value); }
+    public IBrush? LineBrush { get => GetValue(LineBrushProperty); set => SetValue(LineBrushProperty, value); }
+
+    public override void Render(DrawingContext dc)
+    {
+        var v = Values;
+        double w = Bounds.Width, h = Bounds.Height;
+        if (v is null || v.Count < 2 || w <= 8 || h <= 8) return;
+        var g = new StreamGeometry();
+        using (var ctx = g.Open())
+        {
+            for (int i = 0; i < v.Count; i++)
+            {
+                var p = new Point(4 + i * (w - 8) / (v.Count - 1), 4 + (1 - Math.Clamp(v[i], 0, 100) / 100) * (h - 8));
+                if (i == 0) ctx.BeginFigure(p, false); else ctx.LineTo(p);
+            }
+            ctx.EndFigure(false);
+        }
+        dc.DrawGeometry(null, new Pen(LineBrush, 2, lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round), g);
+    }
+}
+
+/// <summary>
 /// 30-day stability timeline (Windows StabilityChart): area + line of the daily value, one dot per crash day
 /// (red = severe, amber = other), date labels every 7 days + today, tooltip per day.
 /// </summary>

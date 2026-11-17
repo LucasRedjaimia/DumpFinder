@@ -37,16 +37,6 @@ public interface IPlatform
 
 public sealed record ActionRow(string Icon, string Tone, string Title, string Sub, bool First) : Toned(Tone);
 
-public sealed record CheckCard(string Tone, string Badge, string Category, string Title, string Detail, string Advice) : Toned(Tone)
-{
-    public bool HasAdvice => Advice.Length > 0;
-}
-
-public sealed record InfoRow(string Icon, string Primary, string Secondary, bool First)
-{
-    public bool HasSecondary => Secondary.Length > 0;
-}
-
 public sealed record ToastItem(string Tone, string Icon, string Text) : Toned(Tone);
 
 public sealed class RelayCommand(Func<object?, Task> run, Func<bool>? canRun = null) : ICommand
@@ -100,8 +90,19 @@ public sealed partial class MainViewModel : Observable
         HeroPrimaryCommand = new RelayCommand(() => { Page = TabHardware; return Task.CompletedTask; });
         HeroSecondaryCommand = new RelayCommand(() => { if (_focusKey is not null) OpenCrash(_focusKey); return Task.CompletedTask; });
         InitCrashes();
+        InitHardwareTools();
+        InitOverlays();
 
-        Loc.LanguageChanged += () => { RefreshTexts(); if (_result is not null) Fill(_result); RefreshCrashTexts(); };
+        Loc.LanguageChanged += () =>
+        {
+            RefreshTexts();
+            if (_result is not null) Fill(_result);
+            RefreshCrashTexts();
+            RenderTools();
+            RenderHistory();
+            OnboardingStep = OnboardingStep;
+            Update = Update;
+        };
         RefreshTexts();
     }
 
@@ -123,6 +124,7 @@ public sealed partial class MainViewModel : Observable
             if (!Set(ref _page, Math.Clamp(value, 0, 6))) return;
             foreach (var n in new[] { nameof(IsHome), nameof(IsCrashes), nameof(IsHardware), nameof(IsFixes), nameof(IsOptimize), nameof(IsTools), nameof(IsSettings), nameof(IsSoon), nameof(SoonTitle) })
                 Raise(n);
+            ShowSectionTip(_page);
         }
     }
     public bool IsHome => Page == TabHome;
@@ -132,9 +134,9 @@ public sealed partial class MainViewModel : Observable
     public bool IsOptimize => Page == TabOptimize;
     public bool IsTools => Page == TabTools;
     public bool IsSettings => Page == TabSettings;
-    /// <summary>Sections not adapted to macOS yet (Fixes, Optimize, Tools): shared "coming soon" page.</summary>
-    public bool IsSoon => Page is TabFixes or TabOptimize or TabTools;
-    public string SoonTitle => Loc.Plain(Loc.S(Page switch { TabFixes => "main_window.fixes", TabOptimize => "main_window.optimize", _ => "main_window.tools" }));
+    /// <summary>Sections not adapted to macOS yet (Fixes, Optimize): shared "coming soon" page.</summary>
+    public bool IsSoon => Page is TabFixes or TabOptimize;
+    public string SoonTitle => Loc.Plain(Loc.S(Page == TabFixes ? "main_window.fixes" : "main_window.optimize"));
 
     bool _sidebarCollapsed;
     public bool SidebarCollapsed
@@ -178,6 +180,16 @@ public sealed partial class MainViewModel : Observable
                 Time = r.ScannedAt.LocalDateTime, Score = summary.Score, Crashes30 = summary.Crashes30,
                 Severe30 = summary.Severe30, Diagnosis = summary.VerdictTitle,
             });
+            RenderHistory();
+            // Windows RecordScan: "N new crashes since the last scan[, M severe.]"
+            var fresh = summary.Crashes.Where(c => _newKeys.Contains(c.Key)).ToList();
+            if (fresh.Count > 0 && !Offline)
+            {
+                int severe = fresh.Count(c => Stability.IsSevere(c.Category));
+                ShowToast(severe > 0 ? "danger" : "warn", Loc.P("history.new_crashes", fresh.Count)
+                    + (severe > 0 ? Loc.F("history.new_crashes_severe", severe) : Loc.S("common.sentence_end")));
+            }
+            MaybeStartOnboarding();
         }
         catch (Exception e)
         {
@@ -188,6 +200,7 @@ public sealed partial class MainViewModel : Observable
         {
             IsScanning = false;
             ReportCommand.Refresh();
+            RefreshReportCommands();
         }
     }
 
@@ -195,9 +208,9 @@ public sealed partial class MainViewModel : Observable
     {
         if (_result is null || _summary is null) return;
         var html = ReportBuilder.Html(_result, _summary);
-        var path = await _platform.SaveTextAsync($"DumpFinder-report-{DateTime.Now:yyyy-MM-dd}", "html", html);
+        var path = await _platform.SaveTextAsync($"DumpFinder_Rapport_{DateTime.Now:yyyyMMdd_HHmm}", "html", html);
         if (path is null) return;
-        ShowToast("success", Loc.S("mac.toast.report_saved"));
+        ShowToast("success", Loc.S("reports.html_report_saved") + Path.GetFileName(path));
         _platform.Open(path);
     }
 
@@ -245,13 +258,6 @@ public sealed partial class MainViewModel : Observable
     bool _noActions, _noRecent;
     public bool NoActions { get => _noActions; private set => Set(ref _noActions, value); }
     public bool NoRecent { get => _noRecent; private set => Set(ref _noRecent, value); }
-
-    // ---------- Crashes / Hardware ----------
-    public ObservableCollection<CheckCard> Checks { get; } = new();
-    public ObservableCollection<InfoRow> Machine { get; } = new();
-    public ObservableCollection<InfoRow> Extensions { get; } = new();
-    bool _noExtension;
-    public bool NoExtension { get => _noExtension; private set => Set(ref _noExtension, value); }
 
     // ---------- Settings ----------
     public string[] Languages => Loc.Natives;
@@ -351,7 +357,6 @@ public sealed partial class MainViewModel : Observable
         Days = s.Days;
 
         var warnings = r.Findings.Where(f => f.Severity >= Severity.Warning).ToList();
-        HardwareBadge = warnings.Count > 0 ? warnings.Count.ToString(Loc.Culture) : "";
         HeroPrimary = warnings.Count > 0 ? Loc.P("mac.home.see_findings", warnings.Count) : "";
         var focus = s.Crashes.FirstOrDefault(c => (now - c.Time).TotalDays <= Stability.WindowDays && Stability.IsSevere(c.Category))
                     ?? s.Crashes.FirstOrDefault(c => (now - c.Time).TotalDays <= Stability.WindowDays);
@@ -372,33 +377,8 @@ public sealed partial class MainViewModel : Observable
         RenderCrashes();
         RenderKb();
 
-        Checks.Clear();
-        foreach (var f in r.Findings)
-            Checks.Add(new CheckCard(
-                f.Severity switch { Severity.Critical => "danger", Severity.Warning => "warn", Severity.Ok => "success", _ => "accent" },
-                ReportBuilder.LevelName(f.Severity), Loc.S("mac.check_cat." + f.Category), f.Title, f.Detail, f.Advice));
-
-        Machine.Clear();
-        i = 0;
-        void M(string icon, string a, string b) => Machine.Add(new InfoRow(icon, a, b, i++ == 0));
-        M("Component", $"{hw.MachineName} ({hw.ModelId})", $"{hw.Chip} · {hw.Memory}");
-        M("Settings", hw.OsVersion, hw.Kernel);
-        if (r.Boot.BootTime is { } bt)
-            M("Reboot", bt.LocalDateTime.ToString("g", Loc.Culture), r.Boot.ShutdownReason);
-        foreach (var d in hw.Drives) M("Save", d.Name, "SMART " + d.SmartStatus);
-        if (hw.BootVolumeSize is long size && hw.BootVolumeFree is long free)
-            M("Save", $"{free / 1e9:0.#} GB / {size / 1e9:0.#} GB", $"{100.0 * free / size:0.#} %");
-        if (hw.HasBattery) M("Lightning", $"{hw.BatteryMaxCapacityPct} %", $"{hw.BatteryCycles} cycles · {hw.BatteryCondition}");
-        M("Shield", "SIP " + OnOff(hw.SipEnabled), "Gatekeeper " + OnOff(hw.GatekeeperEnabled));
-        foreach (var e in r.Errors) M("Warning", Loc.S("mac.hardware.not_read"), e);
-
-        Extensions.Clear();
-        i = 0;
-        foreach (var k in r.KernelExtensions)
-            Extensions.Add(new InfoRow("DevTools", $"{k.BundleId} {k.Version}".Trim(), k.Loaded ? "kext · loaded" : "kext · " + k.Path, i++ == 0));
-        foreach (var x in r.SystemExtensions)
-            Extensions.Add(new InfoRow("DevTools", $"{x.BundleId} {x.Version}", $"system extension · {x.State}", i++ == 0));
-        NoExtension = Extensions.Count == 0;
+        RenderHardware(r);
+        ReportText = ReportBuilder.Text(r, s);
     }
 
     CrashRow ToRow(CrashEntry c, DateTime now, bool first)
@@ -438,6 +418,4 @@ public sealed partial class MainViewModel : Observable
         "system" => "Shield",
         _ => "Lightbulb",
     };
-
-    static string OnOff(bool? b) => b is null ? "?" : b.Value ? "on" : "off";
 }

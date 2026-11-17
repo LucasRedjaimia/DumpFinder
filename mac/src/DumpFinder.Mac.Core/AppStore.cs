@@ -46,6 +46,11 @@ public sealed class AppSettings
     public int Theme { get; set; }
     public bool SidebarCollapsed { get; set; }
     public bool HasCompletedTour { get; set; }
+    /// <summary>Section tips already shown ("tab1,tab2"), Windows SeenTips.</summary>
+    public string SeenTips { get; set; } = "";
+    public bool UpdateCheckDisabled { get; set; }
+    /// <summary>Version the user chose to skip ("0.3.0"); the next one is offered again.</summary>
+    public string SkippedUpdateVersion { get; set; } = "";
 
     public static AppSettings Load() => AppStore.Read<AppSettings>("settings.json");
     public void Save() => AppStore.Write("settings.json", this);

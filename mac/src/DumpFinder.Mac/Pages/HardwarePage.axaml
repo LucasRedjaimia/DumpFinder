@@ -1,53 +1,73 @@
-<!-- Hardware: check cards in the Windows style (level pill, tag, title, detail, advice), this Mac, extensions.
-     The Windows sub-tabs (Hardware / Conflicts / Drivers / Stability test) come with the next steps. -->
+<!-- Hardware, same layout as Windows (src/UI/MainWindow.HealthPage.cs + Hosting.cs): title, subtitle and the
+     Hardware | Conflicts | Extensions pills (Windows Hardware & BIOS | Conflicts | Drivers). The Stability test
+     pill comes with step 7. -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="using:DumpFinder.Mac"
              x:Class="DumpFinder.Mac.Pages.HardwarePage"
              x:DataType="local:MainViewModel">
-  <ScrollViewer>
-    <StackPanel Margin="0,0,6,16">
-      <TextBlock Classes="title" Text="{Binding L[main_window.hardware]}" />
-      <TextBlock Classes="subtitle" Text="{Binding L[mac.hardware.subtitle]}" Margin="0,2,0,16" />
+  <Grid RowDefinitions="Auto,*">
+    <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,16">
+      <StackPanel Margin="0,0,16,0">
+        <TextBlock Classes="title" Text="{Binding L[main_window.hardware]}" />
+        <TextBlock Classes="subtitle" Text="{Binding L[health.bios_memory_pcie_link_ssd_software]}" Margin="0,2,0,0" />
+      </StackPanel>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+        <Button Classes="segment" Classes.active="{Binding IsHwMain}" Content="{Binding L[health.hardware_bios]}" Command="{Binding HardwareTabCommand}" CommandParameter="0" />
+        <Button Classes="segment" Classes.active="{Binding IsHwConflicts}" Content="{Binding L[hosting.conflicts]}" Command="{Binding HardwareTabCommand}" CommandParameter="1" />
+        <Button Classes="segment" Classes.active="{Binding IsHwExtensions}" Content="{Binding L[hosting.drivers]}" Command="{Binding HardwareTabCommand}" CommandParameter="2" />
+      </StackPanel>
+    </Grid>
 
-      <TextBlock Classes="section" Text="{Binding L[mac.home.checks]}" Margin="2,0,0,8" />
-      <ItemsControl ItemsSource="{Binding Checks}">
-        <ItemsControl.ItemTemplate>
-          <DataTemplate x:DataType="local:CheckCard">
-            <Border Classes="card" Padding="18,14" Margin="0,0,0,10">
-              <StackPanel Spacing="4">
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                  <Border Classes="pill" Classes.danger="{Binding IsDanger}" Classes.warn="{Binding IsWarn}" Classes.success="{Binding IsSuccess}" Classes.accent="{Binding IsAccent}">
-                    <TextBlock Text="{Binding Badge}" />
-                  </Border>
-                  <TextBlock Classes="caption" Text="{Binding Category}" VerticalAlignment="Center" />
-                </StackPanel>
-                <SelectableTextBlock Text="{Binding Title}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,4,0,0" />
-                <SelectableTextBlock Classes="body" Text="{Binding Detail}" />
-                <Border Background="{DynamicResource BgSubtle}" CornerRadius="8" Padding="12,8" Margin="0,6,0,0" IsVisible="{Binding HasAdvice}">
-                  <Grid ColumnDefinitions="Auto,*">
-                    <PathIcon Data="{StaticResource Icon.Lightbulb}" Width="14" Height="14" Foreground="{DynamicResource AccentText}" Margin="0,2,10,0" VerticalAlignment="Top" />
-                    <SelectableTextBlock Grid.Column="1" Classes="body" Text="{Binding Advice}" />
+    <!-- Hardware -->
+    <ScrollViewer Grid.Row="1" IsVisible="{Binding IsHwMain}">
+      <ItemsControl ItemsSource="{Binding HardwareCards}" ItemTemplate="{StaticResource HealthCardTemplate}" Margin="0,0,6,16" />
+    </ScrollViewer>
+
+    <!-- Conflicts -->
+    <ScrollViewer Grid.Row="1" IsVisible="{Binding IsHwConflicts}">
+      <ItemsControl ItemsSource="{Binding ConflictCards}" ItemTemplate="{StaticResource HealthCardTemplate}" Margin="0,0,6,16" />
+    </ScrollViewer>
+
+    <!-- Extensions (Windows Drivers: summary line, one card of rows, empty state) -->
+    <ScrollViewer Grid.Row="1" IsVisible="{Binding IsHwExtensions}">
+      <StackPanel Margin="0,0,6,16">
+        <TextBlock Classes="body" Text="{Binding ExtensionSummary}" Margin="2,0,0,12" IsVisible="{Binding !NoExtensionRows}" />
+        <Border Classes="card" Padding="16,6" IsVisible="{Binding !NoExtensionRows}">
+          <ItemsControl ItemsSource="{Binding ExtensionRows}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="local:ExtensionRow">
+                <Border Classes="row" Classes.first="{Binding First}">
+                  <Grid ColumnDefinitions="Auto,*,Auto">
+                    <Border Classes="tile neutral" Classes.danger="{Binding IsDanger}" Margin="0,0,12,0">
+                      <PathIcon Data="{Binding Icon, Converter={StaticResource Icon}}" />
+                    </Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
+                      <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Classes="strong" Text="{Binding Name}" />
+                        <Border Classes="pill danger" IsVisible="{Binding HasBlamed}"><TextBlock Text="{Binding Blamed}" /></Border>
+                        <Border Classes="pill warn" IsVisible="{Binding NotLoaded}"><TextBlock Text="{Binding $parent[UserControl].((local:MainViewModel)DataContext).L[mac.ext.not_loaded]}" /></Border>
+                      </StackPanel>
+                      <TextBlock Classes="mono caption" Text="{Binding Meta}" TextTrimming="CharacterEllipsis" Margin="0,3,0,0" />
+                    </StackPanel>
+                    <Button Grid.Column="2" Classes="flat accenttext" Content="{Binding $parent[UserControl].((local:MainViewModel)DataContext).L[crashes.update]}"
+                            Command="{Binding $parent[UserControl].((local:MainViewModel)DataContext).SearchUpdateCommand}" CommandParameter="{Binding Query}"
+                            ToolTip.Tip="{Binding $parent[UserControl].((local:MainViewModel)DataContext).L[hosting.searches_for_the_latest_version_from]}" VerticalAlignment="Center" />
                   </Grid>
                 </Border>
-              </StackPanel>
-            </Border>
-          </DataTemplate>
-        </ItemsControl.ItemTemplate>
-      </ItemsControl>
-
-      <TextBlock Classes="section" Text="{Binding L[mac.hardware.this_mac]}" Margin="2,10,0,8" />
-      <Border Classes="card" Padding="18,4" Margin="0,0,0,16">
-        <ItemsControl ItemsSource="{Binding Machine}" ItemTemplate="{StaticResource InfoRowTemplate}" />
-      </Border>
-
-      <TextBlock Classes="section" Text="{Binding L[mac.hardware.extensions]}" Margin="2,0,0,8" />
-      <Border Classes="card" Padding="18,4">
-        <StackPanel>
-          <ItemsControl ItemsSource="{Binding Extensions}" ItemTemplate="{StaticResource InfoRowTemplate}" />
-          <TextBlock Classes="body" Text="{Binding L[mac.hardware.no_extension]}" Margin="0,12" IsVisible="{Binding NoExtension}" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </Border>
+        <!-- Empty state (Windows MakeEmptyState) -->
+        <StackPanel HorizontalAlignment="Center" MaxWidth="460" Margin="32,48" IsVisible="{Binding NoExtensionRows}">
+          <Border Width="52" Height="52" CornerRadius="16" Background="{DynamicResource SuccessSoftBg}" HorizontalAlignment="Center">
+            <PathIcon Data="{StaticResource Icon.Completed}" Width="22" Height="22" Foreground="{DynamicResource SuccessFg}" />
+          </Border>
+          <TextBlock Text="{Binding L[mac.ext.none_title]}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center" Margin="0,14,0,6" />
+          <TextBlock Classes="body" Text="{Binding L[mac.ext.none_body]}" TextAlignment="Center" />
         </StackPanel>
-      </Border>
-    </StackPanel>
-  </ScrollViewer>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
 </UserControl>

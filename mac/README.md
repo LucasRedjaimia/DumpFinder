@@ -1,6 +1,6 @@
 # Dump Finder for Mac (prototype)
 
-Apple Silicon version of Dump Finder: it explains why a Mac crashes or restarts and points at the usual culprits. Read-only for now: it changes nothing on the Mac.
+Apple Silicon version of Dump Finder: it explains why a Mac crashes or restarts and points at the usual culprits. Read-only for now: it changes nothing on the Mac. The only network access is the update check (GitHub releases API, at launch, can be turned off in Settings).
 
 ## What it reads
 
@@ -11,7 +11,8 @@ Apple Silicon version of Dump Finder: it explains why a Mac crashes or restarts 
 | `~/Library/Logs/DiagnosticReports/*.ips`, `/Library/Logs/DiagnosticReports/*.ips` | App crashes (`bug_type` 309) and low-memory kills (Jetsam, 298) |
 | `kmutil showloaded`, `/Library/Extensions` | Third-party kernel extensions, loaded or left behind (kexts that macOS installs itself are skipped with `pkgutil`) |
 | `systemextensionsctl list` | System extensions (VPN, security, network filters…) |
-| `system_profiler -json -detailLevel mini` | Model, chip, macOS, SSD SMART status, startup disk free space, battery health |
+| `system_profiler -json -detailLevel mini` | Model, chip, GPU and Metal version, memory type, macOS, SSD SMART status, startup disk free space, battery health, screens, USB and Thunderbolt devices (display serial numbers are never read into the app) |
+| `sysctl hw.perflevel*`, `vm.swapusage`, `memory_pressure -Q`, `pmset -g therm` | Performance / efficiency cores, swap, free memory, thermal throttling |
 | `csrutil status`, `spctl --status` | SIP and Gatekeeper |
 
 The rules and their texts live in [`data/mac-detection.json`](data/mac-detection.json) (data only, like `data/detection.json` on Windows): panic patterns, shutdown codes, kext vendor categories, thresholds, supported macOS versions.
@@ -49,8 +50,8 @@ From `main`. The first run creates `mac/release-notes/v0.2.0.md` and stops; fill
 
 ## Layout
 
-- `src/DumpFinder.Mac.Core`: probes (`DiagnosticReports`, `SystemProbe`), rules (`DiagnosticsEngine`), crash timeline and score (`CrashTimeline`), crash detail (`CrashDetails`), known issues (`KnowledgeBase`), exports (`ReportBuilder`: HTML, JSON, Markdown, text), `Privacy`, texts (`Loc`), settings and history (`AppStore`), self-test. No UI dependency.
-- `src/DumpFinder.Mac`: Avalonia window with the same shell as Windows (title bar, sidebar with the 7 sections and ⌘1…7, canvas, status line, toasts), Home, Crashes (History with filters and detail panel, Common crashes), Hardware, Settings.
+- `src/DumpFinder.Mac.Core`: probes (`DiagnosticReports`, `SystemProbe`), rules (`DiagnosticsEngine`), Hardware cards and extensions (`HardwareChecks`, levels taken from the rules), crash timeline and score (`CrashTimeline`), crash detail (`CrashDetails`), known issues (`KnowledgeBase`), exports (`ReportBuilder`: HTML, JSON, Markdown, text), `Privacy`, update check (`UpdateChecker`), texts (`Loc`), settings and history (`AppStore`), self-test. No UI dependency.
+- `src/DumpFinder.Mac`: Avalonia window with the same shell as Windows (title bar, sidebar with the 7 sections and ⌘1…7, canvas, status line, toasts), Home, Crashes (History with filters and detail panel, Common crashes), Hardware (Hardware · Conflicts · Extensions), Tools (macOS tools · Report & export · History), Settings (language, theme, updates, introduction), the 3-step introduction and the new-version card.
 - `Locales/`: Mac texts (`mac.*` keys, 14 languages) and the Mac wording of shared keys that name Windows or the PC. Every check, explanation and article is a key: `--selftest` fails when a language misses a key or a placeholder.
 
 ## Same app as on Windows
@@ -64,10 +65,12 @@ The two apps have their own interface (WPF on Windows, Avalonia here) but look a
 | Logic | `src/Core/Stability.cs` (score, levels, 30-day timeline) is compiled from the Windows source file (`SharedWindowsSource` in the Core project). A shared file must stay free of Windows APIs: the Mac CI job fails otherwise. Mac crashes map onto the Windows categories: kernel panic = blue screen, watchdog / forced restart = unexpected reboot, Jetsam = memory exhaustion. |
 | Data | Settings and history in `~/Library/Application Support/DumpFinder` (`settings.json`, `history/scans.json`, `history/seen_crashes.json`), same fields as `%LOCALAPPDATA%\DumpFinder`. |
 
-`DumpFinder --screenshot <folder> [--theme light|dark] [--lang xx] [--collapsed]` captures every section, like the Windows capture harness. `DumpFinder --report [--lang xx] [--format text|html|json|md]` prints a report. Every export goes through `Privacy.Redact` (account name, computer name, web paths).
+`DumpFinder --screenshot <folder> [--theme light|dark] [--lang xx] [--collapsed]` captures every section and sub-tab, the introduction and the new-version card (with a sample release), like the Windows capture harness; it never goes online. `DumpFinder --report [--lang xx] [--format text|html|json|md]` prints a report. Every export goes through `Privacy.Redact` (account name, computer name, web paths).
 
 ## Not done yet
 
-Next steps, in order: Hardware sub-tabs + Tools (report formats, history) + update check + introduction, AI assistant ("Ask the AI" in the crash panel) and MCP server, Sentinel (menu bar, notifications, login item), Fixes and Optimize (journal and undo), stability test (CPU / memory / disk, GPU through Metal). Notarization needs an Apple Developer account.
+Next steps, in order: AI assistant ("Ask the AI" in the crash panel) and MCP server, Sentinel (menu bar, notifications, login item), Fixes and Optimize (journal and undo; Tools › History shows an empty journal until then), stability test (CPU / memory / disk, GPU through Metal; the Hardware pill comes with it). Notarization needs an Apple Developer account.
 
-Update check: it cannot use `/releases/latest` (always the Windows release). It will list the releases and take the newest `mac-v*` tag that has a `DumpFinder-mac-*.zip` asset.
+Update check: it cannot use `/releases/latest` (always the Windows release). It lists the releases, keeps the newest published `mac-v*` one and opens its `DumpFinder-mac-*.zip` in the browser: nothing is downloaded or installed by the app. Unlike Windows, it does not refresh the detection data (that file is embedded on the Mac).
+
+Font: the app uses Helvetica Neue, not SF. SF is a variable font and Avalonia's renderer drops the accent of composite capitals (É, Ü…) at SemiBold and Bold weights.

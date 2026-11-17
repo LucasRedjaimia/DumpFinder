@@ -42,3 +42,12 @@ public sealed class IconConverter : IValueConverter
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotSupportedException();
 }
+
+/// <summary>Left indent in pixels → Thickness (release-note bullets).</summary>
+public sealed class IndentConverter : IValueConverter
+{
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        new Thickness(value is int i ? i : 0, 0, 0, 0);
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotSupportedException();
+}
