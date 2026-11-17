@@ -105,6 +105,7 @@ public sealed partial class MainViewModel : Observable
             OnboardingStep = OnboardingStep;
             Update = Update;
             foreach (var n in new[] { nameof(AiCredentialCaption), nameof(AskAiLabel), nameof(RunCheckUpLabel) }) Raise(n);
+            RaiseMonitoring();
             ResetAiOutput();
             RefreshMcp();
         };

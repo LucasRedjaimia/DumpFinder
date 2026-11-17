@@ -343,5 +343,16 @@
   "crashes.ask_the_ai_sends_this_crash": "“询问 AI”会将此崩溃和你的 Mac 配置信息发送给在“设置”中配置的助手。",
   "ai.dump_finder_embeds_a_model_context": "Dump Finder 内置了一个 Model Context Protocol 服务器。连接后，你的 AI 代理可以查询你的崩溃记录、审查你的硬件，并解码你的 .panic 和 .ips 报告。",
   "ai.mcp_server_antigravity_claude_code_gemin": "MCP 服务器（Claude Desktop · Claude Code · Gemini CLI · Antigravity）",
-  "mac.mcp.move_to_applications": "请先将 Dump Finder 移到“应用程序”文件夹，并从那里打开：macOS 当前是从一个临时副本运行它，AI 应用之后将无法找到这个副本。"
+  "mac.mcp.move_to_applications": "请先将 Dump Finder 移到“应用程序”文件夹，并从那里打开：macOS 当前是从一个临时副本运行它，AI 应用之后将无法找到这个副本。",
+  "mac.sentinel.panic_title": "内核崩溃",
+  "mac.sentinel.panic_body": "macOS 刚刚写入了一份内核崩溃报告。点按即可查看分析。",
+  "mac.sentinel.memory_title": "你的 Mac 内存不足",
+  "mac.sentinel.memory_body": "macOS 关闭了一些应用以释放内存。点按即可查看“统一内存”卡片。",
+  "settings.stays_in_the_notification_area_and": "驻留在菜单栏，一旦记录到内核崩溃或内存不足，立即提醒你。",
+  "sentinel.start_with_windows": "登录时打开",
+  "sentinel.starts_the_sentinel_at_sign_in": "登录时启动哨兵，不显示窗口。如果发生了严重崩溃，会有通知提醒你。",
+  "sentinel.dump_finder_will_start_with_windows": "Dump Finder 将在登录时打开，静默驻留在菜单栏。",
+  "sentinel.your_pc_crashed": "你的 Mac 于 {0} 崩溃",
+  "tray_sentinel.sentinel_active_in_the_background_0": "哨兵正在菜单栏中运行。一旦出现内核崩溃或内存不足，你都会收到通知。",
+  "health.sentinel_enabled_background_tray_monitor": "哨兵已启用：正在菜单栏中进行后台监控。"
 }

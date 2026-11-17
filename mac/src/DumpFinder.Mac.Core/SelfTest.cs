@@ -250,6 +250,41 @@ public static class SelfTest
         }
         finally { try { Directory.Delete(tmpDir, true); } catch (IOException) { } }
 
+        // Sentinel: which new reports alert, the login item, crashes not seen yet
+        Check(CrashWatcher.Classify("panic-full-2026-11-17-101112.panic") == LiveAlert.Panic && CrashWatcher.Classify("Kernel-2026-11-17.panic") == LiveAlert.Panic
+              && CrashWatcher.Classify("panic-base-2026-11-17.ips") == LiveAlert.Panic && CrashWatcher.Classify("JetsamEvent-2026-11-17-092629.ips") == LiveAlert.Memory
+              && CrashWatcher.Classify("Safari-2026-11-17-101112.ips") == LiveAlert.None && CrashWatcher.Classify("x.diag") == LiveAlert.None, "Sentinel alert classification");
+        var agentsBefore = LoginItem.AgentsDir;
+        var rootBefore = AppStore.Root;
+        var sentinelDir = Path.Combine(Path.GetTempPath(), "dumpfinder-selftest-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            LoginItem.AgentsDir = sentinelDir;
+            const string exe1 = "/Applications/Dump Finder.app/Contents/MacOS/DumpFinder", exe2 = "/Users/x/Apps/Dump & Finder.app/Contents/MacOS/DumpFinder";
+            bool on = LoginItem.Set(true, exe1) && LoginItem.IsEnabled;
+            var plist = Path.Combine(sentinelDir, LoginItem.Label + ".plist");
+            bool lint = !File.Exists("/usr/bin/plutil") || Proc.Run("/usr/bin/plutil", new[] { "-lint", plist }, 5000).ExitCode == 0;
+            LoginItem.RefreshPathIfEnabled(exe2);
+            bool moved = File.ReadAllText(plist).Contains("Dump &amp; Finder.app", StringComparison.Ordinal);
+            bool lint2 = !File.Exists("/usr/bin/plutil") || Proc.Run("/usr/bin/plutil", new[] { "-lint", plist }, 5000).ExitCode == 0;
+            bool off = LoginItem.Set(false, exe1) && !LoginItem.IsEnabled && !File.Exists(plist);
+            bool refused = !LoginItem.Set(true, "/private/var/folders/x/AppTranslocation/y/Dump Finder.app/Contents/MacOS/DumpFinder");
+            Check(on && lint && moved && lint2 && off && refused, "login item: written, valid plist, follows the app, removed, refused when translocated");
+
+            AppStore.Root = sentinelDir;
+            bool firstEmpty = History.PeekNew(new[] { "a" }).Count == 0;
+            History.MarkSeen(new[] { "a" });
+            var peek = History.PeekNew(new[] { "a", "b" });
+            var peekAgain = History.PeekNew(new[] { "a", "b" });
+            Check(firstEmpty && peek.SetEquals(new[] { "b" }) && peekAgain.SetEquals(new[] { "b" }), "unseen crashes peeked without being marked");
+        }
+        finally
+        {
+            LoginItem.AgentsDir = agentsBefore;
+            AppStore.Root = rootBefore;
+            try { Directory.Delete(sentinelDir, true); } catch (IOException) { }
+        }
+
         // Translations: every language has every Mac key, with the same placeholders ({0}, {1:…}); the "one" plural
         // form of some languages may leave out {0}.
         var en = Loc.MacTable("en");

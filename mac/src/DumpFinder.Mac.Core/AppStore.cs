@@ -46,6 +46,8 @@ public sealed class AppSettings
     public int Theme { get; set; }
     public bool SidebarCollapsed { get; set; }
     public bool HasCompletedTour { get; set; }
+    /// <summary>Windows TraySentinelEnabled: menu bar icon, live alerts, the window hides instead of quitting.</summary>
+    public bool SentinelEnabled { get; set; }
     /// <summary>Section tips already shown ("tab1,tab2"), Windows SeenTips.</summary>
     public string SeenTips { get; set; } = "";
     public bool UpdateCheckDisabled { get; set; }
@@ -86,6 +88,18 @@ public static class History
         list.Add(r);
         if (list.Count > MaxScans) list = list.Skip(list.Count - MaxScans).ToList();
         AppStore.Write("history/scans.json", list);
+    }
+
+    /// <summary>
+    /// Keys not seen yet, without recording them (Windows History.PeekNewCrashes): the Sentinel's login check
+    /// tells about them and the window still shows them as new. Empty before the very first scan.
+    /// </summary>
+    public static HashSet<string> PeekNew(IEnumerable<string> keys)
+    {
+        var path = "history/seen_crashes.json";
+        if (!File.Exists(Path.Combine(AppStore.Root, path))) return new HashSet<string>();
+        var seen = new HashSet<string>(AppStore.Read<List<string>>(path));
+        return new HashSet<string>(keys.Where(k => !seen.Contains(k)));
     }
 
     /// <summary>

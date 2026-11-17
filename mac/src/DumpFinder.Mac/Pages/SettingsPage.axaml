@@ -60,6 +60,35 @@
         </StackPanel>
       </Border>
 
+      <!-- Monitoring (Windows: Sentinel + start with Windows) -->
+      <TextBlock Text="{Binding L[settings.monitoring]}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="2,0,0,8" />
+      <Border Classes="card" Padding="0" Margin="0,0,0,18">
+        <StackPanel>
+          <Border Classes="setting first">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+              <PathIcon Data="{StaticResource Icon.Shield}" Width="16" Height="16" Foreground="{DynamicResource TextSecondary}" Margin="0,0,16,0" />
+              <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,16,0">
+                <TextBlock Classes="strong" Text="{Binding L[settings.sentinel]}" />
+                <TextBlock Text="{Binding L[settings.stays_in_the_notification_area_and]}" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,0" />
+              </StackPanel>
+              <Button Grid.Column="2" Classes="flat toggle" Classes.on="{Binding SentinelOn}" MinWidth="180" VerticalAlignment="Center"
+                      Content="{Binding SentinelLabel}" Command="{Binding ToggleSentinelCommand}" />
+            </Grid>
+          </Border>
+          <Border Classes="setting">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+              <PathIcon Data="{StaticResource Icon.Lightning}" Width="16" Height="16" Foreground="{DynamicResource TextSecondary}" Margin="0,0,16,0" />
+              <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,16,0">
+                <TextBlock Classes="strong" Text="{Binding L[sentinel.start_with_windows]}" />
+                <TextBlock Text="{Binding L[sentinel.starts_the_sentinel_at_sign_in]}" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,0" />
+              </StackPanel>
+              <Button Grid.Column="2" Classes="flat toggle" Classes.on="{Binding LoginOn}" MinWidth="180" VerticalAlignment="Center"
+                      Content="{Binding LoginLabel}" Command="{Binding ToggleLoginCommand}" />
+            </Grid>
+          </Border>
+        </StackPanel>
+      </Border>
+
       <!-- AI assistant (Windows provider card): provider + Claude model | key or Ollama model | Copy prompt -->
       <TextBlock Text="{Binding L[settings.ai_assistant]}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="2,0,0,4" />
       <TextBlock Text="{Binding L[settings.used_by_ask_the_ai_on]}" FontSize="13" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="2,0,0,10" />

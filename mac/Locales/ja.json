@@ -343,5 +343,16 @@
   "crashes.ask_the_ai_sends_this_crash": "「AI に質問」は、このクラッシュと Mac のプロファイルを、設定で構成したアシスタントに送信します。",
   "ai.dump_finder_embeds_a_model_context": "Dump Finder には Model Context Protocol サーバーが組み込まれています。接続すると、AI エージェントがクラッシュの照会、ハードウェアの監査、.panic および .ips レポートの解析を行えます。",
   "ai.mcp_server_antigravity_claude_code_gemin": "MCP サーバー（Claude Desktop · Claude Code · Gemini CLI · Antigravity）",
-  "mac.mcp.move_to_applications": "まず Dump Finder を「アプリケーション」フォルダに移動し、そこから開いてください。macOS は現在一時的なコピーから実行しているため、AI アプリが後でそれを見つけられません。"
+  "mac.mcp.move_to_applications": "まず Dump Finder を「アプリケーション」フォルダに移動し、そこから開いてください。macOS は現在一時的なコピーから実行しているため、AI アプリが後でそれを見つけられません。",
+  "mac.sentinel.panic_title": "カーネルパニック",
+  "mac.sentinel.panic_body": "macOS がカーネルパニックのレポートを書き出しました。クリックすると分析を表示します。",
+  "mac.sentinel.memory_title": "Mac のメモリが不足しました",
+  "mac.sentinel.memory_body": "macOS はメモリを解放するためにアプリを終了しました。クリックすると「ユニファイドメモリ」カードを表示します。",
+  "settings.stays_in_the_notification_area_and": "メニューバーに常駐し、カーネルパニックやメモリ不足が記録されるとすぐにお知らせします。",
+  "sentinel.start_with_windows": "ログイン時に開く",
+  "sentinel.starts_the_sentinel_at_sign_in": "ログイン時に、ウィンドウを表示せずにセンチネルを起動します。重大なクラッシュが発生していた場合は、通知でお知らせします。",
+  "sentinel.dump_finder_will_start_with_windows": "Dump Finder はログイン時に、メニューバーで目立たずに起動します。",
+  "sentinel.your_pc_crashed": "Mac がクラッシュしました（{0}）",
+  "tray_sentinel.sentinel_active_in_the_background_0": "センチネルがメニューバーで動作中です。カーネルパニックやメモリ不足が発生すると通知されます。",
+  "health.sentinel_enabled_background_tray_monitor": "センチネルを有効にしました: メニューバーでのバックグラウンド監視が有効です。"
 }

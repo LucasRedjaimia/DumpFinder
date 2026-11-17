@@ -8,6 +8,14 @@ internal static class Program
     [STAThread]
     public static int Main(string[] args)
     {
+        // Development check of the notification bridge (run from the .app bundle).
+        if (args.Length > 0 && args[0] == "--notify-test")
+        {
+            bool ok = MacNative.Notify("Dump Finder", "Test notification");
+            Thread.Sleep(1500);
+            Console.WriteLine($"posted={ok} delivered={MacNative.DeliveredCount()}");
+            return ok ? 0 : 1;
+        }
         // MCP server for AI agents (Claude Desktop, Claude Code, Gemini CLI…): headless, JSON-RPC over stdio.
         if (args.Length > 0 && args[0] == "--mcp")
             return McpServer.RunStdio();
