@@ -451,6 +451,48 @@ public static class SelfTest
             }
         }
 
+        // Storage: sizes of a small tree, largest first, protected items, Trash and Undo
+        {
+            var spaceHome = Path.Combine(Path.GetTempPath(), "dumpfinder-selftest-" + Guid.NewGuid().ToString("N"));
+            var homeBefore2 = MacPaths.Home;
+            var rootBefore4 = AppStore.Root;
+            try
+            {
+                MacPaths.Home = spaceHome;
+                AppStore.Root = Path.Combine(spaceHome, "store");
+                Directory.CreateDirectory(Path.Combine(spaceHome, "Projects", "big"));
+                Directory.CreateDirectory(Path.Combine(spaceHome, "Documents"));
+                Directory.CreateDirectory(Path.Combine(spaceHome, ".ssh"));
+                File.WriteAllBytes(Path.Combine(spaceHome, "Projects", "big", "video.mov"), new byte[3 << 20]);
+                File.WriteAllBytes(Path.Combine(spaceHome, "Projects", "notes.txt"), new byte[1 << 20]);
+                File.WriteAllBytes(Path.Combine(spaceHome, "Documents", "cv.pdf"), new byte[2 << 20]);
+                File.WriteAllBytes(Path.Combine(spaceHome, ".ssh", "id_ed25519"), new byte[100]);
+                var spaceScan = DiskSpaceScan.Scan(spaceHome, CancellationToken.None, bigFile: 1 << 20);
+                var top = spaceScan.ChildrenOf(spaceHome);
+                Check(spaceScan.SizeOf(Path.Combine(spaceHome, "Projects")) == 4 << 20 && top[0].Name == "Projects" && top[1].Name == "Documents"
+                      && spaceScan.LargestFiles[0].Name == "video.mov", "storage: folder sizes summed, largest first, largest files");
+                Check(DiskSpaceScan.IsProtected(Path.Combine(spaceHome, "Documents")) && DiskSpaceScan.IsProtected(Path.Combine(spaceHome, ".ssh"))
+                      && DiskSpaceScan.IsProtected(Path.Combine(spaceHome, "Library", "Keychains")) && DiskSpaceScan.IsProtected(spaceHome)
+                      && !DiskSpaceScan.IsProtected(Path.Combine(spaceHome, "Projects")) && !DiskSpaceScan.IsProtected(Path.Combine(spaceHome, "Documents", "cv.pdf"))
+                      && !DiskSpaceScan.IsProtected(Path.Combine(spaceHome, "Library", "Caches", "x")) && DiskSpaceScan.IsProtected("/System/Applications/Safari.app"),
+                      "storage: essentials protected, the rest can go to the Trash");
+                var target = Path.Combine(spaceHome, "Projects", "big");
+                var (ok, _, byFinder) = DiskSpaceScan.MoveToTrash(target, "big");
+                bool trashed = ok && !byFinder && !Directory.Exists(target) && Directory.Exists(Path.Combine(spaceHome, ".Trash", "big"));
+                spaceScan.Forget(target);
+                bool parentShrank = spaceScan.SizeOf(Path.Combine(spaceHome, "Projects")) == 1 << 20 && spaceScan.LargestFiles.All(f => f.Name != "video.mov");
+                var undo = Journal.Revert(Journal.Entries().First(e => e.Op == "space_trash"));
+                Check(trashed && parentShrank && undo == "" && File.Exists(Path.Combine(target, "video.mov"))
+                      && !DiskSpaceScan.MoveToTrash(Path.Combine(spaceHome, "Documents"), "Documents").Ok, "storage: to the Trash, journaled, undone; protected refused");
+            }
+            finally
+            {
+                MacPaths.Home = homeBefore2;
+                AppStore.Root = rootBefore4;
+                try { Directory.Delete(spaceHome, true); } catch (IOException) { }
+            }
+        }
+
         // Translations: every language has every Mac key, with the same placeholders ({0}, {1:…}); the "one" plural
         // form of some languages may leave out {0}.
         var en = Loc.MacTable("en");

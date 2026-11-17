@@ -110,6 +110,8 @@ A fix is Recommended when the last 30 days point at it (a crash of that browser 
 
 Optimize: Settings (Finder and Apple advertising preferences, `defaults`), Startup (per-user LaunchAgents: disabling unloads the agent and moves its plist aside, nothing is deleted), Cleanup (app caches, old app logs, Xcode DerivedData moved to the Trash, so Undo puts them back; crash reports are never touched), Myths. Windows' Apps tab (removing preinstalled Store apps) has no Mac match.
 
+Optimize › Storage (Mac addition): one read-only pass over the apps (`/Applications`, `~/Applications`, with Spotlight's last-opened date) and the whole home folder (symlinks not followed; large files counted by the blocks they really use, so sparse VM disks show their true size), then three views: Apps, Folders (drill-down from `~`) and the 60 largest files. Each row has Show in Finder and Move to Trash (journaled, Undo in Tools › History). The home's standard folders, keys and shell configuration, the Library parts that hold accounts, keychains, mail and app data, iCloud Drive and Safari only get Show in Finder. Apps installed by an administrator go to the Trash through the Finder, which asks for the password (Put Back restores them). `DumpFinder --space [folder]` prints the same measure in the terminal.
+
 MCP: `mac_list_fixes` and `mac_apply_fix` (dry run by default; with `confirm`, a native Allow / Don't Allow dialog whose default is Don't Allow, plus the password prompt for admin fixes; refused while the browser or Discord is open).
 
 ## Stability test

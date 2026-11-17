@@ -49,6 +49,8 @@ public sealed class RelayCommand(Func<object?, Task> run, Func<bool>? canRun = n
     public event EventHandler? CanExecuteChanged;
     public bool CanExecute(object? parameter) => canRun?.Invoke() ?? true;
     public async void Execute(object? parameter) { if (CanExecute(parameter)) await run(parameter); }
+    /// <summary>Same as Execute, awaitable (capture harness).</summary>
+    public Task ExecuteAsync(object? parameter = null) => CanExecute(parameter) ? run(parameter) : Task.CompletedTask;
     public void Refresh() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
 }
 

@@ -25,7 +25,8 @@
         <Button Classes="segment" Classes.active="{Binding IsOptSettings}" Content="{Binding L[optimize.settings]}" Command="{Binding OptimizeTabCommand}" CommandParameter="0" />
         <Button Classes="segment" Classes.active="{Binding IsOptStartup}" Content="{Binding L[optimize.startup]}" Command="{Binding OptimizeTabCommand}" CommandParameter="1" />
         <Button Classes="segment" Classes.active="{Binding IsOptCleanup}" Content="{Binding L[optimize.cleanup]}" Command="{Binding OptimizeTabCommand}" CommandParameter="2" />
-        <Button Classes="segment" Classes.active="{Binding IsOptMyths}" Content="{Binding L[optimize.myths]}" Command="{Binding OptimizeTabCommand}" CommandParameter="3" />
+        <Button Classes="segment" Classes.active="{Binding IsOptStorage}" Content="{Binding L[mac.space.tab]}" Command="{Binding OptimizeTabCommand}" CommandParameter="3" />
+        <Button Classes="segment" Classes.active="{Binding IsOptMyths}" Content="{Binding L[optimize.myths]}" Command="{Binding OptimizeTabCommand}" CommandParameter="4" />
       </StackPanel>
     </Grid>
 
@@ -113,6 +114,62 @@
         </ItemsControl>
       </StackPanel>
     </ScrollViewer>
+
+    <!-- Storage (Mac addition): disk bar, Apps | Folders | Largest files, rows with a size bar, Show in Finder, Move to Trash -->
+    <Grid Grid.Row="1" RowDefinitions="Auto,Auto,Auto,*" IsVisible="{Binding IsOptStorage}" Margin="0,0,6,10">
+      <Border Classes="optcard" Padding="16,12">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Spacing="6" Margin="0,0,14,0">
+            <TextBlock Text="{Binding SpaceDisk}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+            <ProgressBar Height="8" MinHeight="8" Minimum="0" Maximum="100" Value="{Binding SpaceUsedShare}" Foreground="{DynamicResource Accent}" />
+            <TextBlock Classes="note" Text="{Binding SpaceStatus}" />
+          </StackPanel>
+          <Button Grid.Column="1" Classes="primary" VerticalAlignment="Center" Content="{Binding SpaceScanText}" Command="{Binding SpaceScanCommand}" />
+        </Grid>
+      </Border>
+      <TextBlock Grid.Row="1" Classes="note" Text="{Binding L[mac.space.note]}" Margin="2,4,0,10" />
+      <Grid Grid.Row="2" ColumnDefinitions="Auto,*" Margin="0,0,0,10" IsVisible="{Binding SpaceReady}">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <Button Classes="segment" Classes.active="{Binding IsSpaceApps}" Content="{Binding L[mac.space.apps]}" Command="{Binding SpaceModeCommand}" CommandParameter="0" />
+          <Button Classes="segment" Classes.active="{Binding IsSpaceFolders}" Content="{Binding L[mac.space.folders]}" Command="{Binding SpaceModeCommand}" CommandParameter="1" />
+          <Button Classes="segment" Classes.active="{Binding IsSpaceFiles}" Content="{Binding L[mac.space.files]}" Command="{Binding SpaceModeCommand}" CommandParameter="2" />
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" VerticalAlignment="Center">
+          <Button Classes="flat" Padding="10,5" Content="↑" Command="{Binding SpaceUpCommand}" IsVisible="{Binding SpaceCanGoUp}" ToolTip.Tip="{Binding L[mac.space.up]}" />
+          <TextBlock Text="{Binding SpaceCrumb}" FontFamily="Menlo, monospace" FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="520" />
+        </StackPanel>
+      </Grid>
+      <ScrollViewer Grid.Row="3" IsVisible="{Binding SpaceReady}">
+        <Border Classes="optcard" Padding="16,4">
+          <ItemsControl ItemsSource="{Binding SpaceRows}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="local:SpaceRow">
+                <Border Classes="row" Classes.first="{Binding First}">
+                  <Grid ColumnDefinitions="Auto,*,110,310">
+                    <Border Classes="tile neutral" Margin="0,0,12,0"><PathIcon Data="{Binding Icon, Converter={StaticResource Icon}}" /></Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
+                      <Button Classes="plain" Padding="0" HorizontalAlignment="Left" Command="{Binding $parent[UserControl].((local:MainViewModel)DataContext).SpaceOpenCommand}" CommandParameter="{Binding}"
+                              IsHitTestVisible="{Binding IsFolder}">
+                        <TextBlock Classes="strong" Text="{Binding Name}" />
+                      </Button>
+                      <TextBlock Classes="caption" Text="{Binding Sub}" TextTrimming="CharacterEllipsis" />
+                      <ProgressBar Height="4" MinHeight="4" Minimum="0" Maximum="100" Value="{Binding Share}" Margin="0,4,0,0" Foreground="{DynamicResource AccentText}" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="2" Text="{Binding Size}" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0" />
+                    <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" HorizontalAlignment="Right">
+                      <Button Classes="flat" Padding="10,5" Content="{Binding $parent[UserControl].((local:MainViewModel)DataContext).L[mac.detail.show_in_finder]}"
+                              Command="{Binding $parent[UserControl].((local:MainViewModel)DataContext).SpaceRevealCommand}" CommandParameter="{Binding}" />
+                      <Button Classes="flat" Padding="10,5" IsVisible="{Binding CanTrash}" Content="{Binding $parent[UserControl].((local:MainViewModel)DataContext).L[mac.space.trash]}"
+                              Command="{Binding $parent[UserControl].((local:MainViewModel)DataContext).SpaceTrashCommand}" CommandParameter="{Binding}" />
+                    </StackPanel>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </Border>
+      </ScrollViewer>
+    </Grid>
 
     <!-- Myths -->
     <ScrollViewer Grid.Row="1" IsVisible="{Binding IsOptMyths}">

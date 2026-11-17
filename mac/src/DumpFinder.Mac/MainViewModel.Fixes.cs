@@ -266,15 +266,16 @@ public sealed partial class MainViewModel
         get => _optimizeTab;
         set
         {
-            Set(ref _optimizeTab, Math.Clamp(value, 0, 3));
-            foreach (var n in new[] { nameof(IsOptSettings), nameof(IsOptStartup), nameof(IsOptCleanup), nameof(IsOptMyths) }) Raise(n);
+            Set(ref _optimizeTab, Math.Clamp(value, 0, 4));
+            foreach (var n in new[] { nameof(IsOptSettings), nameof(IsOptStartup), nameof(IsOptCleanup), nameof(IsOptStorage), nameof(IsOptMyths) }) Raise(n);
             RenderOptimize();
         }
     }
     public bool IsOptSettings => OptimizeTab == 0;
     public bool IsOptStartup => OptimizeTab == 1;
     public bool IsOptCleanup => OptimizeTab == 2;
-    public bool IsOptMyths => OptimizeTab == 3;
+    public bool IsOptStorage => OptimizeTab == 3;
+    public bool IsOptMyths => OptimizeTab == 4;
 
     string _tweaksButton = "", _agentsNote = "", _cleanButton = "";
     bool _hasTweaksToApply, _noAgents, _canClean;
@@ -292,6 +293,7 @@ public sealed partial class MainViewModel
         if (IsOptSettings) RenderTweaks();
         else if (IsOptStartup) RenderAgents();
         else if (IsOptCleanup) _ = RenderCleanupAsync();
+        else if (IsOptStorage) RenderSpace();
         Raise(nameof(Myths));
     }
 

@@ -154,7 +154,7 @@ public partial class MainWindow : Window, IPlatform
         {
             (0, 0, 0, "1-home"), (1, 0, 0, "2-crashes"), (1, 1, 0, "2b-common-crashes"),
             (2, 0, 0, "3-hardware"), (2, 1, 0, "3b-conflicts"), (2, 2, 0, "3c-extensions"), (2, 3, 0, "3d-stability"), (2, 3, 7, "3e-stability-live"), (2, 3, 8, "3f-stability-result"), (3, 0, 0, "4-fixes"),
-            (4, 0, 0, "5-optimize"), (4, 1, 0, "5b-startup"), (4, 2, 0, "5c-cleanup"), (4, 3, 0, "5d-myths"),
+            (4, 0, 0, "5-optimize"), (4, 1, 0, "5b-startup"), (4, 2, 0, "5c-cleanup"), (4, 3, 9, "5d-storage"), (4, 4, 0, "5e-myths"),
             (1, 0, 5, "2c-ai-check-up"), (5, 0, 0, "6-tools"), (5, 1, 0, "6b-report"), (5, 2, 0, "6c-history"), (6, 0, 0, "7-settings"), (6, 0, 6, "7b-settings-ai"),
             (0, 0, 1, "8-intro-1"), (0, 0, 2, "8-intro-2"), (0, 0, 3, "8-intro-3"), (0, 0, 4, "9-update"),
         };
@@ -165,6 +165,16 @@ public partial class MainWindow : Window, IPlatform
             if (page == 2) _vm.HardwareTab = sub;
             if (page == 5) _vm.ToolsTab = sub;
             if (page == 4) _vm.OptimizeTab = sub;
+            if (overlay == 9)
+            {
+                // Storage: a real (read-only) measure of the apps and the home folder, then the three views.
+                await _vm.SpaceScanCommand.ExecuteAsync();
+                await SaveCapture(Path.Combine(folder, "5d-storage-apps.png"));
+                _vm.SpaceMode = 1;
+                await Task.Delay(300);
+                await SaveCapture(Path.Combine(folder, "5d-storage-folders.png"));
+                _vm.SpaceMode = 2;
+            }
             if (overlay == 7)
             {
                 // A real one-minute graphics stage, captured after a few seconds, then stopped: the live view and the results.

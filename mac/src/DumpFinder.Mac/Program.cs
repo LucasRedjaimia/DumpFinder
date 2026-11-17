@@ -31,6 +31,22 @@ internal static class Program
             Console.WriteLine(outcome);
             return outcome.Errors > 0 ? 1 : 0;
         }
+        // Development run of the storage scan (read-only): --space [folder]
+        if (args.Length > 0 && args[0] == "--space")
+        {
+            var root = args.Length > 1 ? args[1] : MacPaths.Home;
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            var scan = DiskSpaceScan.Scan(root, CancellationToken.None);
+            Console.WriteLine($"{DiskSpaceScan.Human(scan.ScannedBytes)} in {scan.ScannedFiles:N0} files, {sw.Elapsed.TotalSeconds:0.0} s");
+            foreach (var e in scan.ChildrenOf(root).Take(12)) Console.WriteLine($"  {DiskSpaceScan.Human(e.Bytes),10}  {e.Name}{(e.Protected ? "  [protected]" : "")}");
+            Console.WriteLine("Largest files:");
+            foreach (var f in scan.LargestFiles.Take(8)) Console.WriteLine($"  {DiskSpaceScan.Human(f.Bytes),10}  {f.Path}");
+            sw.Restart();
+            var apps = DiskSpaceScan.Apps(CancellationToken.None);
+            Console.WriteLine($"Apps: {apps.Count} in {sw.Elapsed.TotalSeconds:0.0} s");
+            foreach (var a in apps.Take(8)) Console.WriteLine($"  {DiskSpaceScan.Human(a.Bytes),10}  {a.Name}  {a.LastUsed:yyyy-MM-dd}{(a.Protected ? "  [protected]" : "")}");
+            return 0;
+        }
         // MCP server for AI agents (Claude Desktop, Claude Code, Gemini CLI…): headless, JSON-RPC over stdio.
         if (args.Length > 0 && args[0] == "--mcp")
             return McpServer.RunStdio();
