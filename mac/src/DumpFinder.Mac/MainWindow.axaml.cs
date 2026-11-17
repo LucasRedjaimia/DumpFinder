@@ -135,6 +135,7 @@ public partial class MainWindow : Window, IPlatform
         {
             (0, 0, 0, "1-home"), (1, 0, 0, "2-crashes"), (1, 1, 0, "2b-common-crashes"),
             (2, 0, 0, "3-hardware"), (2, 1, 0, "3b-conflicts"), (2, 2, 0, "3c-extensions"), (3, 0, 0, "4-fixes"),
+            (4, 0, 0, "5-optimize"), (4, 1, 0, "5b-startup"), (4, 2, 0, "5c-cleanup"), (4, 3, 0, "5d-myths"),
             (1, 0, 5, "2c-ai-check-up"), (5, 0, 0, "6-tools"), (5, 1, 0, "6b-report"), (5, 2, 0, "6c-history"), (6, 0, 0, "7-settings"), (6, 0, 6, "7b-settings-ai"),
             (0, 0, 1, "8-intro-1"), (0, 0, 2, "8-intro-2"), (0, 0, 3, "8-intro-3"), (0, 0, 4, "9-update"),
         };
@@ -144,6 +145,8 @@ public partial class MainWindow : Window, IPlatform
             if (page == 1) _vm.CrashTab = sub;
             if (page == 2) _vm.HardwareTab = sub;
             if (page == 5) _vm.ToolsTab = sub;
+            if (page == 4) _vm.OptimizeTab = sub;
+            if (page == 4 && sub == 2) await Task.Delay(4000);   // sizes of the cleanup items
             if (overlay is >= 1 and <= 3) { _vm.StartOnboarding(); _vm.OnboardingStep = overlay - 1; }
             if (overlay == 4) { _vm.OnboardingEndCommand.Execute(null); _vm.PreviewUpdate(SampleUpdate()); }
             if (overlay == 5) _vm.SystemReviewCommand.Execute(null);

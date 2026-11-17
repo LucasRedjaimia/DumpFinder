@@ -1,0 +1,136 @@
+<!-- Optimize, same layout as Windows (src/UI/MainWindow.OptimizePage.cs): title, subtitle and the Settings | Startup | Cleanup |
+     Myths pills (Windows also has Apps: removing preinstalled Store apps, which macOS does not have). Each tab: a note and its
+     action button, then cards. Every change is journaled and can be undone from Tools › History. -->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:DumpFinder.Mac"
+             xmlns:core="using:DumpFinder.Mac.Core"
+             x:Class="DumpFinder.Mac.Pages.OptimizePage"
+             x:DataType="local:MainViewModel">
+  <UserControl.Styles>
+    <Style Selector="Border.optcard">
+      <Setter Property="Background" Value="{DynamicResource BgCard}" /><Setter Property="BorderBrush" Value="{DynamicResource BorderCard}" />
+      <Setter Property="BorderThickness" Value="1" /><Setter Property="CornerRadius" Value="12" /><Setter Property="Padding" Value="16,12" /><Setter Property="Margin" Value="0,0,0,8" />
+    </Style>
+    <Style Selector="TextBlock.note"><Setter Property="FontSize" Value="12" /><Setter Property="Foreground" Value="{DynamicResource TextMuted}" /><Setter Property="TextWrapping" Value="Wrap" /><Setter Property="VerticalAlignment" Value="Center" /></Style>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="Auto,*">
+    <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,14">
+      <StackPanel Margin="0,0,16,0">
+        <TextBlock Classes="title" Text="{Binding L[main_window.optimize]}" />
+        <TextBlock Classes="subtitle" Text="{Binding L[optimize.remove_the_clutter_and_tune_windows]}" Margin="0,2,0,0" />
+      </StackPanel>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+        <Button Classes="segment" Classes.active="{Binding IsOptSettings}" Content="{Binding L[optimize.settings]}" Command="{Binding OptimizeTabCommand}" CommandParameter="0" />
+        <Button Classes="segment" Classes.active="{Binding IsOptStartup}" Content="{Binding L[optimize.startup]}" Command="{Binding OptimizeTabCommand}" CommandParameter="1" />
+        <Button Classes="segment" Classes.active="{Binding IsOptCleanup}" Content="{Binding L[optimize.cleanup]}" Command="{Binding OptimizeTabCommand}" CommandParameter="2" />
+        <Button Classes="segment" Classes.active="{Binding IsOptMyths}" Content="{Binding L[optimize.myths]}" Command="{Binding OptimizeTabCommand}" CommandParameter="3" />
+      </StackPanel>
+    </Grid>
+
+    <!-- Settings -->
+    <ScrollViewer Grid.Row="1" IsVisible="{Binding IsOptSettings}">
+      <StackPanel Margin="0,0,6,16">
+        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,12">
+          <TextBlock Classes="note" Text="{Binding L[mac.opt.settings_note]}" Margin="0,0,14,0" />
+          <Button Grid.Column="1" Classes="primary" IsEnabled="{Binding HasTweaksToApply}" Content="{Binding TweaksButton}" Command="{Binding ApplyTweaksCommand}" />
+        </Grid>
+        <ItemsControl ItemsSource="{Binding TweakRows}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="local:TweakRow">
+              <Border Classes="optcard">
+                <Grid ColumnDefinitions="*,Auto">
+                  <StackPanel Margin="0,0,14,0">
+                    <WrapPanel>
+                      <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap" Margin="0,0,8,0" VerticalAlignment="Center" />
+                      <Border Classes="pill" Classes.success="{Binding Applied}" Classes.warn="{Binding Recommended}"><TextBlock Text="{Binding Status}" /></Border>
+                    </WrapPanel>
+                    <TextBlock Text="{Binding Explanation}" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                    <TextBlock Text="{Binding Detail}" FontFamily="Menlo, monospace" FontSize="11" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                  </StackPanel>
+                  <Button Grid.Column="1" Classes="flat" MinWidth="110" VerticalAlignment="Center" Content="{Binding ButtonText}"
+                          Command="{Binding $parent[UserControl].((local:MainViewModel)DataContext).TweakCommand}" CommandParameter="{Binding}" />
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </ScrollViewer>
+
+    <!-- Startup -->
+    <ScrollViewer Grid.Row="1" IsVisible="{Binding IsOptStartup}">
+      <StackPanel Margin="0,0,6,16">
+        <TextBlock Classes="note" Text="{Binding AgentsNote}" Margin="0,0,0,12" />
+        <Border Classes="optcard" IsVisible="{Binding NoAgents}"><TextBlock Classes="body" Text="{Binding L[optimize.no_startup_programs]}" /></Border>
+        <ItemsControl ItemsSource="{Binding AgentRows}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="local:AgentRow">
+              <Border Classes="optcard">
+                <Grid ColumnDefinitions="*,Auto">
+                  <StackPanel Margin="0,0,14,0">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Classes="strong" Text="{Binding Name}" />
+                      <Border Classes="pill" Classes.success="{Binding Enabled}"><TextBlock Text="{Binding Pill}" /></Border>
+                    </StackPanel>
+                    <TextBlock Text="{Binding Program}" FontFamily="Menlo, monospace" FontSize="11" Foreground="{DynamicResource TextMuted}" TextTrimming="CharacterEllipsis" Margin="0,4,0,0"
+                               ToolTip.Tip="{Binding Program}" />
+                  </StackPanel>
+                  <Button Grid.Column="1" Classes="flat" MinWidth="110" VerticalAlignment="Center" Content="{Binding ButtonText}"
+                          Command="{Binding $parent[UserControl].((local:MainViewModel)DataContext).AgentCommand}" CommandParameter="{Binding}" />
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </ScrollViewer>
+
+    <!-- Cleanup -->
+    <ScrollViewer Grid.Row="1" IsVisible="{Binding IsOptCleanup}">
+      <StackPanel Margin="0,0,6,16">
+        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,12">
+          <TextBlock Classes="note" Text="{Binding L[mac.opt.cleanup_note]}" Margin="0,0,14,0" />
+          <Button Grid.Column="1" Classes="primary" IsEnabled="{Binding CanClean}" Content="{Binding CleanButton}" Command="{Binding CleanCommand}" />
+        </Grid>
+        <ItemsControl ItemsSource="{Binding CleanupRows}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="local:CleanupRow">
+              <Border Classes="optcard">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                  <CheckBox IsChecked="{Binding Checked}" VerticalAlignment="Center" Margin="0,0,10,0" AutomationProperties.Name="{Binding Title}" />
+                  <StackPanel Grid.Column="1" Margin="0,0,14,0">
+                    <TextBlock Classes="strong" Text="{Binding Title}" />
+                    <TextBlock Text="{Binding Explanation}" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,3,0,0" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="2" Text="{Binding Size}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"
+                             Foreground="{DynamicResource AccentText}" />
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </ScrollViewer>
+
+    <!-- Myths -->
+    <ScrollViewer Grid.Row="1" IsVisible="{Binding IsOptMyths}">
+      <StackPanel Margin="0,0,6,16">
+        <TextBlock Classes="note" Text="{Binding L[optimize.widespread_optimizations_dump_finder_del]}" Margin="0,0,0,12" />
+        <ItemsControl ItemsSource="{Binding Myths}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="core:KeyValue">
+              <Border Classes="optcard">
+                <StackPanel>
+                  <TextBlock Classes="strong" Text="{Binding Key}" />
+                  <TextBlock Text="{Binding Value}" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" LineHeight="17" Margin="0,4,0,0" />
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

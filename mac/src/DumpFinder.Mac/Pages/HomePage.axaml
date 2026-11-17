@@ -89,7 +89,7 @@
               <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="local:ActionRow">
                   <Border Classes="row" Classes.first="{Binding First}">
-                    <Grid ColumnDefinitions="Auto,*">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
                       <Border Classes="tile" Classes.danger="{Binding IsDanger}" Classes.warn="{Binding IsWarn}">
                         <PathIcon Data="{Binding Icon, Converter={StaticResource Icon}}" />
                       </Border>
@@ -97,6 +97,10 @@
                         <TextBlock Classes="strong" Text="{Binding Title}" />
                         <TextBlock Classes="caption" Text="{Binding Sub}" TextTrimming="CharacterEllipsis" Margin="0,1,0,0" />
                       </StackPanel>
+                      <!-- Windows: "Apply" on each recommended fix -->
+                      <Button Grid.Column="2" Classes="flat accenttext" VerticalAlignment="Center" IsVisible="{Binding HasFix}"
+                              Content="{Binding $parent[UserControl].((local:MainViewModel)DataContext).L[opt_tweaks.apply]}"
+                              Command="{Binding $parent[UserControl].((local:MainViewModel)DataContext).ApplyFixCommand}" CommandParameter="{Binding FixId}" />
                     </Grid>
                   </Border>
                 </DataTemplate>

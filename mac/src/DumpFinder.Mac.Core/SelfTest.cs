@@ -57,6 +57,7 @@ public static class SelfTest
     public static int Run(TextWriter log)
     {
         int failed = 0;
+        var previousScanForFixes = McpServer.Scan;
         void Check(bool ok, string name)
         {
             log.WriteLine($"{(ok ? "PASS" : "FAIL")}  {name}");
@@ -212,7 +213,7 @@ public static class SelfTest
             Check(init.Contains("\"protocolVersion\":\"2025-06-18\"") && init.Contains("\"name\":\"dumpfinder\""), "MCP initialize");
             Check(McpServer.Handle("{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}") is null, "MCP notifications get no answer");
             using var tools = JsonDocument.Parse(McpServer.Handle("{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/list\"}")!);
-            Check(tools.RootElement.GetProperty("result").GetProperty("tools").GetArrayLength() == 5, "MCP tools/list: 5 tools");
+            Check(tools.RootElement.GetProperty("result").GetProperty("tools").GetArrayLength() == 7, "MCP tools/list: 7 tools");
             Check((McpServer.Handle("{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"nope\"}") ?? "").Contains("-32601")
                   && (McpServer.Handle("{oops") ?? "").Contains("-32700"), "MCP unknown method and parse errors");
             string Call(string tool, string args)
@@ -283,6 +284,114 @@ public static class SelfTest
             LoginItem.AgentsDir = agentsBefore;
             AppStore.Root = rootBefore;
             try { Directory.Delete(sentinelDir, true); } catch (IOException) { }
+        }
+
+        // Fixes, Optimize and the journal, in a temporary home (admin commands recorded, not run)
+        var fixHome = Path.Combine(Path.GetTempPath(), "dumpfinder-selftest-" + Guid.NewGuid().ToString("N"));
+        var homeBefore = MacPaths.Home;
+        var rootBefore2 = AppStore.Root;
+        var adminCalls = new List<string>();
+        try
+        {
+            MacPaths.Home = fixHome;
+            AppStore.Root = Path.Combine(fixHome, "store");
+            Admin.Runner = cmds => { adminCalls.AddRange(cmds); return ""; };
+            StartupAgents.UseLaunchctl = false;
+            var chrome = Path.Combine(MacPaths.AppSupport, "Google", "Chrome", "Local State");
+            var discordFile = Path.Combine(MacPaths.AppSupport, "discord", "settings.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(chrome)!);
+            Directory.CreateDirectory(Path.GetDirectoryName(discordFile)!);
+            const string chromeJson = "{\"browser\":{\"x\":1},\"hardware_acceleration_mode\":{\"enabled\":true}}";
+            File.WriteAllText(chrome, chromeJson);
+            File.WriteAllText(discordFile, "{\"BACKGROUND_COLOR\":\"#202225\"}");
+
+            var fixes = FixCatalog.Inspect(null, null);
+            Check(fixes.Single(f => f.Id == "chrome_gpu").Status == FixStatus.Optional && fixes.Single(f => f.Id == "discord_hwaccel").Status == FixStatus.Optional
+                  && !fixes.Any(f => f.Id == "edge_gpu") && fixes.Single(f => f.Id == "first_aid").IsTool, "fix catalog reads the installed apps");
+            var res = FixCatalog.RunAndRecord(new[] { "chrome_gpu_apply", "discord_hwaccel_apply" }, op => op);
+            bool chromeOff = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(chrome))!["hardware_acceleration_mode"]!["enabled"]!.GetValue<bool>() == false;
+            bool discordOff = File.ReadAllText(discordFile).Contains("\"enableHardwareAcceleration\":false");
+            var applied = FixCatalog.Inspect(null, null);
+            Check(res.All(x => x.Ok) && chromeOff && discordOff && applied.Single(f => f.Id == "chrome_gpu").Status == FixStatus.Applied
+                  && File.ReadAllText(chrome).Contains("\"browser\""), "browser and Discord fixes applied, other settings kept");
+            var journal = Journal.Entries();
+            Check(journal.Count == 2 && journal.All(e => e.Reversible && e.Changes.Count == 1), "each fix journaled with its backup");
+            Check(Journal.Revert(journal.Single(e => e.Op == "chrome_gpu_apply")) == "" && File.ReadAllText(chrome) == chromeJson, "undo puts the exact file back");
+
+            var nap = Pmset.Get("powernap", " sleep 1\n powernap 1\n");
+            var napRun = FixCatalog.Run(new[] { "powernap_apply" });
+            var napUndo = Journal.Revert(new JournalEntry { Changes = napRun[0].Changes });
+            Check(nap == "1" && (napRun[0].Ok == (Pmset.Get("powernap") != "")) && (napRun[0].Changes.Count == 0 || (adminCalls.Contains("/usr/bin/pmset -a 'powernap' '0'")
+                  && napUndo == "" && adminCalls.Any(c => c.StartsWith("/usr/bin/pmset -a 'powernap' '", StringComparison.Ordinal) && !c.EndsWith("'0'", StringComparison.Ordinal)))),
+                  "Power Nap: one admin command, undo writes the previous value");
+            adminCalls.Clear();
+            Admin.Runner = _ => "cancelled";
+            Check(FixCatalog.Run(new[] { "security_updates_apply" }) is [{ Ok: false, Message: "cancelled" }], "admin prompt cancelled → fix failed, nothing journaled");
+            Admin.Runner = cmds => { adminCalls.AddRange(cmds); return ""; };
+            Check(Admin.Sh("it's") == "'it'\\''s'" && Admin.AppleScriptEscape("a\"b\\c") == "a\\\"b\\\\c", "shell and AppleScript quoting");
+
+            // Optimize: a preference on a private plist, cleanup to a private Trash, a LaunchAgent moved aside
+            var plistDomain = Path.Combine(fixHome, "prefs");
+            var tweak = new Tweak("ds_network", plistDomain, "DSDontWriteNetworkStores", "bool", "true", true);
+            var tw = Optimizer.RunTweak(tweak, false);
+            bool on = Optimizer.IsApplied(tweak);
+            var twUndo = Journal.Revert(Journal.Entries().First(e => e.Op == "opt_ds_network_apply"));
+            Check(tw.Ok && on && twUndo == "" && !Defaults.Read(plistDomain, "DSDontWriteNetworkStores").Exists, "preference applied then removed again by undo");
+
+            var cache = Path.Combine(fixHome, "Library", "Caches", "com.example.app");
+            Directory.CreateDirectory(cache);
+            File.WriteAllBytes(Path.Combine(cache, "blob"), new byte[4096]);
+            Directory.SetLastWriteTime(cache, DateTime.Now.AddDays(-3));
+            var fresh = Path.Combine(fixHome, "Library", "Caches", "com.example.busy");
+            Directory.CreateDirectory(fresh);
+            var measured = Optimizer.MeasureCleanup().Single(c => c.Id == "caches");
+            var cleaned = Optimizer.Clean(new[] { "caches" });
+            bool inTrash = Directory.Exists(Path.Combine(fixHome, ".Trash", "com.example.app")) && !Directory.Exists(cache) && Directory.Exists(fresh);
+            var cleanUndo = Journal.Revert(Journal.Entries().First(e => e.Op == "opt_clean_caches_apply"));
+            Check(measured.Bytes == 4096 && measured.Count == 1 && cleaned[0].Ok && inTrash && cleanUndo == "" && File.Exists(Path.Combine(cache, "blob")),
+                  "cleanup: recent items kept, the rest to the Trash, undo puts it back");
+
+            var agentsDir = Path.Combine(fixHome, "Library", "LaunchAgents");
+            Directory.CreateDirectory(agentsDir);
+            File.WriteAllText(Path.Combine(agentsDir, "com.example.helper.plist"), LoginItem.Plist("/Applications/Example.app/Contents/MacOS/helper").Replace(LoginItem.Label, "com.example.helper"));
+            var agent = Optimizer.Agents().Single();
+            var dis = Optimizer.SetAgent(agent, enable: false);
+            bool moved = !File.Exists(Path.Combine(agentsDir, "com.example.helper.plist")) && Optimizer.Agents().Single() is { Enabled: false };
+            var agUndo = Journal.Revert(Journal.Entries().First(e => e.Op == "opt_startup_disable"));
+            Check(agent.Label == "com.example.helper" && agent.Program.Contains("--tray") && dis.Ok && moved && agUndo == "" && Optimizer.Agents().Single().Enabled,
+                  "startup agent disabled (moved aside, nothing deleted) and undone");
+
+            // MCP: dry run, refusal on screen, approval
+            McpServer.Scan = _ => (new ScanResult(), new StabilitySummary());
+            string Fix(string args)
+            {
+                using var d = JsonDocument.Parse(McpServer.Handle($"{{\"jsonrpc\":\"2.0\",\"id\":9,\"method\":\"tools/call\",\"params\":{{\"name\":\"mac_apply_fix\",\"arguments\":{args}}}}}")!);
+                return d.RootElement.GetProperty("result").GetProperty("content")[0].GetProperty("text").GetString() ?? "";
+            }
+            McpServer.Approve = _ => false;
+            var runningBefore = McpServer.AppRunning;
+            McpServer.AppRunning = _ => false;
+            var dry = Fix("{\"fix_id\":\"chrome_gpu\"}");
+            var declined = Fix("{\"fix_id\":\"chrome_gpu\",\"confirm\":true}");
+            McpServer.Approve = _ => true;
+            var approved = Fix("{\"fix_id\":\"chrome_gpu\",\"confirm\":true}");
+            var tool = Fix("{\"fix_id\":\"first_aid\",\"confirm\":true}");
+            McpServer.AppRunning = _ => true;
+            var open = Fix("{\"fix_id\":\"discord_hwaccel\",\"restore\":false,\"confirm\":true}");
+            McpServer.AppRunning = runningBefore;
+            Check(dry.StartsWith("[DRY RUN]", StringComparison.Ordinal) && declined.StartsWith("[DECLINED]", StringComparison.Ordinal)
+                  && approved.StartsWith("[SUCCESS]", StringComparison.Ordinal) && tool.StartsWith("[REFUSED]", StringComparison.Ordinal) && open.Contains("is open", StringComparison.Ordinal),
+                  "MCP apply_fix: dry run, declined, approved, tool refused, refused while the app is open");
+        }
+        finally
+        {
+            MacPaths.Home = homeBefore;
+            AppStore.Root = rootBefore2;
+            Admin.Runner = null;
+            StartupAgents.UseLaunchctl = true;
+            McpServer.Approve = null;
+            McpServer.Scan = previousScanForFixes;
+            try { Directory.Delete(fixHome, true); } catch (IOException) { }
         }
 
         // Translations: every language has every Mac key, with the same placeholders ({0}, {1:…}); the "one" plural

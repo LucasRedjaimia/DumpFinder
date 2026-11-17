@@ -42,6 +42,9 @@
       <Setter Property="FontSize" Value="11" /><Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="Foreground" Value="{DynamicResource AccentText}" /><Setter Property="HorizontalAlignment" Value="Center" />
     </Style>
+    <!-- Fixes badge: count of Recommended fixes (Windows: WarnSoftBg / WarnFg) -->
+    <Style Selector="Border.navbadge.warn"><Setter Property="Background" Value="{DynamicResource WarnSoftBg}" /></Style>
+    <Style Selector="Border.navbadge.warn > TextBlock"><Setter Property="Foreground" Value="{DynamicResource WarnFg}" /></Style>
   </Window.Styles>
 
   <Panel>
@@ -99,6 +102,9 @@
                 <Grid ColumnDefinitions="4,26,*,Auto">
                   <Border Classes="indicator" /><PathIcon Grid.Column="1" Data="{StaticResource Icon.Repair}" />
                   <TextBlock Grid.Column="2" Classes="navlabel" Text="{Binding L[main_window.fixes]}" IsVisible="{Binding SidebarExpanded}" />
+                  <Border Grid.Column="3" Classes="navbadge warn" IsVisible="{Binding ShowFixesBadge}">
+                    <TextBlock Text="{Binding FixesBadge}" />
+                  </Border>
                 </Grid>
               </Button>
               <Button Classes="nav" Classes.active="{Binding IsOptimize}" Command="{Binding NavigateCommand}" CommandParameter="4"
@@ -148,7 +154,8 @@
             <pages:CrashesPage IsVisible="{Binding IsCrashes}" />
             <pages:HardwarePage IsVisible="{Binding IsHardware}" />
             <pages:ToolsPage IsVisible="{Binding IsTools}" />
-            <pages:SoonPage IsVisible="{Binding IsSoon}" />
+            <pages:FixesPage IsVisible="{Binding IsFixes}" />
+            <pages:OptimizePage IsVisible="{Binding IsOptimize}" />
             <pages:SettingsPage IsVisible="{Binding IsSettings}" />
           </Panel>
           <!-- Quiet status line: neutral progress / last scan. Outcomes go to toasts. -->
@@ -252,6 +259,22 @@
               <Button Classes="primary" Content="{Binding UpdateDownloadText}" Command="{Binding UpdateDownloadCommand}" />
             </StackPanel>
           </Grid>
+        </StackPanel>
+      </Border>
+      </Grid>
+    </Border>
+
+    <!-- Yes / No (Windows MessageBox), e.g. "Close Google Chrome gracefully to apply this setting?" -->
+    <Border Classes="scrim" IsVisible="{Binding ConfirmVisible}">
+      <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+      <Border Classes="overlayshadow" />
+      <Border Classes="overlaycard" Width="440" Padding="26,22,26,18">
+        <StackPanel>
+          <TextBlock Text="{Binding ConfirmText}" FontSize="14" LineHeight="20" Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap" />
+          <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button Classes="flat" Content="{Binding L[mac.common.no]}" Command="{Binding ConfirmNoCommand}" />
+            <Button Classes="primary" Content="{Binding L[mac.common.yes]}" Command="{Binding ConfirmYesCommand}" />
+          </StackPanel>
         </StackPanel>
       </Border>
       </Grid>

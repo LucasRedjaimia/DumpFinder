@@ -119,6 +119,7 @@ public sealed partial class MainViewModel
         }, HasReport);
         RenderTools();
         RenderHistory();
+        RenderJournal();
     }
 
     void RefreshReportCommands()
