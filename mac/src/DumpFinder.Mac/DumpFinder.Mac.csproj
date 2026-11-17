@@ -7,7 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>DumpFinder.Mac</RootNamespace>
     <AssemblyName>DumpFinder</AssemblyName>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
     <!-- Apple Silicon only, like the Windows build is x64 only. -->
     <RuntimeIdentifier>osx-arm64</RuntimeIdentifier>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
