@@ -394,6 +394,63 @@ public static class SelfTest
             try { Directory.Delete(fixHome, true); } catch (IOException) { }
         }
 
+        // Stability test: engines clean then with an injected fault, verdicts, the run, crash recovery
+        {
+            var second = TimeSpan.FromSeconds(1);
+            var cpuOk = StressEngines.Cpu(second, CancellationToken.None, _ => { }, 2);
+            var ramOk = StressEngines.Ram(256L << 20, second, CancellationToken.None, _ => { });
+            var diskDir = Path.Combine(Path.GetTempPath(), "dumpfinder-selftest-" + Guid.NewGuid().ToString("N"));
+            var diskOk = StressEngines.Disk(diskDir, 64L << 20, second, CancellationToken.None, _ => { });
+            StressEngines.InjectFault = true;
+            var cpuBad = StressEngines.Cpu(second, CancellationToken.None, _ => { }, 2);
+            var ramBad = StressEngines.Ram(256L << 20, second, CancellationToken.None, _ => { });
+            var diskBad = StressEngines.Disk(diskDir, 64L << 20, second, CancellationToken.None, _ => { });
+            StressEngines.InjectFault = false;
+            try { Directory.Delete(diskDir, true); } catch (IOException) { }
+            Check(cpuOk.Errors == 0 && ramOk.Errors == 0 && diskOk.Errors == 0 && cpuOk.Rate > 0 && diskOk.Rate > 0,
+                  $"stress engines: no error on a healthy run (cpu {cpuOk.Errors}, ram {ramOk.Errors}, disk {diskOk.Errors})");
+            Check(cpuBad.Errors > 0 && ramBad.Errors > 0 && diskBad.Errors > 0, "stress engines: an injected fault is caught by each engine");
+            Check(StressEngines.RamBudget(16L << 30, 50) == (16L << 30) * 50 / 100 * 6 / 10 && StressEngines.RamBudget(16L << 30, 100) == (16L << 30) * 6 / 10
+                  && StressEngines.DiskBudget(10L << 30) == (10L << 30) / 20 && StressEngines.DiskBudget(1L << 40) == 2L << 30, "memory and disk budgets");
+
+            Check(StressTest.Verdict(new StageOutcome(StressStage.Ram, true, 3, 1, "MB/s", second), false, false).Outcome == StressOutcome.Failed
+                  && StressTest.Verdict(new StageOutcome(StressStage.Cpu, true, 0, 1, "ops/s", second), true, false).Outcome == StressOutcome.Warning
+                  && StressTest.Verdict(new StageOutcome(StressStage.Gpu, false, 0, 0, "GFLOPS", TimeSpan.Zero, "helper"), false, false).Outcome == StressOutcome.Skipped
+                  && StressTest.Verdict(new StageOutcome(StressStage.Disk, true, 0, 1, "MB/s", second, "stopped"), false, true).Outcome == StressOutcome.Stopped,
+                  "stage verdicts: errors, throttling, missing helper, stop");
+            Check(StressTest.Total(StressTest.Plan(StressPlanKind.Quick, 10)) == TimeSpan.FromMinutes(10) && StressTest.Plan(StressPlanKind.Disk, 500)[0].Duration == TimeSpan.FromMinutes(120),
+                  "plans: quick is 10 min, a single stage is capped at 120 min");
+
+            var stressRoot = Path.Combine(Path.GetTempPath(), "dumpfinder-selftest-" + Guid.NewGuid().ToString("N"));
+            var rootBefore3 = AppStore.Root;
+            try
+            {
+                AppStore.Root = stressRoot;
+                StressTest.Engine = (p, ct, tick) => { tick(new StressTick(p.Stage, 1, 10, "MB/s", 0)); return new StageOutcome(p.Stage, true, p.Stage == StressStage.Ram ? 2 : 0, 10, "MB/s", second); };
+                StressTest.ThermalProbe = () => false;
+                int ticks = 0;
+                var run = StressTest.Run(StressPlanKind.Quick, StressTest.Plan(StressPlanKind.Quick, 10), new HardwareInfo(), CancellationToken.None, (_, _) => ticks++);
+                bool markerGone = !File.Exists(Path.Combine(stressRoot, "history", "stress_running.json"));
+                Check(run.Completed && run.AnyFailure && run.Stages.Count == 4 && run.Stages[1].Outcome == StressOutcome.Failed && ticks == 4 && markerGone
+                      && StressTest.Runs().Count == 1 && StressTest.RunTone(run) == "danger", "a run: stages in order, failure kept, saved, marker cleared");
+
+                var marker = new StressMarker { Started = DateTime.Now.AddMinutes(-5), Plan = StressPlanKind.Quick, Stage = StressStage.Gpu, StageStarted = DateTime.Now.AddMinutes(-2) };
+                AppStore.Write("history/stress_running.json", marker);
+                var crashed = StressTest.RecoverInterrupted(DateTimeOffset.Now.AddMinutes(-1));
+                AppStore.Write("history/stress_running.json", marker);
+                var quit = StressTest.RecoverInterrupted(DateTimeOffset.Now.AddHours(-3));
+                Check(crashed?.Stages.Last().Outcome == StressOutcome.Interrupted && quit?.Stages.Last().Outcome == StressOutcome.Stopped
+                      && StressTest.RecoverInterrupted(null) is null, "a marker left behind: crash when the Mac booted after the stage started, else the app was quit");
+            }
+            finally
+            {
+                AppStore.Root = rootBefore3;
+                StressTest.Engine = null;
+                StressTest.ThermalProbe = null;
+                try { Directory.Delete(stressRoot, true); } catch (IOException) { }
+            }
+        }
+
         // Translations: every language has every Mac key, with the same placeholders ({0}, {1:…}); the "one" plural
         // form of some languages may leave out {0}.
         var en = Loc.MacTable("en");

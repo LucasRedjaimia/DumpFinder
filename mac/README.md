@@ -34,6 +34,7 @@ Command-line modes:
 | `DumpFinder --selftest` | Parsers and rules on synthetic inputs (no access to the Mac). Exit code: failed checks |
 | `DumpFinder --mcp` | MCP server for AI agents (JSON-RPC over stdio, headless, English) |
 | `DumpFinder --tray` | Login start of the Sentinel: no window, menu bar icon, a notification if a severe crash happened meanwhile (quits at once when the Sentinel is off) |
+| `DumpFinder --stress cpu\|ram\|disk\|gpu [seconds]` | Runs one stability-test stage in the terminal (the GPU stage needs `gpu-stress` next to the binary) |
 | `DumpFinder --notify-test` | Posts a test notification (run it from the .app: notifications need the bundle) |
 | `DumpFinder --screenshot <folder>` | Scans, saves every tab as a PNG, quits (the PNGs show this Mac's data) |
 
@@ -68,11 +69,11 @@ The two apps have their own interface (WPF on Windows, Avalonia here) but look a
 | Logic | `src/Core/Stability.cs` (score, levels, 30-day timeline) is compiled from the Windows source file (`SharedWindowsSource` in the Core project). A shared file must stay free of Windows APIs: the Mac CI job fails otherwise. Mac crashes map onto the Windows categories: kernel panic = blue screen, watchdog / forced restart = unexpected reboot, Jetsam = memory exhaustion. |
 | Data | Settings and history in `~/Library/Application Support/DumpFinder` (`settings.json`, `history/scans.json`, `history/seen_crashes.json`), same fields as `%LOCALAPPDATA%\DumpFinder`. |
 
-`DumpFinder --screenshot <folder> [--theme light|dark] [--lang xx] [--collapsed]` captures every section and sub-tab, the introduction and the new-version card (with a sample release), like the Windows capture harness; it never goes online. `DumpFinder --report [--lang xx] [--format text|html|json|md]` prints a report. Every export goes through `Privacy.Redact` (account name, computer name, web paths).
+`DumpFinder --screenshot <folder> [--theme light|dark] [--lang xx] [--collapsed]` captures every section and sub-tab, the introduction, the new-version card (with a sample release) and a short real run of the graphics stability stage, like the Windows capture harness. It never goes online and works on a temporary copy of the app data, so captures leave no scan, journal entry or test run behind. `DumpFinder --report [--lang xx] [--format text|html|json|md]` prints a report. Every export goes through `Privacy.Redact` (account name, computer name, web paths).
 
 ## Not done yet
 
-Next step: stability test (CPU / memory / disk, GPU through Metal; the Hardware pill comes with it). Notarization needs an Apple Developer account.
+Parity with the Windows sections is complete. Notarization needs an Apple Developer account.
 
 Update check: it cannot use `/releases/latest` (always the Windows release). It lists the releases, keeps the newest published `mac-v*` one and opens its `DumpFinder-mac-*.zip` in the browser: nothing is downloaded or installed by the app. Unlike Windows, it does not refresh the detection data (that file is embedded on the Mac).
 
@@ -105,3 +106,16 @@ A fix is Recommended when the last 30 days point at it (a crash of that browser 
 Optimize: Settings (Finder and Apple advertising preferences, `defaults`), Startup (per-user LaunchAgents: disabling unloads the agent and moves its plist aside, nothing is deleted), Cleanup (app caches, old app logs, Xcode DerivedData moved to the Trash, so Undo puts them back; crash reports are never touched), Myths. Windows' Apps tab (removing preinstalled Store apps) has no Mac match.
 
 MCP: `mac_list_fixes` and `mac_apply_fix` (dry run by default; with `confirm`, a native Allow / Don't Allow dialog whose default is Don't Allow, plus the password prompt for admin fixes; refused while the browser or Discord is open).
+
+## Stability test
+
+Hardware › Stability test, same layout as Windows (plan, duration, this Mac, Start / Stop, phase and timer, step chips, four live tiles, live chart then results, log). Every stage checks its own work, so one wrong result is an error:
+
+| Stage | Load | Check |
+|---|---|---|
+| Processor | every core: SHA-256 of a fixed block + a floating-point FMA chain | each answer against the reference computed before the load |
+| Unified memory | ~60 % of the free memory (at most 70 % of the total), 64 MB blocks | an address-derived pattern with a new seed each pass, every word read back |
+| Graphics | `gpu-stress` (Metal compute, `mac/native/gpu-stress.swift`, built by the app project with `swiftc` and shipped next to the binary) | every pass compared with the first one |
+| SSD | a test file (2 GB, or 5 % of the free space) in 4 MB blocks | read back with the cache bypassed (`F_NOCACHE`), every block compared; the file is deleted |
+
+Plans: quick (10 min, the 4 stages), thorough (2 h, overnight), or one stage for 1–120 minutes. Apple Silicon has no per-core pinning and no separate video memory, so the Windows per-core, VRAM and CPU + GPU spike stages have no Mac version. During a run the Mac is kept awake (`caffeinate`) and macOS thermal state (`pmset -g therm`) is watched: throttling turns a passed stage into "Watch out" with cooling advice. A marker file is written while a stage runs: if it is still there at the next launch and the Mac booted after the stage started, the stage is reported as "Mac crashed". Runs are kept in `history/stress.json` (50).

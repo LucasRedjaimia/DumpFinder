@@ -1,3 +1,5 @@
+<!-- Hardware › Stability test follows the Windows two-column layout (MainWindow.StressPage.cs): plan, hint, duration,
+     this Mac, Start / Stop, last test | phase, timer, progress, step chips, four tiles, live chart or results, log. -->
 <!-- Hardware, same layout as Windows (src/UI/MainWindow.HealthPage.cs + Hosting.cs): title, subtitle and the
      Hardware | Conflicts | Extensions pills (Windows Hardware & BIOS | Conflicts | Drivers). The Stability test
      pill comes with step 7. -->
@@ -6,6 +8,15 @@
              xmlns:local="using:DumpFinder.Mac"
              x:Class="DumpFinder.Mac.Pages.HardwarePage"
              x:DataType="local:MainViewModel">
+  <UserControl.Styles>
+    <Style Selector="TextBlock.tilevalue"><Setter Property="Foreground" Value="{DynamicResource TextPrimary}" /></Style>
+    <Style Selector="TextBlock.tilevalue.good"><Setter Property="Foreground" Value="{DynamicResource SuccessFg}" /></Style>
+    <Style Selector="TextBlock.tilevalue.bad"><Setter Property="Foreground" Value="{DynamicResource DangerFg}" /></Style>
+    <Style Selector="TextBlock.verdict"><Setter Property="Foreground" Value="{DynamicResource TextPrimary}" /></Style>
+    <Style Selector="TextBlock.verdict.good"><Setter Property="Foreground" Value="{DynamicResource SuccessFg}" /></Style>
+    <Style Selector="TextBlock.verdict.warnv"><Setter Property="Foreground" Value="{DynamicResource WarnFg}" /></Style>
+    <Style Selector="TextBlock.verdict.bad"><Setter Property="Foreground" Value="{DynamicResource DangerFg}" /></Style>
+  </UserControl.Styles>
   <Grid RowDefinitions="Auto,*">
     <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,16">
       <StackPanel Margin="0,0,16,0">
@@ -16,6 +27,7 @@
         <Button Classes="segment" Classes.active="{Binding IsHwMain}" Content="{Binding L[health.hardware_bios]}" Command="{Binding HardwareTabCommand}" CommandParameter="0" />
         <Button Classes="segment" Classes.active="{Binding IsHwConflicts}" Content="{Binding L[hosting.conflicts]}" Command="{Binding HardwareTabCommand}" CommandParameter="1" />
         <Button Classes="segment" Classes.active="{Binding IsHwExtensions}" Content="{Binding L[hosting.drivers]}" Command="{Binding HardwareTabCommand}" CommandParameter="2" />
+        <Button Classes="segment" Classes.active="{Binding IsHwStress}" Content="{Binding L[health.stability_test]}" Command="{Binding HardwareTabCommand}" CommandParameter="3" />
       </StackPanel>
     </Grid>
 
@@ -69,5 +81,115 @@
         </StackPanel>
       </StackPanel>
     </ScrollViewer>
+
+    <!-- Stability test -->
+    <Grid Grid.Row="1" ColumnDefinitions="315,16,*" IsVisible="{Binding IsHwStress}" Margin="0,0,6,10">
+      <Border Classes="card" Padding="16">
+        <Grid RowDefinitions="*,Auto">
+          <ScrollViewer>
+            <StackPanel Spacing="8">
+              <TextBlock Text="{Binding L[stress.what_to_test]}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}" />
+              <ComboBox HorizontalAlignment="Stretch" ItemsSource="{Binding StressPlans}" SelectedIndex="{Binding StressPlanIndex}" IsEnabled="{Binding StressIdle}"
+                        AutomationProperties.Name="{Binding L[stress.what_to_test]}" />
+              <TextBlock Text="{Binding StressHint}" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" LineHeight="17" />
+              <StackPanel IsVisible="{Binding StressHasDuration}" Margin="0,4,0,0">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Text="{Binding L[stress.duration]}" FontSize="12" Foreground="{DynamicResource TextSecondary}" />
+                  <TextBlock Grid.Column="1" Text="{Binding StressMinutesText}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AccentText}" />
+                </Grid>
+                <Slider Minimum="1" Maximum="120" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding StressMinutes}" IsEnabled="{Binding StressIdle}" />
+              </StackPanel>
+              <Border Height="1" Background="{DynamicResource BorderCard}" Margin="0,6" />
+              <TextBlock Text="{Binding L[stress.this_pc]}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}" />
+              <TextBlock Text="{Binding StressMachine}" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" LineHeight="18" />
+            </StackPanel>
+          </ScrollViewer>
+          <StackPanel Grid.Row="1" Spacing="8" Margin="0,12,0,0">
+            <Grid ColumnDefinitions="*,8,92">
+              <Button Classes="primary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="{Binding L[stress.start]}" Command="{Binding StartStressCommand}" />
+              <Button Grid.Column="2" Classes="flat" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="{Binding L[stress.stop]}" Command="{Binding StopStressCommand}" />
+            </Grid>
+            <TextBlock Text="{Binding LastTestText}" FontSize="11" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <Grid Grid.Column="2" RowDefinitions="Auto,Auto,*,Auto">
+        <Border Classes="card" Padding="16,12" Margin="0,0,0,10">
+          <StackPanel Spacing="6">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Text="{Binding StressPhase}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap" />
+              <TextBlock Grid.Column="1" Text="{Binding StressTimer}" FontFamily="Menlo, monospace" FontSize="12" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" />
+            </Grid>
+            <TextBlock Text="{Binding StressStatus}" FontSize="12" Foreground="{DynamicResource TextSecondary}" />
+            <ProgressBar Height="6" MinHeight="6" Minimum="0" Maximum="100" Value="{Binding StressProgress}" Foreground="{DynamicResource Accent}" />
+            <ItemsControl ItemsSource="{Binding StepChips}">
+              <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="local:StepChip">
+                  <Border Classes="pill" Classes.accent="{Binding IsAccent}" Classes.success="{Binding IsSuccess}" Classes.warn="{Binding IsWarn}" Classes.danger="{Binding IsDanger}" Margin="0,2,6,0">
+                    <TextBlock Text="{Binding Text}" />
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+
+        <ItemsControl Grid.Row="1" ItemsSource="{Binding StressTiles}" Margin="0,0,0,10">
+          <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="4" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="local:StressTile">
+              <Border Classes="card" Padding="12,10" Margin="0,0,8,0">
+                <StackPanel Spacing="2">
+                  <TextBlock Text="{Binding Title}" FontSize="11" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" MaxLines="2" ToolTip.Tip="{Binding Title}" />
+                  <TextBlock Text="{Binding Value}" FontSize="18" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Classes.good="{Binding IsGood}" Classes.bad="{Binding IsBad}" Classes="tilevalue" />
+                  <TextBlock Text="{Binding Sub}" FontSize="11" Foreground="{DynamicResource TextMuted}" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <!-- Live chart while running, results after a run (same slot, as on Windows) -->
+        <Border Grid.Row="2" Classes="card" Padding="16,12" Margin="0,0,0,10" IsVisible="{Binding StressChartVisible}">
+          <Grid RowDefinitions="Auto,*">
+            <TextBlock Text="{Binding L[mac.stress.chart_legend]}" FontSize="11" Foreground="{DynamicResource TextMuted}" />
+            <local:Sparkline Grid.Row="1" Values="{Binding StressSeries}" LineBrush="{DynamicResource AccentText}" Margin="0,8,0,0" MinHeight="80" />
+          </Grid>
+        </Border>
+        <Border Grid.Row="2" Classes="card" Padding="16,12" Margin="0,0,0,10" IsVisible="{Binding StressResultVisible}">
+          <ScrollViewer>
+            <StackPanel Spacing="8">
+              <TextBlock Text="{Binding ResultVerdict}" FontSize="15" FontWeight="SemiBold" Classes="verdict" Classes.good="{Binding ResultGood}" Classes.warnv="{Binding ResultWarn}" Classes.bad="{Binding ResultBad}" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding ResultMeta}" FontSize="12" Foreground="{DynamicResource TextMuted}" />
+              <TextBlock Text="{Binding ResultNote}" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" IsVisible="{Binding HasResultNote}" />
+              <ItemsControl ItemsSource="{Binding StageResults}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="local:StageResultRow">
+                    <Grid ColumnDefinitions="Auto,*" Margin="0,6,0,0">
+                      <Border Classes="tile neutral" Classes.success="{Binding IsSuccess}" Classes.warn="{Binding IsWarn}" Classes.danger="{Binding IsDanger}" VerticalAlignment="Top">
+                        <PathIcon Data="{Binding Icon, Converter={StaticResource Icon}}" />
+                      </Border>
+                      <StackPanel Grid.Column="1" Margin="12,0,0,0" Spacing="3">
+                        <TextBlock Text="{Binding Head}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap" />
+                        <SelectableTextBlock Text="{Binding Summary}" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" />
+                        <Border Background="{DynamicResource BgSubtle}" CornerRadius="8" Padding="10,7" IsVisible="{Binding HasAdvice}">
+                          <SelectableTextBlock Text="{Binding Advice}" FontSize="12" Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap" />
+                        </Border>
+                      </StackPanel>
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </ScrollViewer>
+        </Border>
+
+        <Border Grid.Row="3" Background="{DynamicResource BgInput}" BorderBrush="{DynamicResource BorderCard}" BorderThickness="1" CornerRadius="8" Height="86">
+          <TextBox Text="{Binding StressLog}" IsReadOnly="True" TextWrapping="Wrap" FontFamily="Menlo, monospace" FontSize="11" BorderThickness="0" Background="Transparent" Padding="10,6" />
+        </Border>
+      </Grid>
+    </Grid>
   </Grid>
 </UserControl>
