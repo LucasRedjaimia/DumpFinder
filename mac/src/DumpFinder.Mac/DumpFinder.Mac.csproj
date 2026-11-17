@@ -24,4 +24,21 @@
     <ProjectReference Include="..\DumpFinder.Mac.Core\DumpFinder.Mac.Core.csproj" />
   </ItemGroup>
 
+  <!-- GPU stage of the stability test: a Metal helper (mac/native/gpu-stress.swift) built with swiftc and shipped next to
+       the app binary, in the build output and in the published bundle. -->
+  <PropertyGroup>
+    <GpuStressSource>$(MSBuildThisFileDirectory)..\..\native\gpu-stress.swift</GpuStressSource>
+    <GpuStressBinary>$(IntermediateOutputPath)gpu-stress</GpuStressBinary>
+  </PropertyGroup>
+  <Target Name="BuildGpuStress" BeforeTargets="AssignTargetPaths" Inputs="$(GpuStressSource)" Outputs="$(GpuStressBinary)"
+          Condition="$([MSBuild]::IsOSPlatform('OSX'))">
+    <MakeDir Directories="$(IntermediateOutputPath)" />
+    <Exec Command="xcrun swiftc -O -target arm64-apple-macos13 -o &quot;$(GpuStressBinary)&quot; &quot;$(GpuStressSource)&quot; -framework Metal" />
+  </Target>
+  <Target Name="ShipGpuStress" BeforeTargets="AssignTargetPaths" AfterTargets="BuildGpuStress" Condition="$([MSBuild]::IsOSPlatform('OSX'))">
+    <ItemGroup>
+      <None Include="$(GpuStressBinary)" Link="gpu-stress" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    </ItemGroup>
+  </Target>
+
 </Project>

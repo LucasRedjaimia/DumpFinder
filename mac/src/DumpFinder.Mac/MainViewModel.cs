@@ -92,13 +92,20 @@ public sealed partial class MainViewModel : Observable
         ReportCommand = new RelayCommand(SaveHtmlReportAsync, () => _result is not null);
         ToggleSidebarCommand = new RelayCommand(() => { SidebarCollapsed = !SidebarCollapsed; return Task.CompletedTask; });
         // Windows OnHeroPrimaryClick: apply the recommended fixes, else the checks of the Hardware page.
-        HeroPrimaryCommand = new RelayCommand(() => { if (HeroAppliesFixes) return ApplyAllAsync(); Page = TabHardware; return Task.CompletedTask; });
+        // Windows: no fix to apply → "Run a stress test". The Mac shows its checks to look at first, when there are some.
+        HeroPrimaryCommand = new RelayCommand(() =>
+        {
+            if (HeroAppliesFixes) return ApplyAllAsync();
+            RunAction(_result?.Findings.Any(f => f.Severity >= Severity.Warning) == true ? "nav:hardware" : "nav:stress");
+            return Task.CompletedTask;
+        });
         // Windows OnHeroSecondaryClick: the crash to look at, else the whole-system AI check-up.
         HeroSecondaryCommand = new RelayCommand(() => { if (_focusKey is not null) OpenCrash(_focusKey); else OpenSystemReview(); return Task.CompletedTask; });
         InitCrashes();
         InitHardwareTools();
         InitOverlays();
         InitAi();
+        InitStress();
 
         Loc.LanguageChanged += () =>
         {
@@ -113,6 +120,7 @@ public sealed partial class MainViewModel : Observable
             RaiseMonitoring();
             RenderJournal();
             RenderOptimize();
+            if (!IsStressRunning) RenderStressIdle();
             ResetAiOutput();
             RefreshMcp();
         };
@@ -369,7 +377,7 @@ public sealed partial class MainViewModel : Observable
         Days = s.Days;
 
         var warnings = r.Findings.Where(f => f.Severity >= Severity.Warning).ToList();
-        HeroPrimary = warnings.Count > 0 ? Loc.P("mac.home.see_findings", warnings.Count) : "";
+        HeroPrimary = warnings.Count > 0 ? Loc.P("mac.home.see_findings", warnings.Count) : Loc.Plain(Loc.S("home.run_a_stress_test"));
         var focus = s.Crashes.FirstOrDefault(c => (now - c.Time).TotalDays <= Stability.WindowDays && Stability.IsSevere(c.Category))
                     ?? s.Crashes.FirstOrDefault(c => (now - c.Time).TotalDays <= Stability.WindowDays);
         HeroSecondary = Loc.Plain(Loc.S(focus is not null ? "home.view_crash" : "home.ai_check_up"));
@@ -392,6 +400,7 @@ public sealed partial class MainViewModel : Observable
         RenderHardware(r);
         ReportText = ReportBuilder.Text(r, s);
         _ = RefreshFixesAsync();
+        Raise(nameof(StressMachine));
     }
 
     CrashRow ToRow(CrashEntry c, DateTime now, bool first)

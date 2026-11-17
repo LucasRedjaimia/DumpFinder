@@ -140,6 +140,7 @@ public sealed partial class MainViewModel
             case "hardware": HardwareTab = 0; Page = TabHardware; break;
             case "conflicts": HardwareTab = 1; Page = TabHardware; break;
             case "drivers": HardwareTab = 2; Page = TabHardware; break;
+            case "stress": HardwareTab = 3; Page = TabHardware; break;
             case "tools": Page = TabTools; break;
             case "history": ToolsTab = 2; Page = TabTools; break;
             default: ShowToast("warn", Loc.S("health.unable_to_open_action") + target); break;
@@ -151,11 +152,12 @@ public sealed partial class MainViewModel
     public int HardwareTab
     {
         get => _hardwareTab;
-        set { Set(ref _hardwareTab, Math.Clamp(value, 0, 2)); Raise(nameof(IsHwMain)); Raise(nameof(IsHwConflicts)); Raise(nameof(IsHwExtensions)); }
+        set { Set(ref _hardwareTab, Math.Clamp(value, 0, 3)); Raise(nameof(IsHwMain)); Raise(nameof(IsHwConflicts)); Raise(nameof(IsHwExtensions)); Raise(nameof(IsHwStress)); }
     }
     public bool IsHwMain => HardwareTab == 0;
     public bool IsHwConflicts => HardwareTab == 1;
     public bool IsHwExtensions => HardwareTab == 2;
+    public bool IsHwStress => HardwareTab == 3;
 
     string _extensionSummary = "";
     public string ExtensionSummary { get => _extensionSummary; private set => Set(ref _extensionSummary, value); }

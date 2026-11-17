@@ -16,6 +16,21 @@ internal static class Program
             Console.WriteLine($"posted={ok} delivered={MacNative.DeliveredCount()}");
             return ok ? 0 : 1;
         }
+        // Development run of one stability-test stage: --stress cpu|ram|disk|gpu [seconds]
+        if (args.Length > 1 && args[0] == "--stress")
+        {
+            var secs = TimeSpan.FromSeconds(args.Length > 2 && int.TryParse(args[2], out var n) ? n : 5);
+            void Tick(StressTick t) => Console.WriteLine($"{t.Stage} {t.Fraction:P0} {t.Rate:0} {t.RateUnit} errors={t.Errors} {t.Detail}");
+            var outcome = args[1] switch
+            {
+                "cpu" => StressEngines.Cpu(secs, CancellationToken.None, Tick),
+                "ram" => StressEngines.Ram(StressEngines.RamBudget(Environment.GetEnvironmentVariable("DF_RAM_TOTAL") is { } tot ? long.Parse(tot) : 8L << 30, 50), secs, CancellationToken.None, Tick),
+                "disk" => StressEngines.Disk(Path.Combine(Path.GetTempPath(), "dumpfinder-stress"), 512L << 20, secs, CancellationToken.None, Tick),
+                _ => StressEngines.Gpu(secs, CancellationToken.None, Tick),
+            };
+            Console.WriteLine(outcome);
+            return outcome.Errors > 0 ? 1 : 0;
+        }
         // MCP server for AI agents (Claude Desktop, Claude Code, Gemini CLI…): headless, JSON-RPC over stdio.
         if (args.Length > 0 && args[0] == "--mcp")
             return McpServer.RunStdio();
