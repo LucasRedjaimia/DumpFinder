@@ -1,33 +1,32 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:DumpFinder.Mac"
              x:Class="DumpFinder.Mac.App"
              Name="Dump Finder"
              RequestedThemeVariant="Default">
   <Application.Resources>
     <ResourceDictionary>
-      <ResourceDictionary.ThemeDictionaries>
-        <ResourceDictionary x:Key="Light">
-          <SolidColorBrush x:Key="CardBrush" Color="#FFFFFF" />
-          <SolidColorBrush x:Key="PageBrush" Color="#F4F5F7" />
-          <SolidColorBrush x:Key="MutedBrush" Color="#5C6370" />
-          <SolidColorBrush x:Key="CriticalBrush" Color="#C62828" />
-          <SolidColorBrush x:Key="WarningBrush" Color="#B26A00" />
-          <SolidColorBrush x:Key="InfoBrush" Color="#1E63C4" />
-          <SolidColorBrush x:Key="OkBrush" Color="#2E7D32" />
-        </ResourceDictionary>
-        <ResourceDictionary x:Key="Dark">
-          <SolidColorBrush x:Key="CardBrush" Color="#25272C" />
-          <SolidColorBrush x:Key="PageBrush" Color="#1A1B1F" />
-          <SolidColorBrush x:Key="MutedBrush" Color="#A3A9B4" />
-          <SolidColorBrush x:Key="CriticalBrush" Color="#FF6B6B" />
-          <SolidColorBrush x:Key="WarningBrush" Color="#F2B04B" />
-          <SolidColorBrush x:Key="InfoBrush" Color="#6EA8FF" />
-          <SolidColorBrush x:Key="OkBrush" Color="#6CCB72" />
-        </ResourceDictionary>
-      </ResourceDictionary.ThemeDictionaries>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="avares://DumpFinder/Themes/Tokens.axaml" />
+        <ResourceInclude Source="avares://DumpFinder/Themes/Icons.axaml" />
+      </ResourceDictionary.MergedDictionaries>
+      <local:IconConverter x:Key="Icon" />
+      <!-- Icon · title · secondary line, separated rows inside a card -->
+      <DataTemplate x:Key="InfoRowTemplate" x:DataType="local:InfoRow">
+        <Border Classes="row" Classes.first="{Binding First}">
+          <Grid ColumnDefinitions="Auto,*">
+            <PathIcon Data="{Binding Icon, Converter={StaticResource Icon}}" Width="16" Height="16" Foreground="{DynamicResource TextSecondary}" Margin="0,0,14,0" />
+            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+              <SelectableTextBlock Text="{Binding Primary}" FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap" />
+              <SelectableTextBlock Text="{Binding Secondary}" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,1,0,0" IsVisible="{Binding HasSecondary}" />
+            </StackPanel>
+          </Grid>
+        </Border>
+      </DataTemplate>
     </ResourceDictionary>
   </Application.Resources>
   <Application.Styles>
     <FluentTheme />
+    <StyleInclude Source="avares://DumpFinder/Themes/Controls.axaml" />
   </Application.Styles>
 </Application>

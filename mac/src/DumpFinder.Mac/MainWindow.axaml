@@ -1,129 +1,177 @@
+<!-- Window shell, same structure as the Windows app (src/UI/MainWindow.cs BuildLayout + MainWindow.Shell.cs):
+     title bar (menu toggle, logo, "DumpFinder" wordmark, version pill), sidebar 236 / 68 px with the same
+     7 sections, an elevated canvas with a rounded top-left corner, a quiet status line and bottom-right toasts. -->
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="using:DumpFinder.Mac"
+        xmlns:pages="using:DumpFinder.Mac.Pages"
         x:Class="DumpFinder.Mac.MainWindow"
         x:DataType="local:MainViewModel"
         Title="Dump Finder"
-        Width="980" Height="720" MinWidth="640" MinHeight="480"
-        Background="{DynamicResource PageBrush}">
-
-  <Window.Resources>
-    <DataTemplate x:Key="LineTemplate" x:DataType="local:LineRow">
-      <Border Classes="card" Padding="12,8">
-        <StackPanel Spacing="2">
-          <SelectableTextBlock Text="{Binding Primary}" FontWeight="SemiBold" TextWrapping="Wrap" />
-          <SelectableTextBlock Text="{Binding Secondary}" Classes="muted" TextWrapping="Wrap" IsVisible="{Binding HasSecondary}" />
-        </StackPanel>
-      </Border>
-    </DataTemplate>
-  </Window.Resources>
+        Width="1240" Height="820" MinWidth="900" MinHeight="600"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="PreferSystemChrome"
+        ExtendClientAreaTitleBarHeightHint="44">
 
   <Window.KeyBindings>
-    <KeyBinding Gesture="Cmd+R" Command="{Binding RescanCommand}" />
-    <KeyBinding Gesture="F5" Command="{Binding RescanCommand}" />
-    <KeyBinding Gesture="Cmd+Shift+C" Command="{Binding CopyCommand}" />
+    <KeyBinding Gesture="Cmd+D1" Command="{Binding NavigateCommand}" CommandParameter="0" />
+    <KeyBinding Gesture="Cmd+D2" Command="{Binding NavigateCommand}" CommandParameter="1" />
+    <KeyBinding Gesture="Cmd+D3" Command="{Binding NavigateCommand}" CommandParameter="2" />
+    <KeyBinding Gesture="Cmd+D4" Command="{Binding NavigateCommand}" CommandParameter="3" />
+    <KeyBinding Gesture="Cmd+D5" Command="{Binding NavigateCommand}" CommandParameter="4" />
+    <KeyBinding Gesture="Cmd+D6" Command="{Binding NavigateCommand}" CommandParameter="5" />
+    <KeyBinding Gesture="Cmd+D7" Command="{Binding NavigateCommand}" CommandParameter="6" />
+    <KeyBinding Gesture="Cmd+R" Command="{Binding ScanCommand}" />
+    <KeyBinding Gesture="F5" Command="{Binding ScanCommand}" />
   </Window.KeyBindings>
 
   <Window.Styles>
-    <Style Selector="Border.card">
-      <Setter Property="Background" Value="{DynamicResource CardBrush}" />
-      <Setter Property="CornerRadius" Value="8" />
-      <Setter Property="Padding" Value="14,12" />
-      <Setter Property="Margin" Value="0,0,0,10" />
-      <Setter Property="BorderThickness" Value="4,0,0,0" />
-      <Setter Property="BorderBrush" Value="{DynamicResource InfoBrush}" />
+    <!-- Sidebar entry: indicator bar · icon · label · count badge (Windows nav row grid 4 / 26 / * / Auto) -->
+    <Style Selector="Border.indicator">
+      <Setter Property="Width" Value="3" /><Setter Property="Height" Value="16" /><Setter Property="CornerRadius" Value="1.5" />
+      <Setter Property="Background" Value="{DynamicResource Accent}" /><Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="Margin" Value="-8,0,0,0" />
     </Style>
-    <Style Selector="Border.card.critical"><Setter Property="BorderBrush" Value="{DynamicResource CriticalBrush}" /></Style>
-    <Style Selector="Border.card.warning"><Setter Property="BorderBrush" Value="{DynamicResource WarningBrush}" /></Style>
-    <Style Selector="Border.card.ok"><Setter Property="BorderBrush" Value="{DynamicResource OkBrush}" /></Style>
-    <Style Selector="TextBlock.badge"><Setter Property="Foreground" Value="{DynamicResource InfoBrush}" /></Style>
-    <Style Selector="TextBlock.badge.critical"><Setter Property="Foreground" Value="{DynamicResource CriticalBrush}" /></Style>
-    <Style Selector="TextBlock.badge.warning"><Setter Property="Foreground" Value="{DynamicResource WarningBrush}" /></Style>
-    <Style Selector="TextBlock.badge.ok"><Setter Property="Foreground" Value="{DynamicResource OkBrush}" /></Style>
-    <Style Selector="TextBlock.muted"><Setter Property="Foreground" Value="{DynamicResource MutedBrush}" /></Style>
-    <Style Selector="TextBlock.section">
-      <Setter Property="FontSize" Value="15" />
-      <Setter Property="FontWeight" Value="SemiBold" />
-      <Setter Property="Margin" Value="0,8,0,8" />
+    <Style Selector="Border.navbadge">
+      <Setter Property="CornerRadius" Value="12" /><Setter Property="Padding" Value="7,1,7,2" /><Setter Property="MinWidth" Value="20" />
+      <Setter Property="Background" Value="{DynamicResource AccentSoftBg}" /><Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Border.navbadge > TextBlock">
+      <Setter Property="FontSize" Value="11" /><Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{DynamicResource AccentText}" /><Setter Property="HorizontalAlignment" Value="Center" />
     </Style>
   </Window.Styles>
 
-  <DockPanel Margin="20,16,20,0">
-    <!-- Header -->
-    <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,12">
-      <StackPanel Spacing="2">
-        <TextBlock Text="Dump Finder" FontSize="24" FontWeight="Bold" />
-        <TextBlock Text="{Binding MachineLine}" Classes="muted" TextWrapping="Wrap" />
-        <TextBlock Text="{Binding StatusLine}" Classes="muted" TextWrapping="Wrap" />
-      </StackPanel>
-      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top">
-        <Button Content="Scan again" Command="{Binding RescanCommand}" IsEnabled="{Binding !IsScanning}"
-                AutomationProperties.Name="Scan again" ToolTip.Tip="⌘R" />
-        <Button Content="Copy report" Command="{Binding CopyCommand}" IsEnabled="{Binding HasResult}"
-                AutomationProperties.Name="Copy report" ToolTip.Tip="⇧⌘C" />
-      </StackPanel>
+  <Panel>
+    <Grid RowDefinitions="44,*" ColumnDefinitions="Auto,*">
+
+      <!-- ===== Title bar (traffic lights on the left, then the Windows title-bar content) ===== -->
+      <Border Grid.ColumnSpan="2" Background="Transparent">
+        <StackPanel Orientation="Horizontal" Margin="84,0,0,0" VerticalAlignment="Center">
+          <Button Classes="nav" Width="40" Height="32" Padding="0" Margin="0,0,8,0" HorizontalContentAlignment="Center"
+                  Command="{Binding ToggleSidebarCommand}"
+                  ToolTip.Tip="{Binding L[shell.collapse_expand_menu]}" AutomationProperties.Name="{Binding L[shell.menu]}">
+            <PathIcon Data="{StaticResource Icon.GlobalNav}" Width="14" Height="14" />
+          </Button>
+          <Image Source="{StaticResource BrandLogo}" Width="20" Height="20" Margin="0,0,9,0" VerticalAlignment="Center" />
+          <TextBlock FontSize="13" VerticalAlignment="Center">
+            <Run Text="Dump" FontWeight="Bold" /><Run Text="Finder" FontWeight="Medium" Foreground="{DynamicResource TextSecondary}" />
+          </TextBlock>
+          <Border CornerRadius="8" Padding="6,1,6,2" Margin="9,1,0,0" VerticalAlignment="Center" Background="{DynamicResource BgSubtle}">
+            <TextBlock Text="{Binding VersionShort}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}" />
+          </Border>
+        </StackPanel>
+      </Border>
+
+      <!-- ===== Sidebar ===== -->
+      <Border Grid.Row="1" Width="{Binding SidebarWidth}" Padding="12,6,12,14">
+        <Grid RowDefinitions="*,Auto,Auto">
+          <ScrollViewer Margin="-8,0,0,0" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="8,0,0,0">
+              <Button Classes="nav" Classes.active="{Binding IsHome}" Command="{Binding NavigateCommand}" CommandParameter="0"
+                      ToolTip.Tip="⌘1" AutomationProperties.Name="{Binding L[main_window.home]}" AutomationProperties.AcceleratorKey="Cmd+1">
+                <Grid ColumnDefinitions="4,26,*,Auto">
+                  <Border Classes="indicator" /><PathIcon Grid.Column="1" Data="{StaticResource Icon.Home}" />
+                  <TextBlock Grid.Column="2" Classes="navlabel" Text="{Binding L[main_window.home]}" IsVisible="{Binding SidebarExpanded}" />
+                </Grid>
+              </Button>
+              <Button Classes="nav" Classes.active="{Binding IsCrashes}" Command="{Binding NavigateCommand}" CommandParameter="1"
+                      ToolTip.Tip="⌘2" AutomationProperties.Name="{Binding L[crashes.crashes]}" AutomationProperties.AcceleratorKey="Cmd+2">
+                <Grid ColumnDefinitions="4,26,*,Auto">
+                  <Border Classes="indicator" /><PathIcon Grid.Column="1" Data="{StaticResource Icon.Diagnostic}" />
+                  <TextBlock Grid.Column="2" Classes="navlabel" Text="{Binding L[crashes.crashes]}" IsVisible="{Binding SidebarExpanded}" />
+                </Grid>
+              </Button>
+              <Button Classes="nav" Classes.active="{Binding IsHardware}" Command="{Binding NavigateCommand}" CommandParameter="2"
+                      ToolTip.Tip="⌘3" AutomationProperties.Name="{Binding L[main_window.hardware]}" AutomationProperties.AcceleratorKey="Cmd+3">
+                <Grid ColumnDefinitions="4,26,*,Auto">
+                  <Border Classes="indicator" /><PathIcon Grid.Column="1" Data="{StaticResource Icon.Component}" />
+                  <TextBlock Grid.Column="2" Classes="navlabel" Text="{Binding L[main_window.hardware]}" IsVisible="{Binding SidebarExpanded}" />
+                  <Border Grid.Column="3" Classes="navbadge" IsVisible="{Binding ShowHardwareBadge}">
+                    <TextBlock Text="{Binding HardwareBadge}" />
+                  </Border>
+                </Grid>
+              </Button>
+              <Button Classes="nav" Classes.active="{Binding IsFixes}" Command="{Binding NavigateCommand}" CommandParameter="3"
+                      ToolTip.Tip="⌘4" AutomationProperties.Name="{Binding L[main_window.fixes]}" AutomationProperties.AcceleratorKey="Cmd+4">
+                <Grid ColumnDefinitions="4,26,*,Auto">
+                  <Border Classes="indicator" /><PathIcon Grid.Column="1" Data="{StaticResource Icon.Repair}" />
+                  <TextBlock Grid.Column="2" Classes="navlabel" Text="{Binding L[main_window.fixes]}" IsVisible="{Binding SidebarExpanded}" />
+                </Grid>
+              </Button>
+              <Button Classes="nav" Classes.active="{Binding IsOptimize}" Command="{Binding NavigateCommand}" CommandParameter="4"
+                      ToolTip.Tip="⌘5" AutomationProperties.Name="{Binding L[main_window.optimize]}" AutomationProperties.AcceleratorKey="Cmd+5">
+                <Grid ColumnDefinitions="4,26,*,Auto">
+                  <Border Classes="indicator" /><PathIcon Grid.Column="1" Data="{StaticResource Icon.Speed}" />
+                  <TextBlock Grid.Column="2" Classes="navlabel" Text="{Binding L[main_window.optimize]}" IsVisible="{Binding SidebarExpanded}" />
+                </Grid>
+              </Button>
+              <Button Classes="nav" Classes.active="{Binding IsTools}" Command="{Binding NavigateCommand}" CommandParameter="5"
+                      ToolTip.Tip="⌘6" AutomationProperties.Name="{Binding L[main_window.tools]}" AutomationProperties.AcceleratorKey="Cmd+6">
+                <Grid ColumnDefinitions="4,26,*,Auto">
+                  <Border Classes="indicator" /><PathIcon Grid.Column="1" Data="{StaticResource Icon.DevTools}" />
+                  <TextBlock Grid.Column="2" Classes="navlabel" Text="{Binding L[main_window.tools]}" IsVisible="{Binding SidebarExpanded}" />
+                </Grid>
+              </Button>
+            </StackPanel>
+          </ScrollViewer>
+
+          <!-- Compact hardware box (Windows: profile badge, GPU, CPU) -->
+          <Border Grid.Row="1" Classes="card" CornerRadius="12" Padding="12,10" IsVisible="{Binding SidebarExpanded}">
+            <StackPanel>
+              <Border Classes="pill accent" CornerRadius="8" Padding="7,2,7,3" Margin="0,0,0,8">
+                <TextBlock Text="{Binding HwBadge}" />
+              </Border>
+              <TextBlock Text="{Binding HwLine1}" FontSize="12" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+              <TextBlock Text="{Binding HwLine2}" FontSize="11" Foreground="{DynamicResource TextSecondary}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
+            </StackPanel>
+          </Border>
+
+          <Button Grid.Row="2" Classes="nav" Classes.active="{Binding IsSettings}" Margin="0,8,0,0" Command="{Binding NavigateCommand}" CommandParameter="6"
+                  ToolTip.Tip="⌘7" AutomationProperties.Name="{Binding L[main_window.settings]}" AutomationProperties.AcceleratorKey="Cmd+7">
+            <Grid ColumnDefinitions="4,26,*,Auto">
+              <Border Classes="indicator" /><PathIcon Grid.Column="1" Data="{StaticResource Icon.Settings}" />
+              <TextBlock Grid.Column="2" Classes="navlabel" Text="{Binding L[main_window.settings]}" IsVisible="{Binding SidebarExpanded}" />
+            </Grid>
+          </Button>
+        </Grid>
+      </Border>
+
+      <!-- ===== Canvas ===== -->
+      <Border Grid.Row="1" Grid.Column="1" Background="{DynamicResource BgWindow}" BorderBrush="{DynamicResource BorderCard}"
+              BorderThickness="1,1,0,0" CornerRadius="12,0,0,0" ClipToBounds="True">
+        <Grid RowDefinitions="*,Auto">
+          <Panel Margin="32,26,32,10">
+            <pages:HomePage IsVisible="{Binding IsHome}" />
+            <pages:CrashesPage IsVisible="{Binding IsCrashes}" />
+            <pages:HardwarePage IsVisible="{Binding IsHardware}" />
+            <pages:SoonPage IsVisible="{Binding IsSoon}" />
+            <pages:SettingsPage IsVisible="{Binding IsSettings}" />
+          </Panel>
+          <!-- Quiet status line: neutral progress / last scan. Outcomes go to toasts. -->
+          <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="32,4,32,10">
+            <Border Width="6" Height="6" CornerRadius="3" Margin="0,1,8,0" VerticalAlignment="Center" Background="{DynamicResource TextMuted}" />
+            <TextBlock Text="{Binding Status}" FontSize="11" Foreground="{DynamicResource TextMuted}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+          </StackPanel>
+        </Grid>
+      </Border>
     </Grid>
 
-    <ProgressBar DockPanel.Dock="Top" IsIndeterminate="True" IsVisible="{Binding IsScanning}" Margin="0,0,0,8" />
-
-    <TabControl x:Name="Tabs">
-      <TabItem Header="Findings">
-        <ScrollViewer>
-          <ItemsControl ItemsSource="{Binding Findings}" Margin="0,8,0,16">
-            <ItemsControl.ItemTemplate>
-              <DataTemplate x:DataType="local:FindingRow">
-                <Border Classes="card" Classes.critical="{Binding IsCritical}" Classes.warning="{Binding IsWarning}" Classes.ok="{Binding IsOk}">
-                  <StackPanel Spacing="4">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                      <TextBlock Text="{Binding Badge}" FontWeight="Bold" Classes="badge"
-                                 Classes.critical="{Binding IsCritical}" Classes.warning="{Binding IsWarning}" Classes.ok="{Binding IsOk}" />
-                      <TextBlock Text="{Binding Category}" Classes="muted" />
-                    </StackPanel>
-                    <SelectableTextBlock Text="{Binding Title}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap" />
-                    <SelectableTextBlock Text="{Binding Detail}" TextWrapping="Wrap" />
-                    <SelectableTextBlock Text="{Binding Advice}" IsVisible="{Binding HasAdvice}" TextWrapping="Wrap" FontStyle="Italic" />
-                  </StackPanel>
-                </Border>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
-        </ScrollViewer>
-      </TabItem>
-
-      <TabItem Header="Crashes">
-        <ScrollViewer>
-          <StackPanel Margin="0,8,0,16">
-            <TextBlock Classes="section" Text="Kernel panics (90 days)" />
-            <TextBlock Classes="muted" Text="None." IsVisible="{Binding !Panics.Count}" />
-            <ItemsControl ItemsSource="{Binding Panics}" ItemTemplate="{StaticResource LineTemplate}" />
-            <TextBlock Classes="section" Text="App crashes and low-memory events (90 days)" />
-            <TextBlock Classes="muted" Text="None." IsVisible="{Binding !Crashes.Count}" />
-            <ItemsControl ItemsSource="{Binding Crashes}" ItemTemplate="{StaticResource LineTemplate}" />
-          </StackPanel>
-        </ScrollViewer>
-      </TabItem>
-
-      <TabItem Header="Extensions">
-        <ScrollViewer>
-          <StackPanel Margin="0,8,0,16">
-            <TextBlock Classes="muted" TextWrapping="Wrap"
-                       Text="Only non-Apple extensions are listed. Kernel extensions (kexts) run inside the kernel and are the usual suspects in kernel panics; system extensions run outside it." />
-            <TextBlock Classes="section" Text="Kernel extensions" />
-            <TextBlock Classes="muted" Text="None: only Apple's kernel extensions are present." IsVisible="{Binding !Kexts.Count}" />
-            <ItemsControl ItemsSource="{Binding Kexts}" ItemTemplate="{StaticResource LineTemplate}" />
-            <TextBlock Classes="section" Text="System extensions" />
-            <TextBlock Classes="muted" Text="None." IsVisible="{Binding !SysExts.Count}" />
-            <ItemsControl ItemsSource="{Binding SysExts}" ItemTemplate="{StaticResource LineTemplate}" />
-          </StackPanel>
-        </ScrollViewer>
-      </TabItem>
-
-      <TabItem Header="Hardware">
-        <ScrollViewer>
-          <ItemsControl ItemsSource="{Binding HardwareLines}" ItemTemplate="{StaticResource LineTemplate}" Margin="0,8,0,16" />
-        </ScrollViewer>
-      </TabItem>
-    </TabControl>
-  </DockPanel>
-
+    <!-- ===== Toasts (Windows: 380 px, bottom-right, 24 / 40 px margin) ===== -->
+    <ItemsControl ItemsSource="{Binding Toasts}" Width="380" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,24,40">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="local:ToastItem">
+          <Border Background="{DynamicResource ToastBg}" BorderBrush="{DynamicResource BorderCard}" BorderThickness="1" CornerRadius="12"
+                  Padding="14,12" Margin="0,8,0,0" BoxShadow="0 8 24 0 #33000000">
+            <Grid ColumnDefinitions="Auto,*">
+              <Border Classes="tile" Classes.danger="{Binding IsDanger}" Classes.warn="{Binding IsWarn}" Classes.success="{Binding IsSuccess}" Width="28" Height="28">
+                <PathIcon Data="{Binding Icon, Converter={StaticResource Icon}}" />
+              </Border>
+              <TextBlock Grid.Column="1" Text="{Binding Text}" Margin="12,0,0,0" TextWrapping="Wrap" VerticalAlignment="Center" FontSize="13" />
+            </Grid>
+          </Border>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+  </Panel>
 </Window>

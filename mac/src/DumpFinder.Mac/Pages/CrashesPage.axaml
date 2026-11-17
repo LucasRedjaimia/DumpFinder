@@ -1,0 +1,47 @@
+<!-- Crashes: list in the Windows style (category tile, title, "New" pill, technical line, time).
+     Filters, the detail panel and "Ask the AI" come with the next step of the Mac port. -->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:DumpFinder.Mac"
+             x:Class="DumpFinder.Mac.Pages.CrashesPage"
+             x:DataType="local:MainViewModel">
+  <ScrollViewer>
+    <StackPanel Margin="0,0,6,16">
+      <TextBlock Classes="title" Text="{Binding L[crashes.crashes]}" />
+      <TextBlock Classes="subtitle" Text="{Binding L[mac.crashes.subtitle]}" Margin="0,2,0,16" />
+
+      <Border Classes="card">
+        <StackPanel>
+          <ItemsControl ItemsSource="{Binding CrashList}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="local:CrashRow">
+                <Border Classes="row" Classes.first="{Binding First}">
+                  <Grid ColumnDefinitions="Auto,*,Auto">
+                    <Border Classes="tile" Classes.danger="{Binding IsDanger}" Classes.warn="{Binding IsWarn}">
+                      <PathIcon Data="{Binding Icon, Converter={StaticResource Icon}}" />
+                    </Border>
+                    <StackPanel Grid.Column="1" Margin="12,0,10,0" VerticalAlignment="Center">
+                      <StackPanel Orientation="Horizontal">
+                        <TextBlock Classes="caption" Text="{Binding Category}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                        <Border Classes="pill accent" Margin="8,0,0,0" Padding="7,0,7,1" IsVisible="{Binding IsNew}">
+                          <TextBlock Text="{Binding $parent[UserControl].((local:MainViewModel)DataContext).L[mac.crashes.new]}" />
+                        </Border>
+                      </StackPanel>
+                      <TextBlock Classes="strong" Text="{Binding Title}" Margin="0,2,0,0" />
+                      <TextBlock Classes="caption mono" Text="{Binding TechLine}" TextTrimming="CharacterEllipsis" Margin="0,1,0,0" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="2" Classes="caption" Text="{Binding When}" VerticalAlignment="Center" />
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <StackPanel Orientation="Horizontal" Margin="0,10,0,12" IsVisible="{Binding NoCrash}">
+            <PathIcon Data="{StaticResource Icon.Completed}" Width="16" Height="16" Foreground="{DynamicResource SuccessFg}" Margin="0,0,10,0" />
+            <TextBlock Classes="body" Text="{Binding L[mac.crashes.none]}" VerticalAlignment="Center" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

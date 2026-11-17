@@ -10,6 +10,32 @@
   <ItemGroup>
     <!-- Detection tables (data only), embedded as the default copy. Same idea as data/detection.json on Windows. -->
     <EmbeddedResource Include="..\..\data\mac-detection.json" LogicalName="Data.mac-detection.json" Link="Data\mac-detection.json" />
+
+    <!-- Interface texts shared with the Windows app: the very same files (src/Locales), 14 languages. -->
+    <EmbeddedResource Include="..\..\..\src\Locales\*.json" LogicalName="Locales.%(Filename).json" Link="Locales\Shared\%(Filename)%(Extension)" />
+    <!-- Mac-only texts and Mac wording of shared keys ("PC" → "Mac", "Windows" → "macOS"): they win over the shared ones. -->
+    <EmbeddedResource Include="..\..\Locales\*.json" LogicalName="MacLocales.%(Filename).json" Link="Locales\Mac\%(Filename)%(Extension)" />
   </ItemGroup>
+
+  <!-- Logic shared with the Windows app, compiled from the same source files (src/Core).
+       A file listed here must stay free of Windows APIs; the Mac CI job builds it. The Windows project has
+       nullable annotations off, so each file is compiled with "#nullable disable" prepended (generated in obj/). -->
+  <ItemGroup>
+    <SharedWindowsSource Include="..\..\..\src\Core\Stability.cs" />
+  </ItemGroup>
+
+  <!-- Runs once per shared file (target batching). -->
+  <Target Name="IncludeSharedWindowsSources" BeforeTargets="CoreCompile" Outputs="%(SharedWindowsSource.Identity)">
+    <PropertyGroup>
+      <_SharedText>$([System.IO.File]::ReadAllText('%(SharedWindowsSource.FullPath)'))</_SharedText>
+      <_SharedOut>$(IntermediateOutputPath)Shared/%(SharedWindowsSource.Filename).g.cs</_SharedOut>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(_SharedOut)" Lines="$([MSBuild]::Escape('#nullable disable&#10;$(_SharedText)'))"
+                      Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <Compile Include="$(_SharedOut)" />
+      <FileWrites Include="$(_SharedOut)" />
+    </ItemGroup>
+  </Target>
 
 </Project>

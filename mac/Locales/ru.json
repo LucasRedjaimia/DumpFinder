@@ -1,0 +1,6 @@
+{
+  "main_window.system_windows": "Системная (macOS)",
+  "home.no_crash_recorded_your_pc_is": "Сбоев не зарегистрировано. Ваш Mac держится.",
+  "home.bsod_reboot": "Kernel panic / перезагрузка",
+  "settings.follow_windows_or_force_light_or": "Как в macOS или всегда светлая/тёмная тема."
+}

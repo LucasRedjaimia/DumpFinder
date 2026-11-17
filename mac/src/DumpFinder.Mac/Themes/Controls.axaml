@@ -1,0 +1,179 @@
+<!-- Control styles mirroring the Windows design system (src/UI/Themes/Controls.xaml, src/UI/MainWindow*.cs):
+     type scale 11 / 12 / 13 / 15 / 18 / 24 / 28, cards radius 14, pills radius 10, buttons radius 8. -->
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <Style Selector="Window">
+    <Setter Property="Background" Value="{DynamicResource BgShell}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+    <Setter Property="FontSize" Value="13" />
+  </Style>
+
+  <!-- ===== Type ===== -->
+  <Style Selector="TextBlock.display"><Setter Property="FontSize" Value="28" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="Foreground" Value="{DynamicResource TextPrimary}" /></Style>
+  <Style Selector="TextBlock.title"><Setter Property="FontSize" Value="24" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="Foreground" Value="{DynamicResource TextPrimary}" /></Style>
+  <Style Selector="TextBlock.subtitle"><Setter Property="FontSize" Value="13" /><Setter Property="Foreground" Value="{DynamicResource TextSecondary}" /><Setter Property="TextWrapping" Value="Wrap" /></Style>
+  <Style Selector="TextBlock.heading"><Setter Property="FontSize" Value="18" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="Foreground" Value="{DynamicResource TextPrimary}" /><Setter Property="TextWrapping" Value="Wrap" /></Style>
+  <Style Selector="TextBlock.section"><Setter Property="FontSize" Value="15" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="Foreground" Value="{DynamicResource TextPrimary}" /><Setter Property="VerticalAlignment" Value="Center" /></Style>
+  <Style Selector="TextBlock.body"><Setter Property="FontSize" Value="13" /><Setter Property="Foreground" Value="{DynamicResource TextSecondary}" /><Setter Property="TextWrapping" Value="Wrap" /><Setter Property="LineHeight" Value="19" /></Style>
+  <Style Selector="TextBlock.strong"><Setter Property="FontSize" Value="13" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="Foreground" Value="{DynamicResource TextPrimary}" /><Setter Property="TextTrimming" Value="CharacterEllipsis" /></Style>
+  <Style Selector="TextBlock.caption"><Setter Property="FontSize" Value="11" /><Setter Property="Foreground" Value="{DynamicResource TextMuted}" /></Style>
+  <Style Selector="TextBlock.mono"><Setter Property="FontFamily" Value="Menlo, Monaco, monospace" /></Style>
+  <Style Selector="SelectableTextBlock.body"><Setter Property="FontSize" Value="13" /><Setter Property="Foreground" Value="{DynamicResource TextSecondary}" /><Setter Property="TextWrapping" Value="Wrap" /></Style>
+
+  <!-- ===== Surfaces ===== -->
+  <Style Selector="Border.card">
+    <Setter Property="Background" Value="{DynamicResource BgCard}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderCard}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="Padding" Value="18,14,18,12" />
+  </Style>
+  <Style Selector="Border.pill">
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Padding" Value="9,2,9,3" />
+    <Setter Property="Background" Value="{DynamicResource BgSubtle}" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Border.pill > TextBlock"><Setter Property="FontSize" Value="11" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="Foreground" Value="{DynamicResource TextSecondary}" /></Style>
+  <Style Selector="Border.pill.success"><Setter Property="Background" Value="{DynamicResource SuccessSoftBg}" /></Style>
+  <Style Selector="Border.pill.success > TextBlock"><Setter Property="Foreground" Value="{DynamicResource SuccessFg}" /></Style>
+  <Style Selector="Border.pill.warn"><Setter Property="Background" Value="{DynamicResource WarnSoftBg}" /></Style>
+  <Style Selector="Border.pill.warn > TextBlock"><Setter Property="Foreground" Value="{DynamicResource WarnFg}" /></Style>
+  <Style Selector="Border.pill.danger"><Setter Property="Background" Value="{DynamicResource DangerSoftBg}" /></Style>
+  <Style Selector="Border.pill.danger > TextBlock"><Setter Property="Foreground" Value="{DynamicResource DangerFg}" /></Style>
+  <Style Selector="Border.pill.accent"><Setter Property="Background" Value="{DynamicResource AccentSoftBg}" /></Style>
+  <Style Selector="Border.pill.accent > TextBlock"><Setter Property="Foreground" Value="{DynamicResource AccentText}" /></Style>
+
+  <!-- List row inside a card: 1 px separator above every row but the first, 10 px vertical padding -->
+  <Style Selector="Border.row">
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderCard}" />
+    <Setter Property="BorderThickness" Value="0,1,0,0" />
+    <Setter Property="Padding" Value="0,10" />
+  </Style>
+  <Style Selector="Border.row.first"><Setter Property="BorderThickness" Value="0" /></Style>
+  <!-- Settings row (Windows SettingRow: padding 18 / 14) -->
+  <Style Selector="Border.setting">
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderCard}" />
+    <Setter Property="BorderThickness" Value="0,1,0,0" />
+    <Setter Property="Padding" Value="18,14" />
+  </Style>
+  <Style Selector="Border.setting.first"><Setter Property="BorderThickness" Value="0" /></Style>
+
+  <!-- 32 px icon tile used in lists (Windows MakeIconTile) -->
+  <Style Selector="Border.tile">
+    <Setter Property="Width" Value="32" /><Setter Property="Height" Value="32" />
+    <Setter Property="CornerRadius" Value="9" />
+    <Setter Property="Background" Value="{DynamicResource AccentSoftBg}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Border.tile > PathIcon"><Setter Property="Width" Value="15" /><Setter Property="Height" Value="15" /><Setter Property="Foreground" Value="{DynamicResource AccentText}" /></Style>
+  <Style Selector="Border.tile.danger"><Setter Property="Background" Value="{DynamicResource DangerSoftBg}" /></Style>
+  <Style Selector="Border.tile.danger > PathIcon"><Setter Property="Foreground" Value="{DynamicResource DangerFg}" /></Style>
+  <Style Selector="Border.tile.warn"><Setter Property="Background" Value="{DynamicResource WarnSoftBg}" /></Style>
+  <Style Selector="Border.tile.warn > PathIcon"><Setter Property="Foreground" Value="{DynamicResource WarnFg}" /></Style>
+  <Style Selector="Border.tile.success"><Setter Property="Background" Value="{DynamicResource SuccessSoftBg}" /></Style>
+  <Style Selector="Border.tile.success > PathIcon"><Setter Property="Foreground" Value="{DynamicResource SuccessFg}" /></Style>
+
+  <!-- ===== Buttons (Windows DfButtonTemplate: radius 8, 1 px border, SemiBold) ===== -->
+  <Style Selector="Button.flat, Button.primary, Button.link">
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="Padding" Value="14,7" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Button.flat">
+    <Setter Property="Background" Value="{DynamicResource BgCard}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderStrong}" />
+  </Style>
+  <Style Selector="Button.flat:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BgSubtle}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderStrong}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+  </Style>
+  <Style Selector="Button.flat.accent"><Setter Property="Foreground" Value="{DynamicResource AccentText}" /><Setter Property="BorderBrush" Value="{DynamicResource BorderCard}" /><Setter Property="FontSize" Value="12" /><Setter Property="Padding" Value="12,5" /></Style>
+  <Style Selector="Button.flat.accent:pointerover /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Foreground" Value="{DynamicResource AccentText}" /></Style>
+
+  <Style Selector="Button.primary">
+    <Setter Property="Background" Value="{DynamicResource Accent}" />
+    <Setter Property="Foreground" Value="{DynamicResource OnAccent}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+    <Setter Property="Padding" Value="16,7" />
+  </Style>
+  <Style Selector="Button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AccentText}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentText}" />
+    <Setter Property="Foreground" Value="{DynamicResource OnAccent}" />
+  </Style>
+  <Style Selector="Button.primary:disabled /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BgSubtle}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BgSubtle}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+  </Style>
+
+  <Style Selector="Button.link">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Foreground" Value="{DynamicResource AccentText}" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Padding" Value="8,3" />
+  </Style>
+  <Style Selector="Button.link:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource HoverOverlay}" />
+    <Setter Property="Foreground" Value="{DynamicResource AccentText}" />
+  </Style>
+
+  <!-- Button content: icon + label (Windows DfButton turns "📄 Report" into a Fluent glyph + text) -->
+  <Style Selector="Button PathIcon"><Setter Property="Width" Value="13" /><Setter Property="Height" Value="13" /><Setter Property="Margin" Value="0,0,7,0" /></Style>
+
+  <!-- ===== Sidebar navigation (Windows DfNavButtonTemplate) ===== -->
+  <Style Selector="Button.nav">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="8,9,10,9" />
+    <Setter Property="Margin" Value="0,0,0,2" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+  <Style Selector="Button.nav:pointerover /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="{DynamicResource HoverOverlay}" /></Style>
+  <Style Selector="Button.nav:pressed /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="{DynamicResource PressOverlay}" /></Style>
+  <Style Selector="Button.nav.active /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="{DynamicResource HoverOverlay}" /></Style>
+  <Style Selector="Button.nav PathIcon"><Setter Property="Width" Value="16" /><Setter Property="Height" Value="16" /><Setter Property="Margin" Value="0" /><Setter Property="Foreground" Value="{DynamicResource TextSecondary}" /></Style>
+  <Style Selector="Button.nav TextBlock.navlabel"><Setter Property="FontSize" Value="13" /><Setter Property="Foreground" Value="{DynamicResource TextSecondary}" /><Setter Property="TextTrimming" Value="CharacterEllipsis" /><Setter Property="Margin" Value="8,0,4,0" /><Setter Property="VerticalAlignment" Value="Center" /></Style>
+  <Style Selector="Button.nav.active PathIcon"><Setter Property="Foreground" Value="{DynamicResource AccentText}" /></Style>
+  <Style Selector="Button.nav.active TextBlock.navlabel"><Setter Property="Foreground" Value="{DynamicResource TextPrimary}" /></Style>
+  <Style Selector="Button.nav Border.indicator"><Setter Property="IsVisible" Value="False" /></Style>
+  <Style Selector="Button.nav.active Border.indicator"><Setter Property="IsVisible" Value="True" /></Style>
+
+  <!-- ===== Sub-tab pills (Windows: active = Accent / OnAccent, other = BgCard / TextSecondary) ===== -->
+  <Style Selector="Button.segment">
+    <Setter Property="CornerRadius" Value="8" /><Setter Property="Padding" Value="12,6" /><Setter Property="FontSize" Value="12" />
+    <Setter Property="FontWeight" Value="SemiBold" /><Setter Property="BorderThickness" Value="1" /><Setter Property="Margin" Value="0,0,6,0" />
+    <Setter Property="Background" Value="{DynamicResource BgCard}" /><Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderCard}" /><Setter Property="Cursor" Value="Hand" />
+  </Style>
+  <Style Selector="Button.segment:pointerover /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="{DynamicResource BgSubtle}" /><Setter Property="Foreground" Value="{DynamicResource TextPrimary}" /></Style>
+  <Style Selector="Button.segment.active"><Setter Property="Background" Value="{DynamicResource Accent}" /><Setter Property="Foreground" Value="{DynamicResource OnAccent}" /><Setter Property="BorderBrush" Value="{DynamicResource Accent}" /></Style>
+  <Style Selector="Button.segment.active:pointerover /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="{DynamicResource Accent}" /><Setter Property="Foreground" Value="{DynamicResource OnAccent}" /></Style>
+
+  <!-- Inputs -->
+  <Style Selector="ComboBox">
+    <Setter Property="Background" Value="{DynamicResource BgInput}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderStrong}" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="MinWidth" Value="220" />
+  </Style>
+
+  <!-- Keyboard focus ring (Windows: 2 px FocusRing around the control) -->
+  <Style Selector="Button">
+    <Setter Property="FocusAdorner">
+      <FocusAdornerTemplate><Border BorderThickness="2" BorderBrush="{DynamicResource FocusRing}" CornerRadius="10" Margin="-3" /></FocusAdornerTemplate>
+    </Setter>
+  </Style>
+</Styles>

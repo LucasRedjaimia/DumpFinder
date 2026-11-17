@@ -106,3 +106,4 @@ Users see the new version the next time they open the app.
 - [LibreHardwareMonitorLib](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor) (MPL-2.0): CPU temperature, through the [PawnIO](https://pawnio.eu/) driver.
 - [Anthropic SDK for C#](https://github.com/anthropics/anthropic-sdk-csharp) (MIT).
 - [Costura.Fody](https://github.com/Fody/Costura) (MIT): bundles the dependencies into a single executable.
+- Mac app: [Avalonia](https://github.com/AvaloniaUI/Avalonia) (MIT) for the interface, [Fluent UI System Icons](https://github.com/microsoft/fluentui-system-icons) (MIT) for the icons.

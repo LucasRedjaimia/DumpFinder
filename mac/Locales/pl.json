@@ -1,0 +1,6 @@
+{
+  "main_window.system_windows": "Systemowy (macOS)",
+  "home.no_crash_recorded_your_pc_is": "Brak zarejestrowanych awarii. Twój Mac trzyma się dobrze.",
+  "home.bsod_reboot": "Kernel panic / restart",
+  "settings.follow_windows_or_force_light_or": "Zgodnie z macOS albo wymuś jasny lub ciemny."
+}

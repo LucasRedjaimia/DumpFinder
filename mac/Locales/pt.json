@@ -1,0 +1,6 @@
+{
+  "main_window.system_windows": "Sistema (macOS)",
+  "home.no_crash_recorded_your_pc_is": "Nenhuma falha registrada. Seu Mac está firme.",
+  "home.bsod_reboot": "Kernel panic / reinício",
+  "settings.follow_windows_or_force_light_or": "Seguir o macOS ou forçar claro/escuro."
+}
