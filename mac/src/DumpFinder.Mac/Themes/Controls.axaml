@@ -18,7 +18,7 @@
   <Style Selector="TextBlock.strong"><Setter Property="FontSize" Value="13" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="Foreground" Value="{DynamicResource TextPrimary}" /><Setter Property="TextTrimming" Value="CharacterEllipsis" /></Style>
   <Style Selector="TextBlock.caption"><Setter Property="FontSize" Value="11" /><Setter Property="Foreground" Value="{DynamicResource TextMuted}" /></Style>
   <Style Selector="TextBlock.mono"><Setter Property="FontFamily" Value="Menlo, Monaco, monospace" /></Style>
-  <Style Selector="SelectableTextBlock.body"><Setter Property="FontSize" Value="13" /><Setter Property="Foreground" Value="{DynamicResource TextSecondary}" /><Setter Property="TextWrapping" Value="Wrap" /></Style>
+  <Style Selector="SelectableTextBlock.body"><Setter Property="FontSize" Value="13" /><Setter Property="Foreground" Value="{DynamicResource TextSecondary}" /><Setter Property="TextWrapping" Value="Wrap" /><Setter Property="LineHeight" Value="19" /></Style>
 
   <!-- ===== Surfaces ===== -->
   <Style Selector="Border.card">
@@ -126,6 +126,15 @@
     <Setter Property="Background" Value="{DynamicResource HoverOverlay}" />
     <Setter Property="Foreground" Value="{DynamicResource AccentText}" />
   </Style>
+
+  <!-- Whole list row as a button (Windows ClickableCard): no chrome, hover tint -->
+  <Style Selector="Button.plain">
+    <Setter Property="Background" Value="Transparent" /><Setter Property="BorderThickness" Value="0" /><Setter Property="Padding" Value="0" />
+    <Setter Property="CornerRadius" Value="8" /><Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" /><Setter Property="Cursor" Value="Hand" />
+  </Style>
+  <Style Selector="Button.plain:pointerover /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="{DynamicResource HoverOverlay}" /></Style>
+  <Style Selector="Button.plain:pressed /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="{DynamicResource PressOverlay}" /></Style>
 
   <!-- Button content: icon + label (Windows DfButton turns "📄 Report" into a Fluent glyph + text) -->
   <Style Selector="Button PathIcon"><Setter Property="Width" Value="13" /><Setter Property="Height" Value="13" /><Setter Property="Margin" Value="0,0,7,0" /></Style>

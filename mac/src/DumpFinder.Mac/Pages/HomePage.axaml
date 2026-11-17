@@ -118,6 +118,8 @@
             <ItemsControl ItemsSource="{Binding Recent}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="local:CrashRow">
+                  <Button Classes="plain" Command="{Binding $parent[UserControl].((local:MainViewModel)DataContext).OpenCrashCommand}" CommandParameter="{Binding Key}"
+                          AutomationProperties.Name="{Binding Title}">
                   <Border Classes="row" Classes.first="{Binding First}">
                     <Grid ColumnDefinitions="Auto,*,Auto">
                       <Border Classes="tile" Classes.danger="{Binding IsDanger}" Classes.warn="{Binding IsWarn}">
@@ -130,6 +132,7 @@
                       <TextBlock Grid.Column="2" Classes="caption" Text="{Binding When}" VerticalAlignment="Center" />
                     </Grid>
                   </Border>
+                  </Button>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>

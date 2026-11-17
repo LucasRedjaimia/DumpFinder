@@ -49,9 +49,9 @@ From `main`. The first run creates `mac/release-notes/v0.2.0.md` and stops; fill
 
 ## Layout
 
-- `src/DumpFinder.Mac.Core`: probes (`DiagnosticReports`, `SystemProbe`), rules (`DiagnosticsEngine`), crash timeline and score (`CrashTimeline`), texts (`Loc`), settings and history (`AppStore`), text report, self-test. No UI dependency.
-- `src/DumpFinder.Mac`: Avalonia window with the same shell as Windows (title bar, sidebar with the 7 sections and ⌘1…7, canvas, status line, toasts), Home, Crashes, Hardware, Settings.
-- `Locales/`: Mac texts (`mac.*` keys) and the Mac wording of shared keys that name Windows or the PC.
+- `src/DumpFinder.Mac.Core`: probes (`DiagnosticReports`, `SystemProbe`), rules (`DiagnosticsEngine`), crash timeline and score (`CrashTimeline`), crash detail (`CrashDetails`), known issues (`KnowledgeBase`), exports (`ReportBuilder`: HTML, JSON, Markdown, text), `Privacy`, texts (`Loc`), settings and history (`AppStore`), self-test. No UI dependency.
+- `src/DumpFinder.Mac`: Avalonia window with the same shell as Windows (title bar, sidebar with the 7 sections and ⌘1…7, canvas, status line, toasts), Home, Crashes (History with filters and detail panel, Common crashes), Hardware, Settings.
+- `Locales/`: Mac texts (`mac.*` keys, 14 languages) and the Mac wording of shared keys that name Windows or the PC. Every check, explanation and article is a key: `--selftest` fails when a language misses a key or a placeholder.
 
 ## Same app as on Windows
 
@@ -64,10 +64,10 @@ The two apps have their own interface (WPF on Windows, Avalonia here) but look a
 | Logic | `src/Core/Stability.cs` (score, levels, 30-day timeline) is compiled from the Windows source file (`SharedWindowsSource` in the Core project). A shared file must stay free of Windows APIs: the Mac CI job fails otherwise. Mac crashes map onto the Windows categories: kernel panic = blue screen, watchdog / forced restart = unexpected reboot, Jetsam = memory exhaustion. |
 | Data | Settings and history in `~/Library/Application Support/DumpFinder` (`settings.json`, `history/scans.json`, `history/seen_crashes.json`), same fields as `%LOCALAPPDATA%\DumpFinder`. |
 
-`DumpFinder --screenshot <folder> [--theme light|dark] [--lang xx] [--collapsed]` captures every section, like the Windows capture harness.
+`DumpFinder --screenshot <folder> [--theme light|dark] [--lang xx] [--collapsed]` captures every section, like the Windows capture harness. `DumpFinder --report [--lang xx] [--format text|html|json|md]` prints a report. Every export goes through `Privacy.Redact` (account name, computer name, web paths).
 
 ## Not done yet
 
-Next steps, in order: Crashes (filters, detail panel, Mac known issues, reports), Hardware sub-tabs + Tools + update check + introduction, AI assistant and MCP server, Sentinel (menu bar, notifications, login item), Fixes and Optimize (journal and undo), stability test (CPU / memory / disk, GPU through Metal). Mac check texts (`DiagnosticsEngine`) are English only for now, and the `mac.*` keys exist in English and French (other languages fall back to English). Notarization needs an Apple Developer account.
+Next steps, in order: Hardware sub-tabs + Tools (report formats, history) + update check + introduction, AI assistant ("Ask the AI" in the crash panel) and MCP server, Sentinel (menu bar, notifications, login item), Fixes and Optimize (journal and undo), stability test (CPU / memory / disk, GPU through Metal). Notarization needs an Apple Developer account.
 
 Update check: it cannot use `/releases/latest` (always the Windows release). It will list the releases and take the newest `mac-v*` tag that has a `DumpFinder-mac-*.zip` asset.

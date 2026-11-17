@@ -1,16 +1,17 @@
 namespace DumpFinder.Mac.Core;
 
-/// <summary>Runs every probe (in parallel) and turns the readings into findings.</summary>
+/// <summary>Runs every probe (in parallel) and turns the readings into findings, in the app language (Loc).</summary>
 public static class DiagnosticsEngine
 {
-    public static async Task<ScanResult> ScanAsync(DetectionData? data = null)
+    /// <param name="maxAgeDays">How far back reports are read: 90 days by default, more for "All history".</param>
+    public static async Task<ScanResult> ScanAsync(DetectionData? data = null, int maxAgeDays = 90)
     {
         data ??= DetectionData.Embedded;
         var errors = new List<string>();
         // Each probe gets its own error list (they run concurrently), merged at the end.
         var eReports = new List<string>(); var eKext = new List<string>(); var eSys = new List<string>(); var eHw = new List<string>();
 
-        var reportsT = Task.Run(() => DiagnosticReports.ReadAll(data, TimeSpan.FromDays(Math.Max(90, data.Thresholds.RecentDays)), eReports));
+        var reportsT = Task.Run(() => DiagnosticReports.ReadAll(data, TimeSpan.FromDays(Math.Max(maxAgeDays, data.Thresholds.RecentDays)), eReports));
         var kextT = Task.Run(() => SystemProbe.ReadKernelExtensions(eKext));
         var sysExtT = Task.Run(() => SystemProbe.ReadSystemExtensions(eSys));
         var hwT = Task.Run(() => SystemProbe.ReadHardware(eHw));
@@ -44,28 +45,28 @@ public static class DiagnosticsEngine
         foreach (var group in recentPanics.GroupBy(PanicKey))
         {
             var p = group.First();
-            var thirdParty = p.BacktraceExtensions.Where(id => !id.StartsWith("com.apple.", StringComparison.OrdinalIgnoreCase)).ToList();
-            var pattern = data.PanicPatterns.FirstOrDefault(x => x.Id == p.PatternId);
-            string title = pattern?.Title ?? "Kernel panic";
-            string count = group.Count() == 1 ? "once" : $"{group.Count()} times";
-            string detail = $"The Mac restarted after a kernel panic {count} in the last {th.RecentDays} days (last: {p.Time:yyyy-MM-dd HH:mm}).\n{p.Message}";
-            if (p.PanickedProcess.Length > 0) detail += $"\nProcess: {p.PanickedProcess}";
-            if (p.Explanation.Length > 0) detail += "\n" + p.Explanation;
-            string advice = p.Advice.Length > 0 ? p.Advice : "Update macOS and your apps. If it repeats, note what you were doing and contact Apple support.";
+            var thirdParty = p.BacktraceExtensions.Where(id => !IsApple(id)).ToList();
+            string title = MacText.PanicTitle(p.PatternId, data);
+            var detail = new List<string> { Loc.P("mac.check.panic_detail", group.Count(), p.Time?.LocalDateTime ?? now.LocalDateTime, th.RecentDays), p.Message };
+            if (p.PanickedProcess.Length > 0) detail.Add(Loc.F("mac.check.panic_process", p.PanickedProcess));
+            if (MacText.PanicExplanation(p.PatternId, data) is { Length: > 0 } ex) detail.Add(ex);
+            string advice = MacText.PanicAdvice(p.PatternId, data) is { Length: > 0 } a ? a : Loc.S("mac.check.panic_advice_generic");
             if (thirdParty.Count > 0)
             {
-                title += $" — involves {string.Join(", ", thirdParty)}";
-                detail += $"\nNon-Apple extension(s) in the backtrace: {string.Join(", ", thirdParty)}.";
-                advice = $"Update or uninstall the software that installed {string.Join(", ", thirdParty)}; it is the most likely cause. " + advice;
+                var list = string.Join(", ", thirdParty);
+                title = Loc.F("mac.check.panic_with_kext", title, list);
+                detail.Add(Loc.F("mac.check.panic_kexts", list));
+                advice = Loc.F("mac.check.panic_advice_kext", list) + " " + advice;
             }
-            f.Add(new Finding(Severity.Critical, "Crashes", title, detail, advice));
+            f.Add(new Finding("panic", Severity.Critical, "crashes", title, string.Join("\n", detail), advice));
         }
 
         // --- Previous shutdown (Apple Silicon) ---
         if (r.Boot.Abnormal && recentPanics.Count == 0)
-            f.Add(new Finding(Severity.Warning, "Crashes", "The last restart was not a normal shutdown",
-                $"Started {r.Boot.BootTime:yyyy-MM-dd HH:mm}. Recorded cause: {string.Join("; ", r.Boot.Interpretation)}.\nRaw value: {r.Boot.ShutdownReason}",
-                "If the Mac froze and you held the power button, this is expected. If it restarted by itself, watch for repeats and check the accessories connected at the time. (These codes are not documented by Apple: the reading is approximate.)"));
+            f.Add(new Finding("restart", Severity.Warning, "crashes", Loc.S("mac.check.restart_title"),
+                Loc.F("mac.check.restart_detail", r.Boot.BootTime?.LocalDateTime ?? now.LocalDateTime,
+                      string.Join("; ", MacText.ShutdownCauses(r.Boot.ShutdownReason, data)), r.Boot.ShutdownReason),
+                Loc.S("mac.check.restart_advice")));
 
         // --- App crashes and memory pressure ---
         foreach (var g in r.Reports.Where(x => x.Kind == ReportKind.Crash && x.Time >= recent)
@@ -75,54 +76,45 @@ public static class DiagnosticsEngine
             var last = g.First();
             var why = string.Join(" / ", new[] { last.ExceptionType, last.Signal, last.Termination }.Where(s => s.Length > 0));
             bool apple = g.All(x => x.FirstParty);
-            f.Add(new Finding(apple ? Severity.Info : Severity.Warning, "Crashes",
-                $"{g.Key} crashed {g.Count()} times",
-                $"Last crash {last.Time:yyyy-MM-dd HH:mm}" + (why.Length > 0 ? $" ({why})." : "."),
-                apple ? "This is an Apple background process: it is usually harmless unless you notice a problem. Updating macOS often fixes it."
-                      : "Update the app. If it keeps crashing, reset its preferences or reinstall it."));
+            f.Add(new Finding("app_crashes", apple ? Severity.Info : Severity.Warning, "crashes",
+                Loc.P("mac.check.app_crashed", g.Count(), g.Key),
+                Loc.F("mac.check.app_last", last.Time?.LocalDateTime ?? now.LocalDateTime, why.Length > 0 ? $" ({why})" : ""),
+                Loc.S(apple ? "mac.check.app_apple_advice" : "mac.check.app_advice")));
         }
         var jetsam = r.Reports.Count(x => x.Kind == ReportKind.MemoryPressure && x.Time >= recent);
         if (jetsam > 0)
-            f.Add(new Finding(jetsam >= th.RepeatedCrashes ? Severity.Warning : Severity.Info, "Memory",
-                $"macOS ran low on memory {jetsam} time(s)",
-                $"macOS closed processes to free memory ({jetsam} \"Jetsam\" report(s) in {th.RecentDays} days).",
-                "Look at Memory in Activity Monitor around those times; browsers with many tabs, VMs and creative apps use the most. Low free disk space makes it worse (less room for swap)."));
+            f.Add(new Finding("jetsam", jetsam >= th.RepeatedCrashes ? Severity.Warning : Severity.Info, "memory",
+                Loc.P("mac.check.jetsam_title", jetsam), Loc.P("mac.check.jetsam_detail", jetsam, th.RecentDays), Loc.S("mac.check.jetsam_advice")));
 
         // --- Kernel extensions ---
         foreach (var k in r.KernelExtensions.Where(k => k.Loaded))
         {
-            var cat = data.VendorCategory(k.BundleId);
             bool inPanic = recentPanics.Any(p => p.BacktraceExtensions.Contains(k.BundleId));
-            f.Add(new Finding(inPanic ? Severity.Critical : Severity.Warning, "Drivers",
-                $"Third-party kernel extension loaded: {k.BundleId}",
-                $"Version {k.Version}{(cat is null ? "" : $" · {cat}")}. Kernel extensions run inside the macOS kernel; on Apple Silicon they need reduced security in Startup Security Utility.",
-                "Check that it is still needed and up to date. Most vendors now provide a system extension or a DriverKit driver instead."));
+            f.Add(new Finding("kext_loaded", inPanic ? Severity.Critical : Severity.Warning, "drivers",
+                Loc.F("mac.check.kext_loaded_title", k.BundleId),
+                Loc.F("mac.check.kext_loaded_detail", k.Version, VendorSuffix(k.BundleId, data)),
+                Loc.S("mac.check.kext_loaded_advice")));
         }
         foreach (var k in r.KernelExtensions.Where(k => !k.Loaded))
-        {
-            var cat = data.VendorCategory(k.BundleId);
-            f.Add(new Finding(Severity.Info, "Drivers", $"Kernel extension installed but not loaded: {k.BundleId}",
-                $"{k.Path}{(cat is null ? "" : $" · {cat}")}. Often left behind by uninstalled software.",
-                "If you no longer use this software, uninstall it with its vendor's uninstaller."));
-        }
+            f.Add(new Finding("kext_leftover", Severity.Info, "drivers", Loc.F("mac.check.kext_leftover_title", k.BundleId),
+                Loc.F("mac.check.kext_leftover_detail", k.Path, VendorSuffix(k.BundleId, data)), Loc.S("mac.check.kext_leftover_advice")));
         if (r.SystemExtensions.Count > 0)
-            f.Add(new Finding(Severity.Info, "Drivers", $"{r.SystemExtensions.Count} system extension(s) installed",
+            f.Add(new Finding("sysext", Severity.Info, "drivers", Loc.P("mac.check.sysext_title", r.SystemExtensions.Count),
                 string.Join("\n", r.SystemExtensions.Select(s => $"{s.BundleId} ({s.Version}) — {s.State}")),
-                "Security, VPN and network-filter extensions can slow down or block the network. Disable the ones you do not use in System Settings › General › Login Items & Extensions."));
+                Loc.S("mac.check.sysext_advice")));
 
         // --- Storage ---
         var hw = r.Hardware;
         foreach (var d in hw.Drives.Where(d => d.SmartStatus.Length > 0 && !d.SmartStatus.Equals("Verified", StringComparison.OrdinalIgnoreCase)))
-            f.Add(new Finding(Severity.Critical, "Hardware", $"Drive reports a problem: {d.Name}",
-                $"SMART status: {d.SmartStatus}.", "Back up now. An internal drive in this state needs Apple support."));
+            f.Add(new Finding("smart", Severity.Critical, "hardware", Loc.F("mac.check.smart_title", d.Name),
+                Loc.F("mac.check.smart_detail", d.SmartStatus), Loc.S("mac.check.smart_advice")));
         if (hw.BootVolumeFree is long free && hw.BootVolumeSize is long size && size > 0)
         {
             double pct = 100.0 * free / size;
             var sev = pct < th.DiskFreeCriticalPct ? Severity.Critical : pct < th.DiskFreeWarnPct ? Severity.Warning : Severity.Ok;
             if (sev != Severity.Ok)
-                f.Add(new Finding(sev, "Hardware", $"Low free space on the startup disk ({pct:0.#} %)",
-                    $"{Gb(free)} free out of {Gb(size)}. macOS needs room for swap, updates and caches.",
-                    "Free up space: System Settings › General › Storage. Keep at least 10 % free."));
+                f.Add(new Finding("low_disk", sev, "hardware", Loc.F("mac.check.disk_title", pct),
+                    Loc.F("mac.check.disk_detail", free / 1e9, size / 1e9), Loc.S("mac.check.disk_advice")));
         }
 
         // --- Battery ---
@@ -132,38 +124,71 @@ public static class DiagnosticsEngine
                         || (hw.BatteryCondition.Length > 0 && !hw.BatteryCondition.Equals("Good", StringComparison.OrdinalIgnoreCase)
                             && !hw.BatteryCondition.Equals("Normal", StringComparison.OrdinalIgnoreCase));
             if (weak)
-                f.Add(new Finding(Severity.Warning, "Hardware", "Battery worn",
-                    $"Maximum capacity {hw.BatteryMaxCapacityPct} %, condition \"{hw.BatteryCondition}\", {hw.BatteryCycles} cycles.",
-                    "A worn battery can cause sudden shutdowns under load. Apple recommends service below 80 %."));
+                f.Add(new Finding("battery_worn", Severity.Warning, "hardware", Loc.S("mac.check.battery_title"),
+                    Loc.F("mac.check.battery_detail", hw.BatteryMaxCapacityPct ?? 0, hw.BatteryCondition, hw.BatteryCycles ?? 0),
+                    Loc.S("mac.check.battery_advice")));
             else if (hw.BatteryCycles >= th.BatteryCycles)
-                f.Add(new Finding(Severity.Info, "Hardware", "Battery past its rated cycle count",
-                    $"{hw.BatteryCycles} cycles (rated {th.BatteryCycles}).", "Plan a battery service if battery life drops."));
+                f.Add(new Finding("battery_cycles", Severity.Info, "hardware", Loc.S("mac.check.cycles_title"),
+                    Loc.F("mac.check.cycles_detail", hw.BatteryCycles ?? 0, th.BatteryCycles), Loc.S("mac.check.cycles_advice")));
         }
 
         // --- macOS and security ---
         if (hw.OsMajor > 0 && hw.OsMajor < data.SupportedMacOSMajors.Min())
-            f.Add(new Finding(Severity.Warning, "System", $"{hw.OsVersion} no longer gets security updates",
-                "Apple fixes security issues in the current macOS and the two previous ones.", "Update macOS if your Mac supports a newer version."));
+            f.Add(new Finding("macos_unsupported", Severity.Warning, "system", Loc.F("mac.check.os_title", hw.OsVersion),
+                Loc.S("mac.check.os_detail"), Loc.S("mac.check.os_advice")));
         if (hw.SipEnabled == false)
-            f.Add(new Finding(Severity.Warning, "System", "System Integrity Protection is off",
-                "SIP protects system files from changes, including by kernel extensions.", "Turn it back on from recoveryOS (csrutil enable) unless you need it off."));
+            f.Add(new Finding("sip_off", Severity.Warning, "system", Loc.S("mac.check.sip_title"), Loc.S("mac.check.sip_detail"), Loc.S("mac.check.sip_advice")));
         if (hw.GatekeeperEnabled == false)
-            f.Add(new Finding(Severity.Warning, "System", "Gatekeeper is off",
-                "Apps are no longer checked for a valid signature at launch.", "Turn it back on: sudo spctl --master-enable."));
+            f.Add(new Finding("gatekeeper_off", Severity.Warning, "system", Loc.S("mac.check.gk_title"), Loc.S("mac.check.gk_detail"), Loc.S("mac.check.gk_advice")));
         if (r.Boot.BootTime is DateTimeOffset bt && (now - bt).TotalDays >= th.LongUptimeDays)
-            f.Add(new Finding(Severity.Info, "System", $"No restart for {(int)(now - bt).TotalDays} days",
-                "Some updates and memory fixes apply only after a restart.", "Restart the Mac when convenient."));
+            f.Add(new Finding("uptime", Severity.Info, "system", Loc.P("mac.check.uptime_title", (int)(now - bt).TotalDays),
+                Loc.S("mac.check.uptime_detail"), Loc.S("mac.check.uptime_advice")));
 
         if (!f.Any(x => x.Severity >= Severity.Warning))
-            f.Insert(0, new Finding(Severity.Ok, "Summary", "No problem found",
-                $"No kernel panic, repeated crash or hardware warning in the last {th.RecentDays} days.", ""));
+            f.Insert(0, new Finding("ok", Severity.Ok, "summary", Loc.S("mac.check.ok_title"), Loc.F("mac.check.ok_detail", th.RecentDays), ""));
 
         return f.OrderByDescending(x => x.Severity).ToList();
     }
 
-    static string PanicKey(PanicReport p) =>
-        p.PatternId + "|" + string.Join(",", p.BacktraceExtensions.Where(id => !id.StartsWith("com.apple.", StringComparison.OrdinalIgnoreCase)))
-        + (p.PatternId.Length == 0 ? "|" + p.Message : "");
+    static bool IsApple(string id) => id.StartsWith("com.apple.", StringComparison.OrdinalIgnoreCase);
 
-    static string Gb(long bytes) => $"{bytes / 1e9:0.#} GB";
+    static string VendorSuffix(string bundleId, DetectionData data) =>
+        data.VendorCategory(bundleId) is { } cat ? " · " + MacText.VendorCategory(cat) : "";
+
+    static string PanicKey(PanicReport p) =>
+        p.PatternId + "|" + string.Join(",", p.BacktraceExtensions.Where(id => !IsApple(id)))
+        + (p.PatternId.Length == 0 ? "|" + p.Message : "");
+}
+
+/// <summary>
+/// Texts of the detection data in the app language: Locales keys first (mac.panic.*, mac.panic_explain.*,
+/// mac.panic_advice.*, mac.shutdown.*, mac.vendor.*), the English text of mac-detection.json as the fallback.
+/// </summary>
+public static class MacText
+{
+    static string Or(string key, string? fallback)
+    {
+        var t = Loc.S(key);
+        return t != key ? t : fallback ?? "";
+    }
+
+    public static string PanicTitle(string patternId, DetectionData data) =>
+        patternId.Length == 0 ? Loc.S("mac.category.panic")
+            : Or("mac.panic." + patternId, data.PanicPatterns.FirstOrDefault(p => p.Id == patternId)?.Title ?? Loc.S("mac.category.panic"));
+
+    public static string PanicExplanation(string patternId, DetectionData data) =>
+        patternId.Length == 0 ? "" : Or("mac.panic_explain." + patternId, data.PanicPatterns.FirstOrDefault(p => p.Id == patternId)?.Explanation);
+
+    public static string PanicAdvice(string patternId, DetectionData data) =>
+        patternId.Length == 0 ? "" : Or("mac.panic_advice." + patternId, data.PanicPatterns.FirstOrDefault(p => p.Id == patternId)?.Advice);
+
+    public static IEnumerable<string> ShutdownCauses(string shutdownReason, DetectionData data)
+    {
+        var interpreted = SystemProbe.InterpretBoot("", shutdownReason, null, data);
+        foreach (var t in data.ShutdownTokens)
+            if (interpreted.Interpretation.Contains(t.Meaning))
+                yield return Or("mac.shutdown." + t.Token, t.Meaning);
+    }
+
+    public static string VendorCategory(string id) => Or("mac.vendor." + id, id);
 }

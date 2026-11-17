@@ -23,6 +23,7 @@
     <KeyBinding Gesture="Cmd+D7" Command="{Binding NavigateCommand}" CommandParameter="6" />
     <KeyBinding Gesture="Cmd+R" Command="{Binding ScanCommand}" />
     <KeyBinding Gesture="F5" Command="{Binding ScanCommand}" />
+    <KeyBinding Gesture="Escape" Command="{Binding CloseDetailCommand}" />
   </Window.KeyBindings>
 
   <Window.Styles>

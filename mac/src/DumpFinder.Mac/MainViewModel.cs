@@ -19,7 +19,21 @@ public abstract record Toned(string Tone)
     public bool IsAccent => Tone == "accent";
 }
 
-public sealed record CrashRow(string Key, string Icon, string Tone, string Title, string TechLine, string When, string Category, bool IsNew, bool First) : Toned(Tone);
+public sealed record CrashRow(string Key, string Icon, string Tone, string Title, string TechLine, string When, string Category, bool IsNew, bool First,
+                             bool IsSelected = false, string FileTag = "") : Toned(Tone)
+{
+    public bool HasFileTag => FileTag.Length > 0;
+}
+
+/// <summary>What the view model asks of the window: clipboard, file dialogs, opening links and files.</summary>
+public interface IPlatform
+{
+    Task CopyTextAsync(string text);
+    /// <summary>Save dialog; returns the chosen path (content already written) or null when cancelled.</summary>
+    Task<string?> SaveTextAsync(string suggestedName, string extension, string content);
+    Task<string?> PickFileAsync(string[] patterns);
+    void Open(string pathOrUrl);
+}
 
 public sealed record ActionRow(string Icon, string Tone, string Title, string Sub, bool First) : Toned(Tone);
 
@@ -61,32 +75,33 @@ public abstract class Observable : INotifyPropertyChanged
 /// Window state: navigation (same 7 sections and order as Windows), scan, Home, Crashes, Hardware, Settings.
 /// Texts come from Loc (shared Windows Locales + Mac overrides) and are rebuilt when the language changes.
 /// </summary>
-public sealed class MainViewModel : Observable
+public sealed partial class MainViewModel : Observable
 {
     public const int TabHome = 0, TabCrashes = 1, TabHardware = 2, TabFixes = 3, TabOptimize = 4, TabTools = 5, TabSettings = 6;
 
     readonly AppSettings _settings;
-    readonly Func<string, Task> _copy;
+    readonly IPlatform _platform;
     ScanResult? _result;
     StabilitySummary? _summary;
     HashSet<string> _newKeys = new();
 
-    public MainViewModel(AppSettings settings, Func<string, Task> copyToClipboard)
+    public MainViewModel(AppSettings settings, IPlatform platform)
     {
         _settings = settings;
-        _copy = copyToClipboard;
+        _platform = platform;
         _sidebarCollapsed = settings.SidebarCollapsed;
         _languageIndex = Math.Max(0, Array.IndexOf(Loc.Codes, Loc.Current));
         _themeIndex = Math.Clamp(settings.Theme, 0, 2);
 
         NavigateCommand = new RelayCommand(p => { Page = Convert.ToInt32(p); return Task.CompletedTask; });
-        ScanCommand = new RelayCommand(ScanAsync, () => !IsScanning);
-        ReportCommand = new RelayCommand(CopyReportAsync, () => _result is not null);
+        ScanCommand = new RelayCommand(() => ScanAsync(), () => !IsScanning);
+        ReportCommand = new RelayCommand(SaveHtmlReportAsync, () => _result is not null);
         ToggleSidebarCommand = new RelayCommand(() => { SidebarCollapsed = !SidebarCollapsed; return Task.CompletedTask; });
         HeroPrimaryCommand = new RelayCommand(() => { Page = TabHardware; return Task.CompletedTask; });
-        HeroSecondaryCommand = new RelayCommand(() => { Page = TabCrashes; return Task.CompletedTask; });
+        HeroSecondaryCommand = new RelayCommand(() => { if (_focusKey is not null) OpenCrash(_focusKey); return Task.CompletedTask; });
+        InitCrashes();
 
-        Loc.LanguageChanged += () => { RefreshTexts(); if (_result is not null) Fill(_result); };
+        Loc.LanguageChanged += () => { RefreshTexts(); if (_result is not null) Fill(_result); RefreshCrashTexts(); };
         RefreshTexts();
     }
 
@@ -146,13 +161,14 @@ public sealed class MainViewModel : Observable
     string _status = "";
     public string Status { get => _status; private set => Set(ref _status, value); }
 
-    public async Task ScanAsync()
+    /// <param name="maxAgeDays">90 days by default; Crashes › "All history" asks for more.</param>
+    public async Task ScanAsync(int maxAgeDays = 90)
     {
         IsScanning = true;
         Status = Loc.S("mac.status.scanning");
         try
         {
-            var r = await DiagnosticsEngine.ScanAsync();
+            var r = await DiagnosticsEngine.ScanAsync(maxAgeDays: maxAgeDays);
             _result = r;
             var summary = CrashTimeline.Build(r, DetectionData.Embedded, DateTime.Now);
             _newKeys = History.MarkSeen(summary.Crashes.Select(c => c.Key));
@@ -175,11 +191,14 @@ public sealed class MainViewModel : Observable
         }
     }
 
-    async Task CopyReportAsync()
+    async Task SaveHtmlReportAsync()
     {
-        if (_result is null) return;
-        await _copy(TextReport.Build(_result));
-        ShowToast("success", Loc.S("mac.toast.report_copied"));
+        if (_result is null || _summary is null) return;
+        var html = ReportBuilder.Html(_result, _summary);
+        var path = await _platform.SaveTextAsync($"DumpFinder-report-{DateTime.Now:yyyy-MM-dd}", "html", html);
+        if (path is null) return;
+        ShowToast("success", Loc.S("mac.toast.report_saved"));
+        _platform.Open(path);
     }
 
     // ---------- Sidebar badge (Windows: count of Warning + Critical checks on Hardware, hidden when collapsed) ----------
@@ -228,9 +247,6 @@ public sealed class MainViewModel : Observable
     public bool NoRecent { get => _noRecent; private set => Set(ref _noRecent, value); }
 
     // ---------- Crashes / Hardware ----------
-    public ObservableCollection<CrashRow> CrashList { get; } = new();
-    bool _noCrash;
-    public bool NoCrash { get => _noCrash; private set => Set(ref _noCrash, value); }
     public ObservableCollection<CheckCard> Checks { get; } = new();
     public ObservableCollection<InfoRow> Machine { get; } = new();
     public ObservableCollection<InfoRow> Extensions { get; } = new();
@@ -345,28 +361,22 @@ public sealed class MainViewModel : Observable
         Actions.Clear();
         int i = 0;
         foreach (var f in warnings.Take(3))
-            Actions.Add(new ActionRow(CategoryIcon(f.Category), f.Severity == Severity.Critical ? "danger" : "warn", f.Title, f.Category, i++ == 0));
+            Actions.Add(new ActionRow(CategoryIcon(f.Category), f.Severity == Severity.Critical ? "danger" : "warn", f.Title, Loc.S("mac.check_cat." + f.Category), i++ == 0));
         NoActions = Actions.Count == 0;
 
         Recent.Clear();
-        CrashList.Clear();
         i = 0;
-        foreach (var c in s.Crashes)
-        {
-            var row = ToRow(c, now, i == 0);
-            if (i < 4) Recent.Add(row);
-            CrashList.Add(row);
-            i++;
-        }
+        foreach (var c in s.Crashes.Take(4)) Recent.Add(ToRow(c, now, i++ == 0));
         NoRecent = Recent.Count == 0;
-        NoCrash = CrashList.Count == 0;
+        _focusKey = focus?.Key;
+        RenderCrashes();
+        RenderKb();
 
         Checks.Clear();
         foreach (var f in r.Findings)
             Checks.Add(new CheckCard(
                 f.Severity switch { Severity.Critical => "danger", Severity.Warning => "warn", Severity.Ok => "success", _ => "accent" },
-                f.Severity switch { Severity.Critical => "Critical", Severity.Warning => "Warning", Severity.Ok => "OK", _ => "Info" },
-                f.Category, f.Title, f.Detail, f.Advice));
+                ReportBuilder.LevelName(f.Severity), Loc.S("mac.check_cat." + f.Category), f.Title, f.Detail, f.Advice));
 
         Machine.Clear();
         i = 0;
@@ -404,7 +414,9 @@ public sealed class MainViewModel : Observable
             CrashCategory.BrowserGpu => ("warn", "Globe"),
             _ => ("accent", "ErrorBadge"),
         };
-        return new CrashRow(c.Key, icon, tone, c.Title, c.TechLine, RelativeTime(c.Time, now), CrashTimeline.CategoryName(c.Category), _newKeys.Contains(c.Key), first);
+        string fileTag = c.Panic is not null ? ".panic" : c.Report is not null ? ".ips" : "";
+        return new CrashRow(c.Key, icon, tone, c.Title, c.TechLine, RelativeTime(c.Time, now), CrashTimeline.CategoryName(c.Category), _newKeys.Contains(c.Key), first,
+                            c.Key == _selectedKey, fileTag);
     }
 
     /// <summary>Windows HomePage.RelativeTime.</summary>
@@ -419,11 +431,11 @@ public sealed class MainViewModel : Observable
 
     static string CategoryIcon(string category) => category switch
     {
-        "Crashes" => "Warning",
-        "Memory" => "Diagnostic",
-        "Drivers" => "DevTools",
-        "Hardware" => "Component",
-        "System" => "Shield",
+        "crashes" => "Warning",
+        "memory" => "Diagnostic",
+        "drivers" => "DevTools",
+        "hardware" => "Component",
+        "system" => "Shield",
         _ => "Lightbulb",
     };
 
