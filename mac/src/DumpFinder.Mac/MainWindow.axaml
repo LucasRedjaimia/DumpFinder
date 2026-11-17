@@ -50,8 +50,10 @@
   <Panel>
     <Grid RowDefinitions="44,*" ColumnDefinitions="Auto,*">
 
-      <!-- ===== Title bar (traffic lights on the left, then the Windows title-bar content) ===== -->
-      <Border Grid.ColumnSpan="2" Background="Transparent">
+      <!-- ===== Title bar (traffic lights on the left, then the Windows title-bar content) =====
+           The content extends into the title bar, so this area takes the clicks: dragging it moves the window and a
+           double-click zooms it, as the native title bar would (OnTitleBarPressed). -->
+      <Border Grid.ColumnSpan="2" Background="Transparent" PointerPressed="OnTitleBarPressed">
         <StackPanel Orientation="Horizontal" Margin="84,0,0,0" VerticalAlignment="Center">
           <Button Classes="nav" Width="40" Height="32" Padding="0" Margin="0,0,8,0" HorizontalContentAlignment="Center"
                   Command="{Binding ToggleSidebarCommand}"
