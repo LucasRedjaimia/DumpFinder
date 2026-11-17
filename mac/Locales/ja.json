@@ -1,0 +1,6 @@
+{
+  "main_window.system_windows": "システム（macOS）",
+  "home.no_crash_recorded_your_pc_is": "クラッシュは記録されていません。Mac は安定しています。",
+  "home.bsod_reboot": "カーネルパニック / 再起動",
+  "settings.follow_windows_or_force_light_or": "macOS に合わせるか、ライトまたはダークに固定します。"
+}

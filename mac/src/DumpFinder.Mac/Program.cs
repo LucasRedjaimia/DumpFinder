@@ -19,7 +19,15 @@ internal static class Program
         }
 
         if (args.Length > 1 && args[0] == "--screenshot")
+        {
             MainWindow.ScreenshotFolder = Path.GetFullPath(args[1]);
+            for (int i = 2; i < args.Length; i++)
+            {
+                if (args[i] == "--theme" && i + 1 < args.Length) MainWindow.ScreenshotTheme = args[++i];
+                else if (args[i] == "--lang" && i + 1 < args.Length) MainWindow.ScreenshotLang = args[++i];
+                else if (args[i] == "--collapsed") MainWindow.ScreenshotCollapsed = true;
+            }
+        }
 
         return BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
@@ -27,6 +35,5 @@ internal static class Program
     public static AppBuilder BuildAvaloniaApp() =>
         AppBuilder.Configure<App>()
             .UsePlatformDetect()
-            .WithInterFont()
             .LogToTrace();
 }

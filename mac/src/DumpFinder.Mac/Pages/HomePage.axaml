@@ -1,0 +1,145 @@
+<!-- Home, same layout as Windows (src/UI/MainWindow.HomePage.cs): greeting + Report / Scan, hero card with the
+     score ring and the verdict, 30-day stability timeline, then Recommended actions | Recent crashes. -->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:DumpFinder.Mac"
+             x:Class="DumpFinder.Mac.Pages.HomePage"
+             x:DataType="local:MainViewModel">
+  <UserControl.Styles>
+    <Style Selector="local|ScoreRing"><Setter Property="FillBrush" Value="{DynamicResource Accent}" /></Style>
+    <Style Selector="local|ScoreRing.success"><Setter Property="FillBrush" Value="{DynamicResource SuccessFg}" /></Style>
+    <Style Selector="local|ScoreRing.warn"><Setter Property="FillBrush" Value="{DynamicResource WarnFg}" /></Style>
+    <Style Selector="local|ScoreRing.danger"><Setter Property="FillBrush" Value="{DynamicResource DangerFg}" /></Style>
+  </UserControl.Styles>
+  <ScrollViewer>
+    <StackPanel Margin="0,0,6,0">
+
+      <!-- Header -->
+      <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,18">
+        <StackPanel>
+          <TextBlock Classes="display" Text="{Binding Greeting}" />
+          <TextBlock Classes="subtitle" Text="{Binding HomeSubtitle}" Margin="0,2,0,0" />
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+          <Button Classes="flat" Margin="0,0,8,0" BorderBrush="{DynamicResource BorderCard}" Command="{Binding ReportCommand}">
+            <StackPanel Orientation="Horizontal"><PathIcon Data="{StaticResource Icon.Document}" /><TextBlock Text="{Binding L[home.report]}" /></StackPanel>
+          </Button>
+          <Button Classes="primary" Command="{Binding ScanCommand}">
+            <StackPanel Orientation="Horizontal"><PathIcon Data="{StaticResource Icon.Refresh}" /><TextBlock Text="{Binding L[home.scan]}" /></StackPanel>
+          </Button>
+        </StackPanel>
+      </Grid>
+
+      <!-- Hero: score + verdict -->
+      <Border Classes="card" Padding="24,22" Margin="0,0,0,16">
+        <Grid ColumnDefinitions="Auto,*">
+          <Panel Width="128" Height="128" Margin="0,0,26,0" VerticalAlignment="Center">
+            <local:ScoreRing Value="{Binding Score}" StrokeWidth="11" TrackBrush="{DynamicResource BgSubtle}"
+                             Classes.success="{Binding LevelSuccess}" Classes.warn="{Binding LevelWarn}" Classes.danger="{Binding LevelDanger}" />
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+              <TextBlock Text="{Binding ScoreText}" FontSize="36" FontWeight="SemiBold" HorizontalAlignment="Center" />
+              <TextBlock Text="{Binding L[home.100_stability]}" Classes="caption" HorizontalAlignment="Center" Margin="0,-2,0,0" />
+            </StackPanel>
+          </Panel>
+          <StackPanel Grid.Column="1" VerticalAlignment="Center">
+            <StackPanel Orientation="Horizontal">
+              <Border Classes="pill" Classes.success="{Binding LevelSuccess}" Classes.warn="{Binding LevelWarn}" Classes.danger="{Binding LevelDanger}" IsVisible="{Binding HasLevel}">
+                <TextBlock Text="{Binding LevelText}" />
+              </Border>
+              <Border Classes="pill" Classes.success="{Binding DeltaUp}" Classes.danger="{Binding DeltaDown}" Margin="6,0,0,0" IsVisible="{Binding HasDelta}">
+                <TextBlock Text="{Binding DeltaText}" />
+              </Border>
+            </StackPanel>
+            <TextBlock Classes="heading" Text="{Binding VerdictTitle}" Margin="0,9,0,5" />
+            <TextBlock Classes="body" Text="{Binding VerdictBody}" MaxHeight="58" TextTrimming="WordEllipsis" ToolTip.Tip="{Binding VerdictBody}" />
+            <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+              <Button Classes="primary" Margin="0,0,8,0" Content="{Binding HeroPrimary}" IsVisible="{Binding HasHeroPrimary}" Command="{Binding HeroPrimaryCommand}" />
+              <Button Classes="flat" Content="{Binding HeroSecondary}" IsVisible="{Binding HasHeroSecondary}" Command="{Binding HeroSecondaryCommand}" />
+            </StackPanel>
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <!-- Timeline -->
+      <Border Classes="card" Padding="20,16,20,14" Margin="0,0,0,16">
+        <StackPanel>
+          <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,10">
+            <TextBlock Classes="section" Text="{Binding L[home.stability_over_30_days]}" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+              <Border Width="8" Height="8" CornerRadius="4" Margin="14,1,6,0" Background="{DynamicResource DangerFg}" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding L[home.bsod_reboot]}" FontSize="12" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" />
+              <Border Width="8" Height="8" CornerRadius="4" Margin="14,1,6,0" Background="{DynamicResource WarnFg}" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding L[home.other_crash]}" FontSize="12" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" />
+            </StackPanel>
+          </Grid>
+          <local:StabilityChart Height="120" Days="{Binding Days}" LineBrush="{DynamicResource AccentText}" GridBrush="{DynamicResource BorderCard}"
+                                LabelBrush="{DynamicResource TextMuted}" SevereBrush="{DynamicResource DangerFg}" WarnBrush="{DynamicResource WarnFg}" />
+        </StackPanel>
+      </Border>
+
+      <!-- Lower: recommended actions | recent crashes -->
+      <Grid ColumnDefinitions="*,16,*">
+        <Border Classes="card">
+          <StackPanel>
+            <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,6">
+              <TextBlock Classes="section" Text="{Binding L[home.recommended_actions]}" />
+              <Button Grid.Column="1" Classes="link" Content="{Binding L[home.see_all]}" Command="{Binding NavigateCommand}" CommandParameter="2" />
+            </Grid>
+            <ItemsControl ItemsSource="{Binding Actions}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="local:ActionRow">
+                  <Border Classes="row" Classes.first="{Binding First}">
+                    <Grid ColumnDefinitions="Auto,*">
+                      <Border Classes="tile" Classes.danger="{Binding IsDanger}" Classes.warn="{Binding IsWarn}">
+                        <PathIcon Data="{Binding Icon, Converter={StaticResource Icon}}" />
+                      </Border>
+                      <StackPanel Grid.Column="1" Margin="12,0,10,0" VerticalAlignment="Center">
+                        <TextBlock Classes="strong" Text="{Binding Title}" />
+                        <TextBlock Classes="caption" Text="{Binding Sub}" TextTrimming="CharacterEllipsis" Margin="0,1,0,0" />
+                      </StackPanel>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <StackPanel Orientation="Horizontal" Margin="0,10,0,12" IsVisible="{Binding NoActions}">
+              <PathIcon Data="{StaticResource Icon.Completed}" Width="16" Height="16" Foreground="{DynamicResource SuccessFg}" Margin="0,0,10,0" />
+              <TextBlock Classes="body" Text="{Binding L[mac.home.no_warning]}" VerticalAlignment="Center" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <Border Grid.Column="2" Classes="card">
+          <StackPanel>
+            <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,6">
+              <TextBlock Classes="section" Text="{Binding L[home.recent_crashes]}" />
+              <Button Grid.Column="1" Classes="link" Content="{Binding L[crashes.history]}" Command="{Binding NavigateCommand}" CommandParameter="1" />
+            </Grid>
+            <ItemsControl ItemsSource="{Binding Recent}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="local:CrashRow">
+                  <Border Classes="row" Classes.first="{Binding First}">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                      <Border Classes="tile" Classes.danger="{Binding IsDanger}" Classes.warn="{Binding IsWarn}">
+                        <PathIcon Data="{Binding Icon, Converter={StaticResource Icon}}" />
+                      </Border>
+                      <StackPanel Grid.Column="1" Margin="12,0,10,0" VerticalAlignment="Center">
+                        <TextBlock Classes="strong" Text="{Binding Title}" />
+                        <TextBlock Classes="caption mono" Text="{Binding TechLine}" TextTrimming="CharacterEllipsis" Margin="0,1,0,0" />
+                      </StackPanel>
+                      <TextBlock Grid.Column="2" Classes="caption" Text="{Binding When}" VerticalAlignment="Center" />
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <StackPanel Orientation="Horizontal" Margin="0,10,0,12" IsVisible="{Binding NoRecent}">
+              <PathIcon Data="{StaticResource Icon.Completed}" Width="16" Height="16" Foreground="{DynamicResource SuccessFg}" Margin="0,0,10,0" />
+              <TextBlock Classes="body" Text="{Binding L[home.no_crash_recorded_your_pc_is]}" VerticalAlignment="Center" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+      </Grid>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

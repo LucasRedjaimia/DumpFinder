@@ -1,0 +1,6 @@
+{
+  "main_window.system_windows": "System (macOS)",
+  "home.no_crash_recorded_your_pc_is": "Keine Abstürze aufgezeichnet. Dein Mac hält durch.",
+  "home.bsod_reboot": "Kernel-Panic / Neustart",
+  "settings.follow_windows_or_force_light_or": "macOS folgen oder hell/dunkel erzwingen."
+}

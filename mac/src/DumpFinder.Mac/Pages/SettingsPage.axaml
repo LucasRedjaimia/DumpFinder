@@ -1,0 +1,54 @@
+<!-- Settings, same layout as Windows (src/UI/MainWindow.SettingsPage.cs): section header, card of rows
+     (icon · title + description · control). Monitoring, AI, Integrations and Help come with the next steps. -->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:DumpFinder.Mac"
+             x:Class="DumpFinder.Mac.Pages.SettingsPage"
+             x:DataType="local:MainViewModel">
+  <ScrollViewer>
+    <StackPanel Margin="0,0,6,0" MaxWidth="920" HorizontalAlignment="Left">
+      <TextBlock Classes="title" Text="{Binding L[main_window.settings]}" Margin="0,0,0,18" />
+
+      <TextBlock Text="{Binding L[settings.general]}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="2,0,0,8" />
+      <Border Classes="card" Padding="0" Margin="0,0,0,18">
+        <StackPanel>
+          <Border Classes="setting first">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+              <PathIcon Data="{StaticResource Icon.Globe}" Width="16" Height="16" Foreground="{DynamicResource TextSecondary}" Margin="0,0,16,0" />
+              <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,16,0">
+                <TextBlock Classes="strong" Text="{Binding L[settings.language]}" />
+                <TextBlock Text="{Binding L[settings.language_of_the_interface_and_explanatio]}" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,0" />
+              </StackPanel>
+              <ComboBox Grid.Column="2" Width="220" VerticalAlignment="Center" ItemsSource="{Binding Languages}" SelectedIndex="{Binding LanguageIndex}"
+                        AutomationProperties.Name="{Binding L[settings.language]}" />
+            </Grid>
+          </Border>
+          <Border Classes="setting">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+              <PathIcon Data="{StaticResource Icon.Lightbulb}" Width="16" Height="16" Foreground="{DynamicResource TextSecondary}" Margin="0,0,16,0" />
+              <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,16,0">
+                <TextBlock Classes="strong" Text="{Binding L[settings.appearance]}" />
+                <TextBlock Text="{Binding L[settings.follow_windows_or_force_light_or]}" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,0" />
+              </StackPanel>
+              <ComboBox Grid.Column="2" Width="220" VerticalAlignment="Center" ItemsSource="{Binding ThemeOptions}" SelectedIndex="{Binding ThemeIndex}"
+                        AutomationProperties.Name="{Binding L[settings.appearance]}" />
+            </Grid>
+          </Border>
+        </StackPanel>
+      </Border>
+
+      <TextBlock Text="{Binding L[mac.settings.about]}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="2,0,0,8" />
+      <Border Classes="card" Padding="0" Margin="0,0,0,24">
+        <Border Classes="setting first">
+          <Grid ColumnDefinitions="Auto,*">
+            <Image Source="{StaticResource BrandLogo}" Width="28" Height="28" Margin="0,0,14,0" />
+            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+              <TextBlock Classes="strong" Text="Dump Finder" />
+              <TextBlock Text="{Binding VersionText}" FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,2,0,0" />
+            </StackPanel>
+          </Grid>
+        </Border>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

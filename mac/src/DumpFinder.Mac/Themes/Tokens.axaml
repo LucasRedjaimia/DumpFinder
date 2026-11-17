@@ -1,0 +1,101 @@
+<!-- Colour tokens: same names and values as the Windows app (src/UI/ThemeManager.cs, "Ink" palette).
+     Change both files together so the two apps keep the same look. -->
+<ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ResourceDictionary.ThemeDictionaries>
+    <ResourceDictionary x:Key="Light">
+      <SolidColorBrush x:Key="BgShell" Color="#EFEDF6" />
+      <SolidColorBrush x:Key="BgWindow" Color="#F8F7FC" />
+      <SolidColorBrush x:Key="BgCard" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="BgSubtle" Color="#F1EFF8" />
+      <SolidColorBrush x:Key="BgInput" Color="#FAFAFD" />
+      <SolidColorBrush x:Key="BorderCard" Color="#E5E2EF" />
+      <SolidColorBrush x:Key="BorderStrong" Color="#CFCAE0" />
+
+      <SolidColorBrush x:Key="TextPrimary" Color="#14121F" />
+      <SolidColorBrush x:Key="TextSecondary" Color="#55516A" />
+      <SolidColorBrush x:Key="TextMuted" Color="#66627C" />
+
+      <SolidColorBrush x:Key="Accent" Color="#5B47F5" />
+      <SolidColorBrush x:Key="AccentSoftBg" Color="#ECE9FF" />
+      <SolidColorBrush x:Key="AccentText" Color="#4632D8" />
+      <SolidColorBrush x:Key="OnAccent" Color="#FFFFFF" />
+
+      <SolidColorBrush x:Key="SuccessFg" Color="#0B7A4C" />
+      <SolidColorBrush x:Key="SuccessSoftBg" Color="#E9F8F0" />
+      <SolidColorBrush x:Key="SuccessBorder" Color="#B5E6CD" />
+      <SolidColorBrush x:Key="WarnFg" Color="#955800" />
+      <SolidColorBrush x:Key="WarnSoftBg" Color="#FFF6E5" />
+      <SolidColorBrush x:Key="WarnBorder" Color="#F2D08A" />
+      <SolidColorBrush x:Key="DangerFg" Color="#C0302A" />
+      <SolidColorBrush x:Key="DangerSoftBg" Color="#FDEEEC" />
+      <SolidColorBrush x:Key="DangerBorder" Color="#F5C4BF" />
+
+      <SolidColorBrush x:Key="HoverOverlay" Color="#0A14121F" />
+      <SolidColorBrush x:Key="PressOverlay" Color="#1414121F" />
+      <SolidColorBrush x:Key="FocusRing" Color="#5B47F5" />
+      <SolidColorBrush x:Key="ToastBg" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="ScrimBg" Color="#6614121F" />
+      <Color x:Key="ChartLineColor">#4632D8</Color>
+    </ResourceDictionary>
+
+    <ResourceDictionary x:Key="Dark">
+      <SolidColorBrush x:Key="BgShell" Color="#100F18" />
+      <SolidColorBrush x:Key="BgWindow" Color="#0B0B12" />
+      <SolidColorBrush x:Key="BgCard" Color="#16151F" />
+      <SolidColorBrush x:Key="BgSubtle" Color="#1F1D2B" />
+      <SolidColorBrush x:Key="BgInput" Color="#12111A" />
+      <SolidColorBrush x:Key="BorderCard" Color="#252334" />
+      <SolidColorBrush x:Key="BorderStrong" Color="#353149" />
+
+      <SolidColorBrush x:Key="TextPrimary" Color="#F2F1F7" />
+      <SolidColorBrush x:Key="TextSecondary" Color="#A6A3B8" />
+      <SolidColorBrush x:Key="TextMuted" Color="#8C88A3" />
+
+      <SolidColorBrush x:Key="Accent" Color="#6A55F0" />
+      <SolidColorBrush x:Key="AccentSoftBg" Color="#221C44" />
+      <SolidColorBrush x:Key="AccentText" Color="#A99CFF" />
+      <SolidColorBrush x:Key="OnAccent" Color="#FFFFFF" />
+
+      <SolidColorBrush x:Key="SuccessFg" Color="#3DD68C" />
+      <SolidColorBrush x:Key="SuccessSoftBg" Color="#0E2A1E" />
+      <SolidColorBrush x:Key="SuccessBorder" Color="#1A5A3D" />
+      <SolidColorBrush x:Key="WarnFg" Color="#F5B544" />
+      <SolidColorBrush x:Key="WarnSoftBg" Color="#2C2210" />
+      <SolidColorBrush x:Key="WarnBorder" Color="#6B4E14" />
+      <SolidColorBrush x:Key="DangerFg" Color="#FF7A6E" />
+      <SolidColorBrush x:Key="DangerSoftBg" Color="#33161A" />
+      <SolidColorBrush x:Key="DangerBorder" Color="#7A2A30" />
+
+      <SolidColorBrush x:Key="HoverOverlay" Color="#0FFFFFFF" />
+      <SolidColorBrush x:Key="PressOverlay" Color="#1AFFFFFF" />
+      <SolidColorBrush x:Key="FocusRing" Color="#A99CFF" />
+      <SolidColorBrush x:Key="ToastBg" Color="#1F1D2B" />
+      <SolidColorBrush x:Key="ScrimBg" Color="#99050409" />
+      <Color x:Key="ChartLineColor">#A99CFF</Color>
+    </ResourceDictionary>
+  </ResourceDictionary.ThemeDictionaries>
+
+  <!-- Brand mark (branding/logo.svg geometry), theme-independent -->
+  <LinearGradientBrush x:Key="BrandTileBrush" StartPoint="0%,0%" EndPoint="100%,100%">
+    <GradientStop Offset="0" Color="#1D1834" /><GradientStop Offset="1" Color="#0B0A13" />
+  </LinearGradientBrush>
+  <LinearGradientBrush x:Key="BrandBarBrush" StartPoint="0%,0%" EndPoint="100%,100%">
+    <GradientStop Offset="0" Color="#A495FF" /><GradientStop Offset="1" Color="#6A55F7" />
+  </LinearGradientBrush>
+  <LinearGradientBrush x:Key="BrandBarDeepBrush" StartPoint="0%,0%" EndPoint="100%,100%">
+    <GradientStop Offset="0" Color="#7F6BFB" /><GradientStop Offset="1" Color="#4A36E0" />
+  </LinearGradientBrush>
+  <LinearGradientBrush x:Key="BrandFaultBrush" StartPoint="0%,0%" EndPoint="100%,0%">
+    <GradientStop Offset="0" Color="#FF5E62" /><GradientStop Offset="1" Color="#FFA24A" />
+  </LinearGradientBrush>
+  <DrawingImage x:Key="BrandLogo">
+    <DrawingGroup>
+      <GeometryDrawing Brush="{StaticResource BrandTileBrush}" Geometry="M140,16 H372 A124,124 0 0 1 496,140 V372 A124,124 0 0 1 372,496 H140 A124,124 0 0 1 16,372 V140 A124,124 0 0 1 140,16 Z" />
+      <GeometryDrawing Brush="{StaticResource BrandBarBrush}" Geometry="M134,132 H378 A22,22 0 0 1 400,154 V174 A22,22 0 0 1 378,196 H134 A22,22 0 0 1 112,174 V154 A22,22 0 0 1 134,132 Z" />
+      <GeometryDrawing Brush="{StaticResource BrandBarDeepBrush}" Geometry="M134 224H262L250 240L266 256L252 272L262 288H134A22 22 0 0 1 112 266V246A22 22 0 0 1 134 224Z" />
+      <GeometryDrawing Brush="{StaticResource BrandFaultBrush}" Geometry="M292 214H414A22 22 0 0 1 436 236V256A22 22 0 0 1 414 278H292L282 262L296 246L280 230Z" />
+      <GeometryDrawing Brush="#B3FFA24A" Geometry="M455,226 H463 A5,5 0 0 1 468,231 V239 A5,5 0 0 1 463,244 H455 A5,5 0 0 1 450,239 V231 A5,5 0 0 1 455,226 Z" />
+      <GeometryDrawing Brush="{StaticResource BrandBarDeepBrush}" Geometry="M134,316 H378 A22,22 0 0 1 400,338 V358 A22,22 0 0 1 378,380 H134 A22,22 0 0 1 112,358 V338 A22,22 0 0 1 134,316 Z" />
+    </DrawingGroup>
+  </DrawingImage>
+</ResourceDictionary>
