@@ -84,7 +84,7 @@ public static class SelfTest
         // Extensions
         var kexts = SystemProbe.ParseKmutil(KmutilOut).ToList();
         Check(kexts.Count == 2 && kexts[1].BundleId == "com.paragon-software.filesystems.ntfs" && kexts[1].Version == "16.1.3", "kmutil parsing");
-        Check(data.VendorCategory(kexts[1].BundleId)?.StartsWith("File system", StringComparison.Ordinal) == true, "kext vendor category");
+        Check(data.VendorCategory(kexts[1].BundleId) == "filesystem", "kext vendor category");
         var sys = SystemProbe.ParseSystemExtensions(SysExtOut).ToList();
         Check(sys.Count == 1 && sys[0].BundleId == "com.example.vpn.extension" && sys[0].TeamId == "ABCDE12345" && sys[0].State == "activated enabled",
               $"systemextensionsctl parsing (got {sys.Count})");
@@ -105,11 +105,51 @@ public static class SelfTest
             Hardware = new HardwareInfo { HasBattery = true, BatteryMaxCapacityPct = 75, BatteryCondition = "Service Recommended", BatteryCycles = 900, BootVolumeFree = 20_000_000_000, BootVolumeSize = 500_000_000_000, OsMajor = 26 },
         };
         var findings = DiagnosticsEngine.Analyze(scan, data, now);
-        Check(findings[0].Severity == Severity.Critical && findings[0].Title.Contains("com.vendor.fsdriver"), "panic finding names the third-party kext first");
-        Check(findings.Any(x => x.Title.StartsWith("Battery worn", StringComparison.Ordinal)), "worn battery finding");
-        Check(findings.Any(x => x.Title.StartsWith("Low free space", StringComparison.Ordinal) && x.Severity == Severity.Critical), "4 % free → critical");
+        Check(findings[0].Id == "panic" && findings[0].Severity == Severity.Critical && findings[0].Title.Contains("com.vendor.fsdriver"), "panic finding names the third-party kext first");
+        Check(findings.Any(x => x.Id == "battery_worn"), "worn battery finding");
+        Check(findings.Any(x => x.Id == "low_disk" && x.Severity == Severity.Critical), "4 % free → critical");
         var clean = DiagnosticsEngine.Analyze(new ScanResult { Hardware = new HardwareInfo { OsMajor = 26 } }, data, now);
-        Check(clean.Count == 1 && clean[0].Severity == Severity.Ok, "clean machine → a single OK finding");
+        Check(clean.Count == 1 && clean[0].Id == "ok", "clean machine → a single OK finding");
+
+        // Privacy and exports
+        var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var redacted = Privacy.Redact($"{home}/Library/x /Users/someone/a https://example.com/path?q=secret");
+        Check(!redacted.Contains(home) && redacted.Contains("~/Library/x") && redacted.Contains("/Users/<user>/a") && redacted.Contains("https://example.com ") == false
+              && redacted.EndsWith("https://example.com", StringComparison.Ordinal), $"privacy redaction (got '{redacted}')");
+        var sample = new ScanResult { Panics = { p }, Hardware = new HardwareInfo { MachineName = "MacBook Pro", OsVersion = "macOS 26.6", OsMajor = 26 } };
+        sample.Findings.AddRange(DiagnosticsEngine.Analyze(sample, data, now));
+        var summary = CrashTimeline.Build(sample, data, now.LocalDateTime);
+        bool exportsOk = true;
+        foreach (var lang in new[] { "en", "fr", "ru", "ja" })
+        {
+            Loc.SetLanguage(lang);
+            try
+            {
+                var html = ReportBuilder.Html(sample, summary);
+                exportsOk &= html.StartsWith("<!doctype html>", StringComparison.Ordinal) && html.Contains("com.vendor.fsdriver") && html.EndsWith("</html>", StringComparison.Ordinal);
+                exportsOk &= System.Text.Json.JsonDocument.Parse(ReportBuilder.Json(sample, summary)).RootElement.GetProperty("crashes").GetArrayLength() == 1;
+                exportsOk &= ReportBuilder.Markdown(sample, summary).Length > 0 && ReportBuilder.Text(sample, summary).Length > 0;
+                exportsOk &= CrashDetails.ForumMarkdown(summary.Crashes[0], sample).Contains("com.vendor.fsdriver");
+            }
+            catch (Exception e) { exportsOk = false; log.WriteLine($"    {lang}: {e.GetType().Name}: {e.Message}"); }
+        }
+        Loc.SetLanguage("en");
+        Check(exportsOk, "HTML / JSON / Markdown / text exports in 4 languages");
+        // Translations: every language has every Mac key, with the same placeholders ({0}, {1:…}); the "one" plural
+        // form of some languages may leave out {0}.
+        var en = Loc.MacTable("en");
+        var placeholder = new System.Text.RegularExpressions.Regex(@"\{\d+(?::[^}]*)?\}");
+        foreach (var code in Loc.Codes.Where(c => c != "en"))
+        {
+            var t = Loc.MacTable(code);
+            var missing = en.Keys.Where(k => !t.ContainsKey(k)).ToList();
+            var badArgs = en.Where(kv => t.TryGetValue(kv.Key, out var v)
+                && !placeholder.Matches(kv.Value).Select(m => m.Value).Where(p => p != "{0}").ToHashSet()
+                    .IsSubsetOf(placeholder.Matches(v).Select(m => m.Value).ToHashSet())).Select(kv => kv.Key).ToList();
+            Check(missing.Count == 0 && badArgs.Count == 0,
+                  $"mac/Locales/{code}.json complete" + (missing.Count + badArgs.Count > 0 ? $" (missing {missing.Count}: {string.Join(", ", missing.Take(3))}; placeholders: {string.Join(", ", badArgs.Take(3))})" : ""));
+        }
+        Check(KnowledgeBase.Entries.All(k => k.Title != "mac.kb." + k.Id + ".title" && k.Solution != "mac.kb." + k.Id + ".fix"), "every known-issue article has English texts");
 
         log.WriteLine(failed == 0 ? "All checks passed." : $"{failed} check(s) failed.");
         return failed;

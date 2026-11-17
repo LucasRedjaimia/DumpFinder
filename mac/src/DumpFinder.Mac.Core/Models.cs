@@ -2,8 +2,8 @@ namespace DumpFinder.Mac.Core;
 
 public enum Severity { Ok, Info, Warning, Critical }
 
-/// <summary>One diagnostic conclusion shown to the user.</summary>
-public sealed record Finding(Severity Severity, string Category, string Title, string Detail, string Advice);
+/// <summary>Id: stable name of the rule ("panic", "low_disk"…). Category: crashes | memory | drivers | hardware | system | summary.</summary>
+public sealed record Finding(string Id, Severity Severity, string Category, string Title, string Detail, string Advice);
 
 /// <summary>A kernel panic report (.panic, or .ips with bug_type 210).</summary>
 public sealed class PanicReport
@@ -21,6 +21,9 @@ public sealed class PanicReport
     public string PatternId { get; set; } = "";
     public string Explanation { get; set; } = "";
     public string Advice { get; set; } = "";
+    /// <summary>The whole panic string (capped), shown under "Full report".</summary>
+    public string PanicText { get; init; } = "";
+    public long FileSize { get; init; }
 }
 
 public enum ReportKind { Crash, MemoryPressure, Panic, Other }
@@ -37,6 +40,12 @@ public sealed class CrashReport
     public string ExceptionType { get; init; } = "";
     public string Signal { get; init; } = "";
     public string Termination { get; init; } = "";
+    public string AppVersion { get; init; } = "";
+    public string BundleId { get; init; } = "";
+    public string ProcPath { get; init; } = "";
+    public string ParentProcess { get; init; } = "";
+    public string OsVersion { get; init; } = "";
+    public long FileSize { get; init; }
 }
 
 public sealed record KernelExtension(string BundleId, string Version, bool Loaded, string Path);

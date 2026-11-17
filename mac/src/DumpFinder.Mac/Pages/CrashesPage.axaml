@@ -1,47 +1,216 @@
-<!-- Crashes: list in the Windows style (category tile, title, "New" pill, technical line, time).
-     Filters, the detail panel and "Ask the AI" come with the next step of the Mac port. -->
+<!-- Crashes, same layout as Windows (src/UI/MainWindow.CrashesPage.cs): title + History (N) | Common crashes pills,
+     filter bar (period, category, open a report file), list card + 400 px detail panel; the accordion of known issues. -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="using:DumpFinder.Mac"
+             xmlns:core="using:DumpFinder.Mac.Core"
              x:Class="DumpFinder.Mac.Pages.CrashesPage"
              x:DataType="local:MainViewModel">
-  <ScrollViewer>
-    <StackPanel Margin="0,0,6,16">
-      <TextBlock Classes="title" Text="{Binding L[crashes.crashes]}" />
-      <TextBlock Classes="subtitle" Text="{Binding L[mac.crashes.subtitle]}" Margin="0,2,0,16" />
+  <UserControl.Styles>
+    <!-- Crash row (Windows BuildCrashRow: radius 10, padding 10/9/12/9; selected = AccentSoftBg + Accent border) -->
+    <Style Selector="Button.crashrow">
+      <Setter Property="Background" Value="Transparent" /><Setter Property="BorderBrush" Value="Transparent" /><Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="10" /><Setter Property="Padding" Value="10,9,12,9" /><Setter Property="Margin" Value="0,0,0,2" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" /><Setter Property="HorizontalContentAlignment" Value="Stretch" /><Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Button.crashrow:pointerover /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="{DynamicResource HoverOverlay}" /><Setter Property="BorderBrush" Value="Transparent" /></Style>
+    <Style Selector="Button.crashrow.selected"><Setter Property="Background" Value="{DynamicResource AccentSoftBg}" /><Setter Property="BorderBrush" Value="{DynamicResource Accent}" /></Style>
+    <Style Selector="Button.crashrow.selected:pointerover /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="{DynamicResource AccentSoftBg}" /><Setter Property="BorderBrush" Value="{DynamicResource Accent}" /></Style>
+    <Style Selector="TextBlock.catlabel"><Setter Property="FontSize" Value="11" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="Foreground" Value="{DynamicResource AccentText}" /></Style>
+    <Style Selector="TextBlock.catlabel.danger"><Setter Property="Foreground" Value="{DynamicResource DangerFg}" /></Style>
+    <Style Selector="TextBlock.catlabel.warn"><Setter Property="Foreground" Value="{DynamicResource WarnFg}" /></Style>
+    <!-- Drawer section label (Windows DrawerLabel: 11 px, SemiBold, upper case, muted) -->
+    <Style Selector="TextBlock.drawerlabel"><Setter Property="FontSize" Value="11" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="Foreground" Value="{DynamicResource TextMuted}" /><Setter Property="Margin" Value="0,20,0,8" /></Style>
+    <Style Selector="Button.kbcard">
+      <Setter Property="Background" Value="{DynamicResource BgCard}" /><Setter Property="BorderBrush" Value="{DynamicResource BorderCard}" /><Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="12" /><Setter Property="Padding" Value="16,13" /><Setter Property="Margin" Value="0,0,0,8" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" /><Setter Property="HorizontalContentAlignment" Value="Stretch" /><Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Button.kbcard:pointerover /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="{DynamicResource BgCard}" /><Setter Property="BorderBrush" Value="{DynamicResource BorderStrong}" /></Style>
+  </UserControl.Styles>
 
-      <Border Classes="card">
-        <StackPanel>
-          <ItemsControl ItemsSource="{Binding CrashList}">
-            <ItemsControl.ItemTemplate>
-              <DataTemplate x:DataType="local:CrashRow">
-                <Border Classes="row" Classes.first="{Binding First}">
-                  <Grid ColumnDefinitions="Auto,*,Auto">
-                    <Border Classes="tile" Classes.danger="{Binding IsDanger}" Classes.warn="{Binding IsWarn}">
-                      <PathIcon Data="{Binding Icon, Converter={StaticResource Icon}}" />
-                    </Border>
-                    <StackPanel Grid.Column="1" Margin="12,0,10,0" VerticalAlignment="Center">
-                      <StackPanel Orientation="Horizontal">
-                        <TextBlock Classes="caption" Text="{Binding Category}" FontWeight="SemiBold" VerticalAlignment="Center" />
-                        <Border Classes="pill accent" Margin="8,0,0,0" Padding="7,0,7,1" IsVisible="{Binding IsNew}">
-                          <TextBlock Text="{Binding $parent[UserControl].((local:MainViewModel)DataContext).L[mac.crashes.new]}" />
-                        </Border>
-                      </StackPanel>
-                      <TextBlock Classes="strong" Text="{Binding Title}" Margin="0,2,0,0" />
-                      <TextBlock Classes="caption mono" Text="{Binding TechLine}" TextTrimming="CharacterEllipsis" Margin="0,1,0,0" />
-                    </StackPanel>
-                    <TextBlock Grid.Column="2" Classes="caption" Text="{Binding When}" VerticalAlignment="Center" />
-                  </Grid>
-                </Border>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
-          <StackPanel Orientation="Horizontal" Margin="0,10,0,12" IsVisible="{Binding NoCrash}">
-            <PathIcon Data="{StaticResource Icon.Completed}" Width="16" Height="16" Foreground="{DynamicResource SuccessFg}" Margin="0,0,10,0" />
-            <TextBlock Classes="body" Text="{Binding L[mac.crashes.none]}" VerticalAlignment="Center" />
-          </StackPanel>
-        </StackPanel>
-      </Border>
+  <Grid RowDefinitions="Auto,Auto,*">
+    <!-- Header -->
+    <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,14">
+      <StackPanel>
+        <TextBlock Classes="title" Text="{Binding L[crashes.crashes]}" />
+        <TextBlock Classes="subtitle" Text="{Binding L[crashes.each_crash_brings_together_the_windows]}" Margin="0,2,0,0" />
+      </StackPanel>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+        <Button Classes="segment" Classes.active="{Binding IsHistoryTab}" Content="{Binding HistoryTabLabel}" Command="{Binding CrashTabCommand}" CommandParameter="0" />
+        <Button Classes="segment" Classes.active="{Binding IsKbTab}" Content="{Binding L[crashes.common_crashes]}" Command="{Binding CrashTabCommand}" CommandParameter="1" Margin="0" />
+      </StackPanel>
+    </Grid>
+
+    <!-- Filter bar -->
+    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" Margin="0,0,0,12" IsVisible="{Binding IsHistoryTab}">
+      <ComboBox MinWidth="170" ItemsSource="{Binding PeriodOptions}" SelectedIndex="{Binding PeriodIndex}" AutomationProperties.Name="{Binding L[crashes.filter_period]}" />
+      <ComboBox MinWidth="190" ItemsSource="{Binding CategoryOptions}" SelectedIndex="{Binding CategoryIndex}" AutomationProperties.Name="{Binding L[crashes.filter_category]}" />
+      <Button Classes="flat" FontSize="12" Padding="12,6" BorderBrush="{DynamicResource BorderCard}" Command="{Binding OpenReportFileCommand}">
+        <StackPanel Orientation="Horizontal"><PathIcon Data="{StaticResource Icon.Document}" /><TextBlock Text="{Binding L[crashes.open_a_dmp]}" /></StackPanel>
+      </Button>
     </StackPanel>
-  </ScrollViewer>
+
+    <!-- ===== History: list + detail panel ===== -->
+    <Grid Grid.Row="2" ColumnDefinitions="*,Auto" IsVisible="{Binding IsHistoryTab}">
+      <Border Classes="card" Padding="6" MinWidth="340">
+        <Panel>
+          <ScrollViewer>
+            <ItemsControl ItemsSource="{Binding CrashList}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="local:CrashRow">
+                  <Button Classes="crashrow" Classes.selected="{Binding IsSelected}"
+                          Command="{Binding $parent[UserControl].((local:MainViewModel)DataContext).SelectCrashCommand}" CommandParameter="{Binding Key}"
+                          AutomationProperties.Name="{Binding Title}">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                      <Border Classes="tile" Classes.danger="{Binding IsDanger}" Classes.warn="{Binding IsWarn}">
+                        <PathIcon Data="{Binding Icon, Converter={StaticResource Icon}}" />
+                      </Border>
+                      <StackPanel Grid.Column="1" Margin="12,0,12,0" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                          <TextBlock Classes="catlabel" Classes.danger="{Binding IsDanger}" Classes.warn="{Binding IsWarn}" Text="{Binding Category}" VerticalAlignment="Center" Margin="0,0,2,0" />
+                          <Border Classes="pill danger" Padding="6,0,6,1" IsVisible="{Binding IsNew}">
+                            <TextBlock Text="{Binding $parent[UserControl].((local:MainViewModel)DataContext).L[crashes.new]}" />
+                          </Border>
+                          <Border Classes="pill" Padding="6,0,6,1" IsVisible="{Binding HasFileTag}">
+                            <TextBlock Text="{Binding FileTag}" />
+                          </Border>
+                        </StackPanel>
+                        <TextBlock Classes="strong" Text="{Binding Title}" Margin="0,2,0,0" />
+                        <TextBlock Classes="caption mono" Text="{Binding TechLine}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
+                      </StackPanel>
+                      <TextBlock Grid.Column="2" Text="{Binding When}" FontSize="12" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" />
+                    </Grid>
+                  </Button>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+          <!-- Empty state -->
+          <StackPanel IsVisible="{Binding NoCrash}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="24" MaxWidth="420">
+            <PathIcon Data="{StaticResource Icon.Completed}" Width="28" Height="28" Foreground="{DynamicResource SuccessFg}" />
+            <TextBlock Classes="section" Text="{Binding L[crashes.no_crash_in_this_period]}" HorizontalAlignment="Center" Margin="0,10,0,4" />
+            <TextBlock Classes="body" Text="{Binding L[crashes.widen_the_period_or_category_above]}" TextAlignment="Center" />
+          </StackPanel>
+        </Panel>
+      </Border>
+
+      <!-- Detail panel (Windows drawer, 400 px) -->
+      <Border Grid.Column="1" Classes="card" Padding="0" Width="400" Margin="16,0,0,0" IsVisible="{Binding DetailVisible}">
+        <Grid RowDefinitions="*,Auto">
+          <ScrollViewer>
+            <StackPanel Margin="20,18,16,12">
+              <Grid ColumnDefinitions="*,Auto">
+                <Border Classes="pill accent" Classes.danger="{Binding DetailDanger}" Classes.warn="{Binding DetailWarn}">
+                  <TextBlock Text="{Binding DetailCategory}" />
+                </Border>
+                <Button Grid.Column="1" Classes="nav" Width="28" Height="28" Padding="0" Margin="0" HorizontalContentAlignment="Center"
+                        Command="{Binding CloseDetailCommand}" ToolTip.Tip="{Binding L[crashes.close_panel]}" AutomationProperties.Name="{Binding L[crashes.close_panel]}">
+                  <PathIcon Data="{StaticResource Icon.Close}" Width="11" Height="11" />
+                </Button>
+              </Grid>
+              <SelectableTextBlock Text="{Binding DetailTitle}" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,12,0,4" />
+              <SelectableTextBlock Text="{Binding DetailMeta}" FontSize="12" FontFamily="Menlo, monospace" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
+
+              <!-- In plain words -->
+              <Border Background="{DynamicResource BgSubtle}" BorderBrush="{DynamicResource BorderCard}" BorderThickness="1" CornerRadius="12" Padding="14,11,14,12" Margin="0,16,0,0" IsVisible="{Binding HasDetailPlain}">
+                <SelectableTextBlock FontSize="13" TextWrapping="Wrap" LineHeight="19" Foreground="{DynamicResource TextSecondary}">
+                  <Run Text="{Binding L[crashes.in_plain_words]}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" /><Run Text="{Binding DetailPlain}" />
+                </SelectableTextBlock>
+              </Border>
+
+              <!-- Analysis grid -->
+              <TextBlock Classes="drawerlabel" Text="{Binding L[mac.detail.analysis]}" />
+              <ItemsControl ItemsSource="{Binding DetailAnalysis}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="core:KeyValue">
+                    <Grid ColumnDefinitions="110,*" Margin="0,0,0,6">
+                      <TextBlock Text="{Binding Key}" FontSize="12" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" Margin="0,0,14,0" />
+                      <SelectableTextBlock Grid.Column="1" Text="{Binding Value}" FontSize="12" FontFamily="Menlo, monospace" TextWrapping="Wrap"
+                                           Foreground="{DynamicResource TextPrimary}" Classes.hl="{Binding Highlight}" />
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+                <ItemsControl.Styles>
+                  <Style Selector="SelectableTextBlock.hl"><Setter Property="Foreground" Value="{DynamicResource DangerFg}" /></Style>
+                </ItemsControl.Styles>
+              </ItemsControl>
+              <TextBlock Text="{Binding DetailEvidence}" FontSize="12" FontStyle="Italic" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" Margin="0,4,0,0" IsVisible="{Binding HasDetailEvidence}" />
+
+              <!-- Extension involved (Windows: Installed driver box + Update) -->
+              <Border Background="{DynamicResource BgSubtle}" CornerRadius="10" Padding="12,10" Margin="0,12,0,0" IsVisible="{Binding HasDetailExtension}">
+                <Grid ColumnDefinitions="*,Auto">
+                  <StackPanel>
+                    <TextBlock Text="{Binding L[crashes.installed_driver]}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}" />
+                    <TextBlock Text="{Binding DetailExtension}" FontSize="12" FontFamily="Menlo, monospace" TextWrapping="Wrap" Margin="0,3,0,0" />
+                    <TextBlock Text="{Binding DetailExtensionInfo}" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                  </StackPanel>
+                  <Button Grid.Column="1" Classes="flat accent" Margin="10,0,0,0" Command="{Binding SearchExtensionCommand}">
+                    <StackPanel Orientation="Horizontal"><PathIcon Data="{StaticResource Icon.Search}" /><TextBlock Text="{Binding L[crashes.update]}" /></StackPanel>
+                  </Button>
+                </Grid>
+              </Border>
+
+              <!-- Full report (Windows: Full Windows message) -->
+              <Expander Margin="0,14,0,0" IsVisible="{Binding HasDetailFull}" HorizontalAlignment="Stretch">
+                <Expander.Header>
+                  <TextBlock Text="{Binding L[crashes.full_windows_message]}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" />
+                </Expander.Header>
+                <StackPanel>
+                  <SelectableTextBlock Text="{Binding DetailFull}" FontSize="11" FontFamily="Menlo, monospace" TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" MaxHeight="420" />
+                  <Button Classes="link" HorizontalAlignment="Left" Margin="0,8,0,0" Command="{Binding RevealFileCommand}" IsVisible="{Binding HasDetailFile}" Content="{Binding L[mac.detail.show_in_finder]}" />
+                </StackPanel>
+              </Expander>
+            </StackPanel>
+          </ScrollViewer>
+          <!-- Footer: Ask the AI comes with the AI step; Copy for forum -->
+          <Border Grid.Row="1" BorderBrush="{DynamicResource BorderCard}" BorderThickness="0,1,0,0" Padding="16,12,16,14">
+            <Button Classes="flat" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Command="{Binding CopyForumCommand}">
+              <StackPanel Orientation="Horizontal"><PathIcon Data="{StaticResource Icon.Copy}" /><TextBlock Text="{Binding L[crashes.copy_for_forum]}" /></StackPanel>
+            </Button>
+          </Border>
+        </Grid>
+      </Border>
+    </Grid>
+
+    <!-- ===== Common crashes: accordion of known issues ===== -->
+    <ScrollViewer Grid.Row="1" Grid.RowSpan="2" IsVisible="{Binding IsKbTab}">
+      <StackPanel Margin="0,0,6,16">
+        <Border Background="{DynamicResource AccentSoftBg}" CornerRadius="10" Padding="14,10" Margin="0,0,0,12">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Text="{Binding KbStatus}" FontSize="12" Foreground="{DynamicResource AccentText}" VerticalAlignment="Center" TextWrapping="Wrap" />
+            <Button Grid.Column="1" Classes="link" Content="{Binding KbToggleLabel}" Command="{Binding ToggleKbFilterCommand}" />
+          </Grid>
+        </Border>
+        <ItemsControl ItemsSource="{Binding KbRows}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="local:KbRow">
+              <Button Classes="kbcard" Command="{Binding ToggleCommand}" AutomationProperties.Name="{Binding Title}">
+                <StackPanel>
+                  <Grid ColumnDefinitions="Auto,*,22">
+                    <Border Background="{DynamicResource BgSubtle}" CornerRadius="6" Padding="8,2" Margin="0,0,10,0" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Tag}" Foreground="{Binding Color}" FontSize="11" FontWeight="Bold" />
+                    </Border>
+                    <TextBlock Grid.Column="1" Text="{Binding Title}" FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="2" Text="{Binding Chevron}" FontSize="12" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                  </Grid>
+                  <StackPanel Margin="0,10,0,2" Spacing="8" IsVisible="{Binding Expanded}">
+                    <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="19" Foreground="{DynamicResource TextSecondary}">
+                      <Run Text="{Binding $parent[UserControl].((local:MainViewModel)DataContext).L[main_window.symptoms]}" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" /><Run Text="{Binding Symptoms}" />
+                    </TextBlock>
+                    <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="19" Foreground="{DynamicResource TextSecondary}">
+                      <Run Text="{Binding $parent[UserControl].((local:MainViewModel)DataContext).L[main_window.root_cause]}" FontWeight="SemiBold" Foreground="{DynamicResource WarnFg}" /><Run Text="{Binding Cause}" />
+                    </TextBlock>
+                    <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="19" Foreground="{DynamicResource TextSecondary}">
+                      <Run Text="{Binding $parent[UserControl].((local:MainViewModel)DataContext).L[main_window.how_to_fix]}" FontWeight="SemiBold" Foreground="{DynamicResource SuccessFg}" /><Run Text="{Binding Fix}" />
+                    </TextBlock>
+                  </StackPanel>
+                </StackPanel>
+              </Button>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
 </UserControl>

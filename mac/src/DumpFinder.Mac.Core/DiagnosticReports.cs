@@ -29,36 +29,46 @@ public static partial class DiagnosticReports
 
         foreach (var file in Enumerate(new[] { SystemDir, UserDir }, cutoff, errors))
         {
-            string text;
-            try
-            {
-                if (new FileInfo(file).Length > MaxFileBytes) continue;
-                text = File.ReadAllText(file);
-            }
-            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
-            {
-                errors.Add($"Cannot read {Path.GetFileName(file)}: {e.Message}");
-                continue;
-            }
-
-            var (header, body) = SplitIps(text);
-            var bugType = Str(header, "bug_type");
-            bool isPanic = file.EndsWith(".panic", StringComparison.OrdinalIgnoreCase) || bugType == BugPanic;
-            if (isPanic)
-            {
-                var p = ParsePanic(file, header, body, File.GetLastWriteTime(file));
-                Classify(p, data);
-                panics.Add(p);
-            }
-            else if (file.EndsWith(".ips", StringComparison.OrdinalIgnoreCase))
-            {
-                reports.Add(ParseIps(file, header, body, bugType, File.GetLastWriteTime(file)));
-            }
+            var (p, c) = ParseFile(file, data, errors);
+            if (p is not null) panics.Add(p);
+            if (c is not null) reports.Add(c);
         }
 
         panics.Sort((a, b) => Nullable.Compare(b.Time, a.Time));
         reports.Sort((a, b) => Nullable.Compare(b.Time, a.Time));
         return (panics, reports);
+    }
+
+    /// <summary>
+    /// One .panic / .ips file (from the scan, or chosen with "Open a .panic / .ips file…"): a kernel panic, a
+    /// user-space report, or neither when it cannot be read. Never throws.
+    /// </summary>
+    public static (PanicReport? Panic, CrashReport? Report) ParseFile(string file, DetectionData data, List<string> errors)
+    {
+        string text;
+        long size;
+        try
+        {
+            size = new FileInfo(file).Length;
+            if (size > MaxFileBytes) { errors.Add($"{Path.GetFileName(file)}: file too large"); return (null, null); }
+            text = File.ReadAllText(file);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            errors.Add($"Cannot read {Path.GetFileName(file)}: {e.Message}");
+            return (null, null);
+        }
+
+        var (header, body) = SplitIps(text);
+        var bugType = Str(header, "bug_type");
+        var when = File.GetLastWriteTime(file);
+        if (file.EndsWith(".panic", StringComparison.OrdinalIgnoreCase) || bugType == BugPanic)
+        {
+            var p = ParsePanic(file, header, body, when, size);
+            Classify(p, data);
+            return (p, null);
+        }
+        return file.EndsWith(".ips", StringComparison.OrdinalIgnoreCase) ? (null, ParseIps(file, header, body, bugType, when, size)) : (null, null);
     }
 
     static IEnumerable<string> Enumerate(string[] roots, DateTime cutoff, List<string> errors)
@@ -99,7 +109,7 @@ public static partial class DiagnosticReports
         return (null, text);
     }
 
-    public static PanicReport ParsePanic(string file, JsonElement? header, string body, DateTime fallbackTime)
+    public static PanicReport ParsePanic(string file, JsonElement? header, string body, DateTime fallbackTime, long fileSize = 0)
     {
         string panicString = body;
         string os = Str(header, "os_version");
@@ -134,6 +144,8 @@ public static partial class DiagnosticReports
             PanickedProcess = task.Success ? task.Groups[1].Value.Trim() : "",
             BacktraceExtensions = BacktraceExtensions(lines),
             LastStartedExtension = last.Success ? last.Groups[1].Value : "",
+            PanicText = panicString.Length > 30000 ? panicString[..30000] + "\n…" : panicString,
+            FileSize = fileSize,
         };
     }
 
@@ -165,9 +177,9 @@ public static partial class DiagnosticReports
         p.Advice = pattern.Advice;
     }
 
-    public static CrashReport ParseIps(string file, JsonElement? header, string body, string bugType, DateTime fallbackTime)
+    public static CrashReport ParseIps(string file, JsonElement? header, string body, string bugType, DateTime fallbackTime, long fileSize = 0)
     {
-        string exType = "", signal = "", termination = "", proc = Str(header, "name");
+        string exType = "", signal = "", termination = "", proc = Str(header, "name"), procPath = "", parent = "";
         if (proc.Length == 0) proc = Str(header, "app_name");
         if (bugType == BugCrash && body.TrimStart().StartsWith('{'))
         {
@@ -182,6 +194,8 @@ public static partial class DiagnosticReports
                 }
                 if (root.TryGetProperty("termination", out var term)) termination = Str(term, "indicator");
                 if (proc.Length == 0) proc = Str(root, "procName");
+                procPath = Str(root, "procPath");
+                parent = Str(root, "parentProc");
             }
             catch (JsonException) { /* header only */ }
         }
@@ -205,6 +219,12 @@ public static partial class DiagnosticReports
             ExceptionType = exType,
             Signal = signal,
             Termination = termination,
+            AppVersion = Str(header, "app_version"),
+            BundleId = Str(header, "bundleID"),
+            ProcPath = procPath,
+            ParentProcess = parent,
+            OsVersion = Str(header, "os_version"),
+            FileSize = fileSize,
         };
     }
 

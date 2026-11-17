@@ -116,6 +116,9 @@ public sealed class Loc : INotifyPropertyChanged
         catch (FormatException) { return format; }
     }
 
+    /// <summary>Raw Mac table of a language (self-test: every language must have every Mac key).</summary>
+    public static IReadOnlyDictionary<string, string> MacTable(string code) => Table("MacLocales." + code);
+
     static readonly Dictionary<string, Dictionary<string, string>> Tables = new();
 
     static Dictionary<string, string> Table(string name)

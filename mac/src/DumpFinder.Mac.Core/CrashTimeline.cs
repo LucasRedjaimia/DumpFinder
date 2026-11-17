@@ -51,7 +51,7 @@ public static class CrashTimeline
                 Key = "panic:" + Path.GetFileName(p.File),
                 Time = t.LocalDateTime,
                 Category = CrashCategory.BSOD,
-                Title = PanicTitle(p, data),
+                Title = MacText.PanicTitle(p.PatternId, data),
                 TechLine = tech.Length > 0 ? tech : "kernel panic",
                 Panic = p,
             });
@@ -117,17 +117,6 @@ public static class CrashTimeline
         };
     }
 
-    static string PanicTitle(PanicReport p, DetectionData data)
-    {
-        if (p.PatternId.Length > 0)
-        {
-            var key = "mac.panic." + p.PatternId;
-            var t = Loc.S(key);
-            return t != key ? t : data.PanicPatterns.FirstOrDefault(x => x.Id == p.PatternId)?.Title ?? Loc.S("mac.category.panic");
-        }
-        return Loc.S("mac.category.panic");
-    }
-
     /// <summary>Home verdict (Windows: DiagnosticsEngine.BuildSmartDiagnosis), most serious signal first.</summary>
     static (string Title, string Body) Verdict(ScanResult r, List<CrashEntry> recent, DetectionData data, DateTime now)
     {
@@ -137,7 +126,7 @@ public static class CrashTimeline
             var p = panics[0].Panic!;
             var kext = p.BacktraceExtensions.FirstOrDefault(id => !id.StartsWith("com.apple.", StringComparison.OrdinalIgnoreCase));
             string body = kext is not null ? Loc.F("mac.verdict.panic_kext", kext)
-                        : p.PatternId.Length > 0 && Loc.S("mac.panic_body." + p.PatternId) is var b && b != "mac.panic_body." + p.PatternId ? b
+                        : MacText.PanicExplanation(p.PatternId, data) is { Length: > 0 } ex ? ex
                         : Loc.S("mac.verdict.panic_body");
             return (Loc.P("mac.verdict.panic_title", panics.Count), body);
         }

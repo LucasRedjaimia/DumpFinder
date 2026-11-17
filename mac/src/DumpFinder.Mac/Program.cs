@@ -13,8 +13,22 @@ internal static class Program
             return SelfTest.Run(Console.Out);
         if (args.Length > 0 && args[0] == "--report")
         {
+            // --report [--lang xx] [--format text|html|json|md]
+            string format = "text";
+            for (int i = 1; i + 1 < args.Length; i++)
+            {
+                if (args[i] == "--lang") Loc.SetLanguage(args[++i]);
+                else if (args[i] == "--format") format = args[++i];
+            }
             var result = DiagnosticsEngine.ScanAsync().GetAwaiter().GetResult();
-            Console.Write(TextReport.Build(result));
+            var summary = CrashTimeline.Build(result, DetectionData.Embedded, DateTime.Now);
+            Console.Write(format switch
+            {
+                "html" => ReportBuilder.Html(result, summary),
+                "json" => ReportBuilder.Json(result, summary),
+                "md" => ReportBuilder.Markdown(result, summary),
+                _ => ReportBuilder.Text(result, summary),
+            });
             return result.Findings.Count(f => f.Severity == Severity.Critical);
         }
 
