@@ -103,18 +103,34 @@ public static class McpServer
         Tool("mac_get_crash_detail",
             "Without crash_id: list the crashes of the last 30 days with their crash_id. With crash_id: full detail of one crash - plain explanation, analysis, evidence, suspect kernel extension and the full report text.",
             new JsonObject { ["crash_id"] = new JsonObject { ["type"] = "string", ["description"] = "Identifier returned by the list mode. Omit to list crashes." } }),
+        Tool("mac_list_fixes",
+            "List the Dump Finder fixes for this Mac (browser and Discord GPU acceleration, Power Nap, automatic security updates, First Aid) with their live state: Active, Recommended (a crash or panic of the last 30 days points at it), Optional or Tool.",
+            new JsonObject()),
+        Tool("mac_apply_fix",
+            "Apply or restore a Dump Finder fix by fix_id (see mac_list_fixes). SAFE BY DEFAULT: without confirm=true it only describes what would change (dry run). With confirm=true the user is asked on screen to approve; nothing changes unless they click Allow, and settings that need administrator rights also ask for the macOS password. Every applied change is recorded with its previous value and can be undone from Dump Finder (Tools > History).",
+            new JsonObject
+            {
+                ["fix_id"] = new JsonObject { ["type"] = "string", ["description"] = "Identifier of the fix from mac_list_fixes." },
+                ["restore"] = new JsonObject { ["type"] = "boolean", ["description"] = "Set true to restore the macOS default; false (default) to apply the fix." },
+                ["confirm"] = new JsonObject { ["type"] = "boolean", ["description"] = "false (default) = dry run, nothing is changed. true = request the change; the user must approve it on screen. Only set true after the user agreed in the conversation." },
+            }, required: "fix_id"),
         Tool("mac_export_report",
             "Full diagnostic report of this Mac (score, crashes, kernel panics, checks, extensions). format: 'markdown' (default, returned inline), 'json' (returned inline) or 'html' (saved to ~/Documents/DumpFinder/reports, path returned).",
             new JsonObject { ["format"] = new JsonObject { ["type"] = "string", ["enum"] = new JsonArray("markdown", "json", "html") } }),
     };
 
-    static JsonObject Tool(string name, string description, JsonObject properties) => new()
+    static JsonObject Tool(string name, string description, JsonObject properties, string? required = null)
     {
-        ["name"] = name,
-        ["description"] = description,
-        ["inputSchema"] = new JsonObject { ["type"] = "object", ["properties"] = properties },
-        ["annotations"] = new JsonObject { ["readOnlyHint"] = name != "mac_export_report" },
-    };
+        var schema = new JsonObject { ["type"] = "object", ["properties"] = properties };
+        if (required is not null) schema["required"] = new JsonArray(required);
+        return new JsonObject
+        {
+            ["name"] = name,
+            ["description"] = description,
+            ["inputSchema"] = schema,
+            ["annotations"] = new JsonObject { ["readOnlyHint"] = name is not ("mac_export_report" or "mac_apply_fix"), ["destructiveHint"] = false },
+        };
+    }
 
     static JsonObject CallTool(JsonObject? prm)
     {
@@ -129,6 +145,8 @@ public static class McpServer
                 "mac_analyze_panic_report" => AnalyzeReport(StrArg(args, "file_path")),
                 "mac_get_crash_detail" => (CrashDetail(StrArg(args, "crash_id")), false),
                 "mac_export_report" => (ExportReport(StrArg(args, "format")), false),
+                "mac_list_fixes" => (ListFixes(), false),
+                "mac_apply_fix" => ApplyFix(StrArg(args, "fix_id"), BoolArg(args, "restore"), BoolArg(args, "confirm")),
                 _ => ("Unknown tool: " + name, true),
             };
             return ToolResult(Privacy.Redact(text), isError);
@@ -149,6 +167,8 @@ public static class McpServer
         if (n.GetValueKind() == JsonValueKind.Number && n.GetValue<double>() is var d && d >= 0) return (int)d;
         return int.TryParse(n.ToString(), out var i) && i >= 0 ? i : fallback;
     }
+
+    static bool BoolArg(JsonObject a, string key) => a[key] is { } n && (n.GetValueKind() == JsonValueKind.True || n.ToString().Equals("true", StringComparison.OrdinalIgnoreCase));
 
     static string StrArg(JsonObject a, string key) => a[key]?.GetValueKind() == JsonValueKind.String ? a[key]!.GetValue<string>().Trim() : "";
 
@@ -285,6 +305,76 @@ public static class McpServer
                 return "HTML report saved: " + path;
             default: return ReportBuilder.Markdown(r, s);
         }
+    }
+
+    // ---------- Fixes ----------
+    static List<FixItem> Fixes()
+    {
+        var (r, s) = Scan(30);
+        return FixCatalog.Inspect(r, s);
+    }
+
+    static string ListFixes()
+    {
+        var sb = new StringBuilder("=== AVAILABLE FIXES ===\n");
+        foreach (var f in Fixes())
+        {
+            sb.AppendLine($"- fix_id: \"{f.Id}\" | [{f.Tag}] Status: {f.Status} | Current: {f.CurrentValue}{(f.Admin ? " | needs the administrator password" : "")}");
+            sb.AppendLine("  Title: " + f.Title);
+            sb.AppendLine("  Target: " + f.Target);
+            sb.AppendLine("  Explanation: " + f.Explanation);
+        }
+        return sb.ToString().TrimEnd();
+    }
+
+    /// <summary>Is this app open? (test hook: the self-test does not depend on what runs on the Mac)</summary>
+    public static Func<string, bool> AppRunning { get; set; } = app => Proc.Run("/usr/bin/pgrep", new[] { "-x", app }, 3000).ExitCode == 0;
+
+    /// <summary>Test hook: the self-test answers the on-screen approval.</summary>
+    public static Func<string, bool>? Approve { get; set; }
+
+    /// <summary>Windows ApplyFixGuarded: dry run by default; with confirm, an on-screen Allow / Don't Allow (default: Don't Allow).</summary>
+    static (string, bool) ApplyFix(string id, bool restore, bool confirm)
+    {
+        if (id.Length == 0) return ("Missing required parameter 'fix_id'.", true);
+        var fix = Fixes().FirstOrDefault(f => f.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+        if (fix is null) return ($"Unknown fix_id '{id}'. Call mac_list_fixes first.", true);
+        if (fix.IsTool) return ($"[REFUSED] '{fix.Id}' is a tool that opens Disk Utility, not a setting. Ask the user to run it from Dump Finder (Fixes page).", true);
+        if (fix.Status == FixStatus.Info) return ($"[REFUSED] {fix.Title}: {fix.CurrentValue}.", true);
+        if (restore && !fix.CanRestore) return ($"Nothing to restore for '{fix.Id}': {fix.CurrentValue}.", true);
+        var action = (restore ? "Restore the macOS default: " : "Apply: ") + fix.Title;
+        if (!confirm)
+            return ("[DRY RUN] Nothing was changed.\n" + action + "\nTarget: " + fix.Target + "\nCurrent value: " + fix.CurrentValue +
+                    "\nNeeds the administrator password: " + fix.Admin +
+                    "\nTo proceed, ask the user, then call again with confirm=true. They will also have to approve it on screen.", false);
+        if (fix.Process.Length > 0 && AppRunning(fix.Process))
+            return ($"[REFUSED] {fix.Process} is open: it rewrites its settings when it quits. Ask the user to quit {fix.Process}, then call again.", true);
+
+        // The approval box speaks the user's language (the MCP answers stay in English).
+        var lang = Loc.Current;
+        var saved = AppSettings.Load().Language;
+        if (saved.Length > 0) Loc.SetLanguage(saved);
+        var text = Loc.S("engine.mcp_server.an_ai_agent_connected_through_mcp") + (restore ? Loc.S("main_window.reset_to_default") : "") + fix.Title +
+                   "\n\n" + fix.Target + "\n" + Loc.S("engine.mcp_server.current_value") + fix.CurrentValue + "\n\n" + Loc.S("engine.mcp_server.the_current_value_is_saved_you");
+        var allow = Loc.S("mac.mcp.allow");
+        var deny = Loc.S("mac.mcp.deny");
+        Loc.SetLanguage(lang);
+        bool approved = Approve?.Invoke(text) ?? AskOnScreen(text, allow, deny);
+        if (!approved) return ("[DECLINED] The user refused this change on screen. Nothing was modified.", true);
+
+        var op = fix.Id + (restore ? "_restore" : "_apply");
+        var res = FixCatalog.RunAndRecord(new[] { op }, _ => (restore ? "↺ " : "") + fix.Title + " (MCP)")[0];
+        return ((res.Ok ? "[SUCCESS] " : "[FAILED] ") + res.Message +
+                (res.Ok && res.Changes.Count > 0 ? $"\nRecorded in the change journal ({res.Changes.Count} value(s)); undoable from Dump Finder." : ""), !res.Ok);
+    }
+
+    /// <summary>A native dialog from this headless process; the default button is the refusal; gives up after 2 minutes.</summary>
+    static bool AskOnScreen(string text, string allow, string deny)
+    {
+        var script = $"display dialog \"{Admin.AppleScriptEscape(text)}\" with title \"Dump Finder — MCP\" buttons {{\"{Admin.AppleScriptEscape(deny)}\", \"{Admin.AppleScriptEscape(allow)}\"}} " +
+                     $"default button \"{Admin.AppleScriptEscape(deny)}\" cancel button \"{Admin.AppleScriptEscape(deny)}\" with icon caution giving up after 120";
+        var r = Proc.Run("/usr/bin/osascript", new[] { "-e", script }, 130000);
+        return r.ExitCode == 0 && r.Stdout.Contains("button returned:" + allow, StringComparison.Ordinal) && !r.Stdout.Contains("gave up:true", StringComparison.Ordinal);
     }
 
     // ---------- Client registration (Settings › Integrations) ----------

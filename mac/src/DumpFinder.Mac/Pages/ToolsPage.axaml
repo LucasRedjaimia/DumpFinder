@@ -107,10 +107,34 @@
           <StackPanel>
             <TextBlock Classes="section" Text="{Binding L[history.change_journal]}" HorizontalAlignment="Left" />
             <TextBlock Classes="body" Text="{Binding L[history.every_fix_records_the_exact_value]}" Margin="0,6,0,10" />
-            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,4,0,6">
+            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,4,0,6" IsVisible="{Binding NoJournal}">
               <PathIcon Data="{StaticResource Icon.Lightbulb}" Width="16" Height="16" Foreground="{DynamicResource TextMuted}" />
               <TextBlock Text="{Binding L[history.no_changes_yet_applied_fixes_will]}" FontSize="13" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" VerticalAlignment="Center" />
             </StackPanel>
+            <!-- Windows RenderJournal: state tile, title, time · values changed (· undone on …), Undo or "Not undoable" -->
+            <ItemsControl ItemsSource="{Binding JournalRows}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="local:JournalRow">
+                  <Border Classes="row" Classes.first="{Binding First}" ToolTip.Tip="{Binding Tip}">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                      <Border Classes="tile neutral" Classes.success="{Binding IsSuccess}" Classes.danger="{Binding IsDanger}">
+                        <PathIcon Data="{Binding Icon, Converter={StaticResource Icon}}" />
+                      </Border>
+                      <StackPanel Grid.Column="1" Margin="12,0,10,0" VerticalAlignment="Center">
+                        <TextBlock Classes="strong" Text="{Binding Title}" />
+                        <TextBlock Classes="caption" Text="{Binding Sub}" TextTrimming="CharacterEllipsis" Margin="0,1,0,0" />
+                      </StackPanel>
+                      <Button Grid.Column="2" Classes="flat" VerticalAlignment="Center" IsVisible="{Binding CanUndo}"
+                              Content="{Binding $parent[UserControl].((local:MainViewModel)DataContext).L[history.undo]}"
+                              Command="{Binding $parent[UserControl].((local:MainViewModel)DataContext).UndoCommand}" CommandParameter="{Binding Id}" />
+                      <Border Grid.Column="2" Classes="pill" VerticalAlignment="Center" IsVisible="{Binding NotUndoable}">
+                        <TextBlock Text="{Binding $parent[UserControl].((local:MainViewModel)DataContext).L[history.not_undoable]}" />
+                      </Border>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
           </StackPanel>
         </Border>
       </StackPanel>

@@ -1,0 +1,88 @@
+<!-- Fixes, same layout as Windows (src/UI/MainWindow.cs BuildFixesPage / BuildFixCard): title and subtitle, Journal and
+     Apply recommended buttons, group pills, fix cards (title, status pill, tag, explanation, Apply, details drawer with the
+     current state, target and Restore). Windows' restore point, registry rollback and hardware filter have no Mac match. -->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:DumpFinder.Mac"
+             x:Class="DumpFinder.Mac.Pages.FixesPage"
+             x:DataType="local:MainViewModel">
+  <UserControl.Styles>
+    <Style Selector="Border.fixcard">
+      <Setter Property="Background" Value="{DynamicResource BgCard}" /><Setter Property="BorderBrush" Value="{DynamicResource BorderCard}" />
+      <Setter Property="BorderThickness" Value="1" /><Setter Property="CornerRadius" Value="12" /><Setter Property="Padding" Value="16,13" /><Setter Property="Margin" Value="0,0,0,8" />
+    </Style>
+    <Style Selector="Border.fixcard.recommended"><Setter Property="BorderBrush" Value="{DynamicResource WarnBorder}" /></Style>
+    <Style Selector="Border.status"><Setter Property="CornerRadius" Value="6" /><Setter Property="Padding" Value="7,1" /><Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Background" Value="{DynamicResource BgSubtle}" /><Setter Property="BorderBrush" Value="{DynamicResource BorderCard}" /><Setter Property="VerticalAlignment" Value="Center" /></Style>
+    <Style Selector="Border.status > TextBlock"><Setter Property="FontSize" Value="11" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="Foreground" Value="{DynamicResource TextSecondary}" /></Style>
+    <Style Selector="Border.status.applied"><Setter Property="Background" Value="{DynamicResource SuccessSoftBg}" /><Setter Property="BorderBrush" Value="{DynamicResource SuccessBorder}" /></Style>
+    <Style Selector="Border.status.applied > TextBlock"><Setter Property="Foreground" Value="{DynamicResource SuccessFg}" /></Style>
+    <Style Selector="Border.status.recommended"><Setter Property="Background" Value="{DynamicResource WarnSoftBg}" /><Setter Property="BorderBrush" Value="{DynamicResource WarnBorder}" /></Style>
+    <Style Selector="Border.status.recommended > TextBlock"><Setter Property="Foreground" Value="{DynamicResource WarnFg}" /></Style>
+    <Style Selector="Border.vtag"><Setter Property="CornerRadius" Value="6" /><Setter Property="Padding" Value="6,1" /><Setter Property="Background" Value="{DynamicResource BgSubtle}" /><Setter Property="VerticalAlignment" Value="Center" /></Style>
+    <Style Selector="Border.vtag > TextBlock"><Setter Property="FontSize" Value="11" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="Foreground" Value="{DynamicResource TextMuted}" /></Style>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="Auto,Auto,*">
+    <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,14">
+      <StackPanel Margin="0,0,16,0">
+        <TextBlock Classes="title" Text="{Binding L[main_window.fixes_protections]}" />
+        <TextBlock Classes="subtitle" Text="{Binding L[main_window.automatic_registry_snapshot_saved_before]}" Margin="0,2,0,0" />
+      </StackPanel>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+        <Button Classes="flat" Height="34" Command="{Binding JournalCommand}" ToolTip.Tip="{Binding L[history.every_change_dump_finder_made_undoable]}">
+          <StackPanel Orientation="Horizontal"><PathIcon Data="{StaticResource Icon.Document}" /><TextBlock Text="{Binding L[history.journal]}" /></StackPanel>
+        </Button>
+        <Button Classes="primary" Height="34" IsEnabled="{Binding HasRecommended}" Command="{Binding ApplyAllCommand}">
+          <StackPanel Orientation="Horizontal"><PathIcon Data="{StaticResource Icon.Lightning}" /><TextBlock Text="{Binding ApplyAllText}" /></StackPanel>
+        </Button>
+      </StackPanel>
+    </Grid>
+
+    <WrapPanel Grid.Row="1" Margin="0,0,0,14">
+      <Button Classes="segment" Classes.active="{Binding IsGroupAll}" Margin="0,0,7,4" Content="{Binding L[localizer.all]}" Command="{Binding FixGroupCommand}" CommandParameter="0" />
+      <Button Classes="segment" Classes.active="{Binding IsGroupApps}" Margin="0,0,7,4" Content="{Binding L[localizer.browsers_discord]}" Command="{Binding FixGroupCommand}" CommandParameter="1" />
+      <Button Classes="segment" Classes.active="{Binding IsGroupSystem}" Margin="0,0,7,4" Content="{Binding L[localizer.system_repair]}" Command="{Binding FixGroupCommand}" CommandParameter="2" />
+    </WrapPanel>
+
+    <ScrollViewer Grid.Row="2">
+      <ItemsControl ItemsSource="{Binding FixCards}" Margin="0,0,6,16">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="local:FixCardRow">
+            <Border Classes="fixcard" Classes.recommended="{Binding IsRecommended}">
+              <StackPanel>
+                <Grid ColumnDefinitions="*,Auto">
+                  <StackPanel Margin="0,0,14,0">
+                    <WrapPanel>
+                      <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,8,0" />
+                      <Border Classes="status" Classes.applied="{Binding IsApplied}" Classes.recommended="{Binding IsRecommended}" Margin="0,0,6,0"><TextBlock Text="{Binding Status}" /></Border>
+                      <Border Classes="vtag" IsVisible="{Binding HasTag}" Margin="0,0,6,0"><TextBlock Text="{Binding Tag}" /></Border>
+                      <Border Classes="vtag" IsVisible="{Binding IsAdmin}"><TextBlock Text="{Binding AdminText}" /></Border>
+                    </WrapPanel>
+                    <TextBlock Text="{Binding Explanation}" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" LineHeight="17" Margin="0,5,0,0" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Top">
+                    <Button Classes="flat" Classes.primary="{Binding IsRecommended}" MinWidth="118" Content="{Binding ApplyText}" IsEnabled="{Binding CanApply}"
+                            Command="{Binding $parent[UserControl].((local:MainViewModel)DataContext).ApplyFixCommand}" CommandParameter="{Binding Id}" />
+                    <Button Classes="flat subtle" Padding="10,7" Content="{Binding Chevron}" Command="{Binding ToggleCommand}"
+                            ToolTip.Tip="{Binding $parent[UserControl].((local:MainViewModel)DataContext).L[main_window.details]}" />
+                  </StackPanel>
+                </Grid>
+                <Border Background="{DynamicResource BgSubtle}" CornerRadius="8" Padding="12,9" Margin="0,10,0,0" IsVisible="{Binding Expanded}">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel>
+                      <TextBlock Text="{Binding Current}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap" />
+                      <SelectableTextBlock Text="{Binding Target}" FontFamily="Menlo, monospace" FontSize="11" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" Margin="0,3,0,0" />
+                    </StackPanel>
+                    <Button Grid.Column="1" Classes="flat" FontSize="11.5" VerticalAlignment="Center" Margin="10,0,0,0" IsVisible="{Binding HasRestore}" Content="{Binding RestoreText}"
+                            Command="{Binding $parent[UserControl].((local:MainViewModel)DataContext).RestoreFixCommand}" CommandParameter="{Binding Id}" />
+                  </Grid>
+                </Border>
+              </StackPanel>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

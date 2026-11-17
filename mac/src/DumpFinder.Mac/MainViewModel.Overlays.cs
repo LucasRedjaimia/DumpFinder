@@ -60,7 +60,8 @@ public sealed partial class MainViewModel
         CheckUpdateNowCommand = new(CheckUpdateNowAsync, () => !_checkingUpdate);
         EscapeCommand = new(() =>
         {
-            if (Update is not null) Update = null;
+            if (ConfirmVisible) CloseConfirm(false);
+            else if (Update is not null) Update = null;
             else if (OnboardingVisible) EndOnboarding();
             else CloseDetailCommand.Execute(null);
             return Task.CompletedTask;

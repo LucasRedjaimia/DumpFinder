@@ -35,7 +35,11 @@ public interface IPlatform
     void Open(string pathOrUrl);
 }
 
-public sealed record ActionRow(string Icon, string Tone, string Title, string Sub, bool First) : Toned(Tone);
+/// <summary>A Home recommended action; FixId set when it is a fix (Apply button), empty for a check to look at.</summary>
+public sealed record ActionRow(string Icon, string Tone, string Title, string Sub, bool First, string FixId = "") : Toned(Tone)
+{
+    public bool HasFix => FixId.Length > 0;
+}
 
 public sealed record ToastItem(string Tone, string Icon, string Text) : Toned(Tone);
 
@@ -87,7 +91,8 @@ public sealed partial class MainViewModel : Observable
         ScanCommand = new RelayCommand(() => ScanAsync(), () => !IsScanning);
         ReportCommand = new RelayCommand(SaveHtmlReportAsync, () => _result is not null);
         ToggleSidebarCommand = new RelayCommand(() => { SidebarCollapsed = !SidebarCollapsed; return Task.CompletedTask; });
-        HeroPrimaryCommand = new RelayCommand(() => { Page = TabHardware; return Task.CompletedTask; });
+        // Windows OnHeroPrimaryClick: apply the recommended fixes, else the checks of the Hardware page.
+        HeroPrimaryCommand = new RelayCommand(() => { if (HeroAppliesFixes) return ApplyAllAsync(); Page = TabHardware; return Task.CompletedTask; });
         // Windows OnHeroSecondaryClick: the crash to look at, else the whole-system AI check-up.
         HeroSecondaryCommand = new RelayCommand(() => { if (_focusKey is not null) OpenCrash(_focusKey); else OpenSystemReview(); return Task.CompletedTask; });
         InitCrashes();
@@ -106,6 +111,8 @@ public sealed partial class MainViewModel : Observable
             Update = Update;
             foreach (var n in new[] { nameof(AiCredentialCaption), nameof(AskAiLabel), nameof(RunCheckUpLabel) }) Raise(n);
             RaiseMonitoring();
+            RenderJournal();
+            RenderOptimize();
             ResetAiOutput();
             RefreshMcp();
         };
@@ -128,9 +135,10 @@ public sealed partial class MainViewModel : Observable
         set
         {
             if (!Set(ref _page, Math.Clamp(value, 0, 6))) return;
-            foreach (var n in new[] { nameof(IsHome), nameof(IsCrashes), nameof(IsHardware), nameof(IsFixes), nameof(IsOptimize), nameof(IsTools), nameof(IsSettings), nameof(IsSoon), nameof(SoonTitle) })
+            foreach (var n in new[] { nameof(IsHome), nameof(IsCrashes), nameof(IsHardware), nameof(IsFixes), nameof(IsOptimize), nameof(IsTools), nameof(IsSettings) })
                 Raise(n);
             ShowSectionTip(_page);
+            if (_page == TabOptimize) RenderOptimize();
         }
     }
     public bool IsHome => Page == TabHome;
@@ -140,9 +148,7 @@ public sealed partial class MainViewModel : Observable
     public bool IsOptimize => Page == TabOptimize;
     public bool IsTools => Page == TabTools;
     public bool IsSettings => Page == TabSettings;
-    /// <summary>Sections not adapted to macOS yet (Fixes, Optimize): shared "coming soon" page.</summary>
-    public bool IsSoon => Page is TabFixes or TabOptimize;
-    public string SoonTitle => Loc.Plain(Loc.S(Page == TabFixes ? "main_window.fixes" : "main_window.optimize"));
+
 
     bool _sidebarCollapsed;
     public bool SidebarCollapsed
@@ -154,6 +160,7 @@ public sealed partial class MainViewModel : Observable
             Raise(nameof(SidebarExpanded));
             Raise(nameof(SidebarWidth));
             Raise(nameof(ShowHardwareBadge));
+            Raise(nameof(ShowFixesBadge));
             _settings.SidebarCollapsed = value;
             _settings.Save();
         }
@@ -322,7 +329,6 @@ public sealed partial class MainViewModel : Observable
         // The ComboBox drops its selection when its items are replaced: put it back.
         var t = _themeIndex; _themeIndex = -1; Raise(nameof(ThemeIndex)); _themeIndex = t; Raise(nameof(ThemeIndex));
         Raise(nameof(VersionText));
-        Raise(nameof(SoonTitle));
     }
 
     void Fill(ScanResult r) => Fill(r, CrashTimeline.Build(r, DetectionData.Embedded, DateTime.Now));
@@ -385,6 +391,7 @@ public sealed partial class MainViewModel : Observable
 
         RenderHardware(r);
         ReportText = ReportBuilder.Text(r, s);
+        _ = RefreshFixesAsync();
     }
 
     CrashRow ToRow(CrashEntry c, DateTime now, bool first)

@@ -1,6 +1,6 @@
 # Dump Finder for Mac (prototype)
 
-Apple Silicon version of Dump Finder: it explains why a Mac crashes or restarts and points at the usual culprits. Read-only for now: it changes nothing on the Mac. Network access: the update check (GitHub releases API, at launch, can be turned off in Settings) and, only when you click "Ask the AI", the AI provider you chose (Google Gemini, Anthropic Claude, or Ollama on this Mac). What goes to the AI goes through `Privacy.Redact` first.
+Apple Silicon version of Dump Finder: it explains why a Mac crashes or restarts and points at the usual culprits. It changes something only when you click a fix or an Optimize action, and every change can be undone from Tools › History. Network access: the update check (GitHub releases API, at launch, can be turned off in Settings) and, only when you click "Ask the AI", the AI provider you chose (Google Gemini, Anthropic Claude, or Ollama on this Mac). What goes to the AI goes through `Privacy.Redact` first.
 
 ## What it reads
 
@@ -72,7 +72,7 @@ The two apps have their own interface (WPF on Windows, Avalonia here) but look a
 
 ## Not done yet
 
-Next steps, in order: Fixes and Optimize (journal and undo; Tools › History shows an empty journal until then), stability test (CPU / memory / disk, GPU through Metal; the Hardware pill comes with it). Notarization needs an Apple Developer account.
+Next step: stability test (CPU / memory / disk, GPU through Metal; the Hardware pill comes with it). Notarization needs an Apple Developer account.
 
 Update check: it cannot use `/releases/latest` (always the Windows release). It lists the releases, keeps the newest published `mac-v*` one and opens its `DumpFinder-mac-*.zip` in the browser: nothing is downloaded or installed by the app. Unlike Windows, it does not refresh the detection data (that file is embedded on the Mac).
 
@@ -82,8 +82,26 @@ Font: the app uses Helvetica Neue, not SF. SF is a variable font and Avalonia's 
 
 Same as Windows: Settings › AI assistant picks Google Gemini (newest "flash" model), Anthropic Claude (official Anthropic SDK, Claude Opus 5.5 by default, effort medium, server-side refusal fallback) or Ollama on this Mac; "Ask the AI" streams the answer into the crash panel, a second click stops it. The key is stored in the login Keychain through `/usr/bin/security` (written on stdin, never as an argument), not in `settings.json`.
 
-`DumpFinder --mcp` is the Model Context Protocol server (same protocol layer as Windows). Its tools read this Mac: `mac_scan_system`, `mac_check_hardware_and_conflicts`, `mac_analyze_panic_report`, `mac_get_crash_detail`, `mac_export_report`; every answer is redacted. The Windows fix tools (`list_fixes`, `apply_fix` with on-screen approval) come with the Mac fixes. Settings › Integrations adds it to Claude Desktop (`~/Library/Application Support/Claude/claude_desktop_config.json`) or Antigravity (`~/.gemini/config/mcp_config.json`, the Windows location under the home folder), keeping the other servers and a `.bak` copy, or copies the `claude mcp add` / `gemini mcp add` command. The command points at the running binary, so register again after moving the app.
+`DumpFinder --mcp` is the Model Context Protocol server (same protocol layer as Windows). Its tools read this Mac: `mac_scan_system`, `mac_check_hardware_and_conflicts`, `mac_analyze_panic_report`, `mac_get_crash_detail`, `mac_list_fixes`, `mac_apply_fix`, `mac_export_report`; every answer is redacted. Settings › Integrations adds it to Claude Desktop (`~/Library/Application Support/Claude/claude_desktop_config.json`) or Antigravity (`~/.gemini/config/mcp_config.json`, the Windows location under the home folder), keeping the other servers and a `.bak` copy, or copies the `claude mcp add` / `gemini mcp add` command. The command points at the running binary, so register again after moving the app.
 
 ## Sentinel
 
 Settings › Monitoring, same as Windows: with the Sentinel on, a menu bar icon (Open · Rescan · Quit) stays after the window is closed (the red button hides it, ⌘Q quits), and a notification comes as soon as macOS writes a kernel panic or a low-memory (Jetsam) report in the diagnostic report folders (Windows: GPU, WHEA, NVMe and commit events of the System log). "Open at login" writes a per-user LaunchAgent (`~/Library/LaunchAgents/io.github.lucasredjaimia.dumpfinder.sentinel.plist`, `--tray`), kept pointing at the app when it moves, refused while macOS runs the app from a translocated copy. Notifications go through `NSUserNotificationCenter`; a click brings the app forward on what the alert was about.
+
+## Fixes, Optimize and the change journal
+
+Same flows as Windows: one change at a time, the result as a toast, every change written to `history/journal.json` with the exact previous value, Undo from Tools › History.
+
+| Fixes (Windows match) | What it changes | Rights |
+|---|---|---|
+| GPU acceleration in Chrome / Edge / Brave (Skia Graphite fixes) | `hardware_acceleration_mode.enabled` in the browser's `Local State`, backed up first; the browser is closed first, on approval | user |
+| GPU acceleration in Discord (`discord_hwaccel`) | `enableHardwareAcceleration` in Discord's `settings.json`, backed up first | user |
+| Power Nap (sleep / wake panics) | `pmset -a powernap 0`, previous value recorded | administrator password |
+| Security responses and system files (Windows Update protections) | `CriticalUpdateInstall`, `ConfigDataInstall` in `/Library/Preferences/com.apple.SoftwareUpdate` | administrator password |
+| First Aid (SFC) | opens Disk Utility | — |
+
+A fix is Recommended when the last 30 days point at it (a crash of that browser or Discord, a sleep / wake panic) or when updates are not automatic. Admin commands of a batch share one password prompt (`osascript … with administrator privileges`). Windows' restore point, registry rollback and hardware filter have no Mac match.
+
+Optimize: Settings (Finder and Apple advertising preferences, `defaults`), Startup (per-user LaunchAgents: disabling unloads the agent and moves its plist aside, nothing is deleted), Cleanup (app caches, old app logs, Xcode DerivedData moved to the Trash, so Undo puts them back; crash reports are never touched), Myths. Windows' Apps tab (removing preinstalled Store apps) has no Mac match.
+
+MCP: `mac_list_fixes` and `mac_apply_fix` (dry run by default; with `confirm`, a native Allow / Don't Allow dialog whose default is Don't Allow, plus the password prompt for admin fixes; refused while the browser or Discord is open).

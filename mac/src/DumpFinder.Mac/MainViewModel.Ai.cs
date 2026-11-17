@@ -265,6 +265,6 @@ public sealed partial class MainViewModel
         McpPreview = (
             "// Claude Desktop : " + McpServer.ClaudeDesktopConfigPath + "\n" +
             "{ \"mcpServers\": { \"" + McpServer.ServerName + "\": { \"command\": \"" + exe + "\", \"args\": [\"--mcp\"] } } }\n" +
-            "// Tools (5) : scan_system • check_hardware_and_conflicts • analyze_panic_report • get_crash_detail • export_report");
+            "// Tools (7) : scan_system • check_hardware_and_conflicts • analyze_panic_report • get_crash_detail • list_fixes • apply_fix (dry run + on-screen approval) • export_report");
     }
 }
