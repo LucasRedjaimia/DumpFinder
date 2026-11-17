@@ -343,5 +343,16 @@
   "crashes.ask_the_ai_sends_this_crash": "\"Yapay zekâya sor\", bu çökmeyi ve Mac profilinizi Ayarlar'da yapılandırılan asistana gönderir.",
   "ai.dump_finder_embeds_a_model_context": "Dump Finder yerleşik bir Model Context Protocol sunucusu içerir. Bağlandıktan sonra yapay zekâ ajanınız çökmelerinizi sorgulayabilir, donanımınızı denetleyebilir ve .panic ile .ips raporlarınızı çözümleyebilir.",
   "ai.mcp_server_antigravity_claude_code_gemin": "MCP sunucusu (Claude Desktop · Claude Code · Gemini CLI · Antigravity)",
-  "mac.mcp.move_to_applications": "Önce Dump Finder'ı Uygulamalar klasörüne taşıyın ve oradan açın: macOS onu geçici bir kopyadan çalıştırıyor; bir yapay zekâ uygulaması bu kopyayı daha sonra bulamaz."
+  "mac.mcp.move_to_applications": "Önce Dump Finder'ı Uygulamalar klasörüne taşıyın ve oradan açın: macOS onu geçici bir kopyadan çalıştırıyor; bir yapay zekâ uygulaması bu kopyayı daha sonra bulamaz.",
+  "mac.sentinel.panic_title": "Çekirdek paniği",
+  "mac.sentinel.panic_body": "macOS az önce bir çekirdek paniği raporu yazdı. Analizi görmek için tıklayın.",
+  "mac.sentinel.memory_title": "Mac'inizin belleği tükendi",
+  "mac.sentinel.memory_body": "macOS bellek boşaltmak için uygulamaları kapattı. Birleşik bellek kartını görmek için tıklayın.",
+  "settings.stays_in_the_notification_area_and": "Menü çubuğunda kalır ve bir çekirdek paniği veya bellek yetersizliği kaydedildiği anda sizi uyarır.",
+  "sentinel.start_with_windows": "Girişte aç",
+  "sentinel.starts_the_sentinel_at_sign_in": "Sentinel'i oturum açılışında pencere olmadan başlatır. Ciddi bir çökme olduysa bir bildirim sizi uyarır.",
+  "sentinel.dump_finder_will_start_with_windows": "Dump Finder, girişte menü çubuğunda sessizce açılacak.",
+  "sentinel.your_pc_crashed": "Mac'iniz çöktü: {0}",
+  "tray_sentinel.sentinel_active_in_the_background_0": "Sentinel menü çubuğunda etkin. Bir çekirdek paniği veya bellek yetersizliği olursa bildirim alacaksınız.",
+  "health.sentinel_enabled_background_tray_monitor": "Sentinel etkinleştirildi: menü çubuğundan arka plan izleme etkin."
 }

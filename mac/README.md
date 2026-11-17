@@ -33,6 +33,8 @@ Command-line modes:
 | `DumpFinder --report` | Scans and prints a text report. Exit code: number of critical findings |
 | `DumpFinder --selftest` | Parsers and rules on synthetic inputs (no access to the Mac). Exit code: failed checks |
 | `DumpFinder --mcp` | MCP server for AI agents (JSON-RPC over stdio, headless, English) |
+| `DumpFinder --tray` | Login start of the Sentinel: no window, menu bar icon, a notification if a severe crash happened meanwhile (quits at once when the Sentinel is off) |
+| `DumpFinder --notify-test` | Posts a test notification (run it from the .app: notifications need the bundle) |
 | `DumpFinder --screenshot <folder>` | Scans, saves every tab as a PNG, quits (the PNGs show this Mac's data) |
 
 ## Package and release
@@ -70,7 +72,7 @@ The two apps have their own interface (WPF on Windows, Avalonia here) but look a
 
 ## Not done yet
 
-Next steps, in order: Sentinel (menu bar, notifications, login item), Fixes and Optimize (journal and undo; Tools › History shows an empty journal until then), stability test (CPU / memory / disk, GPU through Metal; the Hardware pill comes with it). Notarization needs an Apple Developer account.
+Next steps, in order: Fixes and Optimize (journal and undo; Tools › History shows an empty journal until then), stability test (CPU / memory / disk, GPU through Metal; the Hardware pill comes with it). Notarization needs an Apple Developer account.
 
 Update check: it cannot use `/releases/latest` (always the Windows release). It lists the releases, keeps the newest published `mac-v*` one and opens its `DumpFinder-mac-*.zip` in the browser: nothing is downloaded or installed by the app. Unlike Windows, it does not refresh the detection data (that file is embedded on the Mac).
 
@@ -81,3 +83,7 @@ Font: the app uses Helvetica Neue, not SF. SF is a variable font and Avalonia's 
 Same as Windows: Settings › AI assistant picks Google Gemini (newest "flash" model), Anthropic Claude (official Anthropic SDK, Claude Opus 5.5 by default, effort medium, server-side refusal fallback) or Ollama on this Mac; "Ask the AI" streams the answer into the crash panel, a second click stops it. The key is stored in the login Keychain through `/usr/bin/security` (written on stdin, never as an argument), not in `settings.json`.
 
 `DumpFinder --mcp` is the Model Context Protocol server (same protocol layer as Windows). Its tools read this Mac: `mac_scan_system`, `mac_check_hardware_and_conflicts`, `mac_analyze_panic_report`, `mac_get_crash_detail`, `mac_export_report`; every answer is redacted. The Windows fix tools (`list_fixes`, `apply_fix` with on-screen approval) come with the Mac fixes. Settings › Integrations adds it to Claude Desktop (`~/Library/Application Support/Claude/claude_desktop_config.json`) or Antigravity (`~/.gemini/config/mcp_config.json`, the Windows location under the home folder), keeping the other servers and a `.bak` copy, or copies the `claude mcp add` / `gemini mcp add` command. The command points at the running binary, so register again after moving the app.
+
+## Sentinel
+
+Settings › Monitoring, same as Windows: with the Sentinel on, a menu bar icon (Open · Rescan · Quit) stays after the window is closed (the red button hides it, ⌘Q quits), and a notification comes as soon as macOS writes a kernel panic or a low-memory (Jetsam) report in the diagnostic report folders (Windows: GPU, WHEA, NVMe and commit events of the System log). "Open at login" writes a per-user LaunchAgent (`~/Library/LaunchAgents/io.github.lucasredjaimia.dumpfinder.sentinel.plist`, `--tray`), kept pointing at the app when it moves, refused while macOS runs the app from a translocated copy. Notifications go through `NSUserNotificationCenter`; a click brings the app forward on what the alert was about.

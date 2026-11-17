@@ -343,5 +343,16 @@
   "crashes.ask_the_ai_sends_this_crash": "«Запитати ШІ» надсилає цей збій і профіль вашого Mac асистенту, налаштованому в «Налаштуваннях».",
   "ai.dump_finder_embeds_a_model_context": "Dump Finder містить вбудований сервер Model Context Protocol. Після підключення ваш ШІ-агент зможе запитувати ваші збої, перевіряти обладнання й декодувати ваші звіти .panic і .ips.",
   "ai.mcp_server_antigravity_claude_code_gemin": "MCP-сервер (Claude Desktop · Claude Code · Gemini CLI · Antigravity)",
-  "mac.mcp.move_to_applications": "Спершу перемістіть Dump Finder у папку «Програми» й відкрийте його звідти: macOS запускає його з тимчасової копії, яку ШІ-програма потім не зможе знайти."
+  "mac.mcp.move_to_applications": "Спершу перемістіть Dump Finder у папку «Програми» й відкрийте його звідти: macOS запускає його з тимчасової копії, яку ШІ-програма потім не зможе знайти.",
+  "mac.sentinel.panic_title": "Паніка ядра",
+  "mac.sentinel.panic_body": "macOS щойно записала звіт про паніку ядра. Натисніть, щоб переглянути аналіз.",
+  "mac.sentinel.memory_title": "Вашому Mac забракло пам'яті",
+  "mac.sentinel.memory_body": "macOS закрила програми, щоб звільнити пам'ять. Натисніть, щоб переглянути картку «Уніфікована пам'ять».",
+  "settings.stays_in_the_notification_area_and": "Працює в рядку меню і попереджає вас, щойно зареєстровано паніку ядра чи брак пам'яті.",
+  "sentinel.start_with_windows": "Відкривати під час входу",
+  "sentinel.starts_the_sentinel_at_sign_in": "Запускає Вартового під час входу, без вікна. Якщо стався серйозний збій, вас повідомить сповіщення.",
+  "sentinel.dump_finder_will_start_with_windows": "Dump Finder відкриватиметься під час входу, тихо в рядку меню.",
+  "sentinel.your_pc_crashed": "Ваш Mac дав збій {0}",
+  "tray_sentinel.sentinel_active_in_the_background_0": "Вартовий працює в рядку меню. Ви отримаєте сповіщення, якщо станеться паніка ядра чи брак пам'яті.",
+  "health.sentinel_enabled_background_tray_monitor": "Вартового ввімкнено: фоновий моніторинг у рядку меню активний."
 }

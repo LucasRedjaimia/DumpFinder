@@ -343,5 +343,16 @@
   "crashes.ask_the_ai_sends_this_crash": "\"Vraag het de AI\" stuurt deze crash en je Mac-profiel naar de assistent die in Instellingen is ingesteld.",
   "ai.dump_finder_embeds_a_model_context": "Dump Finder bevat een Model Context Protocol-server. Eenmaal verbonden kan je AI-agent je crashes opvragen, je hardware controleren en je .panic- en .ips-rapporten decoderen.",
   "ai.mcp_server_antigravity_claude_code_gemin": "MCP-server (Claude Desktop · Claude Code · Gemini CLI · Antigravity)",
-  "mac.mcp.move_to_applications": "Verplaats Dump Finder eerst naar de map Apps en open het vanaf daar: macOS voert het nu uit vanaf een tijdelijke kopie, die een AI-app later niet meer zou kunnen vinden."
+  "mac.mcp.move_to_applications": "Verplaats Dump Finder eerst naar de map Apps en open het vanaf daar: macOS voert het nu uit vanaf een tijdelijke kopie, die een AI-app later niet meer zou kunnen vinden.",
+  "mac.sentinel.panic_title": "Kernel panic",
+  "mac.sentinel.panic_body": "macOS heeft net een rapport van een kernel panic geschreven. Klik om de analyse te bekijken.",
+  "mac.sentinel.memory_title": "Je Mac had te weinig geheugen",
+  "mac.sentinel.memory_body": "macOS heeft apps gesloten om geheugen vrij te maken. Klik om de kaart Geïntegreerd geheugen te bekijken.",
+  "settings.stays_in_the_notification_area_and": "Blijft in de menubalk en waarschuwt je zodra er een kernel panic of geheugentekort wordt gelogd.",
+  "sentinel.start_with_windows": "Open bij inloggen",
+  "sentinel.starts_the_sentinel_at_sign_in": "Start Sentinel bij het inloggen, zonder venster. Is er een ernstige crash geweest, dan krijg je een melding.",
+  "sentinel.dump_finder_will_start_with_windows": "Dump Finder wordt voortaan geopend bij het inloggen, onopvallend in de menubalk.",
+  "sentinel.your_pc_crashed": "Je Mac is {0} gecrasht",
+  "tray_sentinel.sentinel_active_in_the_background_0": "Sentinel actief in de menubalk. Je krijgt een melding als er een kernel panic of geheugentekort optreedt.",
+  "health.sentinel_enabled_background_tray_monitor": "Sentinel ingeschakeld: bewaking vanuit de menubalk actief."
 }

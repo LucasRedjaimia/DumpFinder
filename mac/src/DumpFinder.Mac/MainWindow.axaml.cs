@@ -11,6 +11,7 @@ namespace DumpFinder.Mac;
 public partial class MainWindow : Window, IPlatform
 {
     readonly MainViewModel _vm;
+    readonly SentinelHost? _sentinel;
 
     /// <summary>
     /// --screenshot &lt;folder&gt; [--theme light|dark] [--lang xx] [--collapsed]: scans, saves every section as a PNG,
@@ -41,6 +42,20 @@ public partial class MainWindow : Window, IPlatform
         _vm = new MainViewModel(settings, this);
         if (ScreenshotFolder is not null && ScreenshotCollapsed) _vm.SidebarCollapsed = true;
         DataContext = _vm;
+        if (ScreenshotFolder is null)
+        {
+            _sentinel = new SentinelHost(this, _vm);
+            _vm.SentinelToggled += _sentinel.SetEnabled;
+            _sentinel.SetEnabled(settings.SentinelEnabled);
+            LoginItem.RefreshPathIfEnabled(McpServer.ExePath);
+        }
+        // Red button: with the Sentinel on, the window hides and the menu bar icon stays (Windows: tray).
+        Closing += (_, e) => { if (_sentinel?.HideInsteadOfClose() == true) e.Cancel = true; };
+        Closed += (_, _) =>
+        {
+            _sentinel?.Dispose();
+            if (Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime d) d.Shutdown();
+        };
         // Introduction: Right / Enter = next, Left = back (Windows Onboarding keys); Escape is a key binding.
         AddHandler(KeyDownEvent, (_, e) =>
         {
@@ -54,6 +69,20 @@ public partial class MainWindow : Window, IPlatform
             await _vm.ScanAsync();
             if (ScreenshotFolder is { } folder) await CaptureAsync(folder);
         };
+    }
+
+    /// <summary>⌘Q or the menu bar Quit: closing the window then really quits.</summary>
+    public void AllowExit()
+    {
+        if (_sentinel is not null) _sentinel.ForceExit = true;
+    }
+
+    /// <summary>Login start (--tray): no window, menu bar icon, background check for crashes since last time.</summary>
+    public void StartInBackground()
+    {
+        if (_sentinel is null || !_sentinel.IsEnabled) return;
+        MacNative.SetDockIconVisible(false);
+        _ = _sentinel.StartInBackgroundAsync();
     }
 
     // ---------- IPlatform ----------

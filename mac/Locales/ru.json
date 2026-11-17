@@ -343,5 +343,16 @@
   "crashes.ask_the_ai_sends_this_crash": "«Спросить ИИ» отправляет этот сбой и профиль вашего Mac ассистенту, настроенному в разделе «Настройки».",
   "ai.dump_finder_embeds_a_model_context": "В Dump Finder встроен сервер Model Context Protocol. После подключения ваш ИИ-агент сможет запрашивать сведения о сбоях, проверять оборудование и расшифровывать ваши отчёты .panic и .ips.",
   "ai.mcp_server_antigravity_claude_code_gemin": "MCP-сервер (Claude Desktop · Claude Code · Gemini CLI · Antigravity)",
-  "mac.mcp.move_to_applications": "Сначала переместите Dump Finder в папку «Программы» и откройте его оттуда: macOS запускает его из временной копии, которую ИИ-приложение потом не сможет найти."
+  "mac.mcp.move_to_applications": "Сначала переместите Dump Finder в папку «Программы» и откройте его оттуда: macOS запускает его из временной копии, которую ИИ-приложение потом не сможет найти.",
+  "mac.sentinel.panic_title": "Паника ядра",
+  "mac.sentinel.panic_body": "macOS только что записала отчёт о панике ядра. Нажмите, чтобы посмотреть анализ.",
+  "mac.sentinel.memory_title": "Вашему Mac не хватило памяти",
+  "mac.sentinel.memory_body": "macOS закрыла приложения, чтобы освободить память. Нажмите, чтобы открыть карточку «Единая память».",
+  "settings.stays_in_the_notification_area_and": "Работает в строке меню и предупреждает вас, как только регистрируется паника ядра или нехватка памяти.",
+  "sentinel.start_with_windows": "Открывать при входе",
+  "sentinel.starts_the_sentinel_at_sign_in": "Запускает Sentinel при входе в систему, без окна. Если произошёл серьёзный сбой, вы получите уведомление.",
+  "sentinel.dump_finder_will_start_with_windows": "Dump Finder будет открываться при входе в систему, тихо, в строке меню.",
+  "sentinel.your_pc_crashed": "Сбой Mac {0}",
+  "tray_sentinel.sentinel_active_in_the_background_0": "Sentinel работает в строке меню. Вы получите уведомление при панике ядра или нехватке памяти.",
+  "health.sentinel_enabled_background_tray_monitor": "Sentinel включён: фоновый мониторинг из строки меню активен."
 }

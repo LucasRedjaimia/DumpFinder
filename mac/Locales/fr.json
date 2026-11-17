@@ -343,5 +343,16 @@
   "crashes.ask_the_ai_sends_this_crash": "« Demander à l'IA » envoie ce crash et le profil de ton Mac à l'assistant configuré dans Paramètres.",
   "ai.dump_finder_embeds_a_model_context": "Dump Finder intègre un serveur Model Context Protocol. Une fois connecté, ton agent IA peut consulter tes crashs, vérifier ton matériel et décoder tes rapports .panic et .ips.",
   "ai.mcp_server_antigravity_claude_code_gemin": "Serveur MCP (Claude Desktop · Claude Code · Gemini CLI · Antigravity)",
-  "mac.mcp.move_to_applications": "Déplace d'abord Dump Finder dans le dossier Applications et ouvre-le depuis là : macOS le lance depuis une copie temporaire, qu'une app d'IA ne retrouverait pas ensuite."
+  "mac.mcp.move_to_applications": "Déplace d'abord Dump Finder dans le dossier Applications et ouvre-le depuis là : macOS le lance depuis une copie temporaire, qu'une app d'IA ne retrouverait pas ensuite.",
+  "mac.sentinel.panic_title": "Panique du noyau",
+  "mac.sentinel.panic_body": "macOS vient d'écrire un rapport de panique du noyau. Clique pour voir l'analyse.",
+  "mac.sentinel.memory_title": "Ton Mac a manqué de mémoire",
+  "mac.sentinel.memory_body": "macOS a fermé des apps pour libérer de la mémoire. Clique pour voir la carte Mémoire.",
+  "settings.stays_in_the_notification_area_and": "Reste dans la barre des menus et te prévient dès qu'une panique du noyau ou un manque de mémoire est enregistré.",
+  "sentinel.start_with_windows": "Ouvrir à la connexion",
+  "sentinel.starts_the_sentinel_at_sign_in": "Lance la Sentinelle à l'ouverture de session, sans fenêtre. Si un crash grave a eu lieu, une notification te le signale.",
+  "sentinel.dump_finder_will_start_with_windows": "Dump Finder s'ouvrira à la connexion, discrètement dans la barre des menus.",
+  "sentinel.your_pc_crashed": "Ton Mac a planté {0}",
+  "tray_sentinel.sentinel_active_in_the_background_0": "Sentinelle active dans la barre des menus. Tu seras alerté en cas de panique du noyau ou de manque de mémoire.",
+  "health.sentinel_enabled_background_tray_monitor": "Sentinelle activée : surveillance en arrière-plan depuis la barre des menus."
 }

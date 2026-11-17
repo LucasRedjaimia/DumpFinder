@@ -1,5 +1,6 @@
 using System.Globalization;
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Converters;
 using Avalonia.Markup.Xaml;
@@ -19,7 +20,23 @@ public partial class App : Application
         Loc.SetLanguage(string.IsNullOrEmpty(settings.Language) ? Loc.SystemLanguage() : settings.Language);
         ApplyTheme(settings.Theme);
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-            desktop.MainWindow = new MainWindow(settings);
+        {
+            // The app lives while the Sentinel does: closing the window does not quit it then.
+            desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            bool tray = desktop.Args?.Contains(LoginItem.TrayArg) == true;
+            if (tray && !settings.SentinelEnabled)
+            {
+                // Started at login but the Sentinel was turned off since: nothing to do (Windows: same).
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => desktop.Shutdown());
+            }
+            else
+            {
+                var window = new MainWindow(settings);
+                desktop.ShutdownRequested += (_, _) => window.AllowExit();
+                if (tray) window.StartInBackground();
+                else desktop.MainWindow = window;
+            }
+        }
         base.OnFrameworkInitializationCompleted();
     }
 

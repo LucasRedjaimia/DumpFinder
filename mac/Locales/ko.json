@@ -343,5 +343,16 @@
   "crashes.ask_the_ai_sends_this_crash": "\"AI에게 묻기\"는 이 크래시와 Mac 프로필을 설정에서 지정한 어시스턴트로 보내요.",
   "ai.dump_finder_embeds_a_model_context": "Dump Finder에는 Model Context Protocol 서버가 내장되어 있어요. 연결하면 AI 에이전트가 크래시를 조회하고, 하드웨어를 점검하고, .panic 및 .ips 보고서를 해석할 수 있어요.",
   "ai.mcp_server_antigravity_claude_code_gemin": "MCP 서버(Claude Desktop · Claude Code · Gemini CLI · Antigravity)",
-  "mac.mcp.move_to_applications": "먼저 Dump Finder를 응용 프로그램 폴더로 옮긴 다음 거기에서 열어 주세요. macOS가 지금 임시 복사본에서 실행하고 있어서 AI 앱이 나중에 찾지 못해요."
+  "mac.mcp.move_to_applications": "먼저 Dump Finder를 응용 프로그램 폴더로 옮긴 다음 거기에서 열어 주세요. macOS가 지금 임시 복사본에서 실행하고 있어서 AI 앱이 나중에 찾지 못해요.",
+  "mac.sentinel.panic_title": "커널 패닉",
+  "mac.sentinel.panic_body": "macOS가 방금 커널 패닉 보고서를 작성했어요. 클릭하면 분석을 볼 수 있어요.",
+  "mac.sentinel.memory_title": "Mac의 메모리가 부족했어요",
+  "mac.sentinel.memory_body": "macOS가 메모리를 확보하려고 앱을 종료했어요. 클릭하면 통합 메모리 카드를 볼 수 있어요.",
+  "settings.stays_in_the_notification_area_and": "메뉴 막대에 상주하면서 커널 패닉이나 메모리 부족이 기록되는 즉시 알려 드려요.",
+  "sentinel.start_with_windows": "로그인 시 열기",
+  "sentinel.starts_the_sentinel_at_sign_in": "로그인할 때 창 없이 센티널을 시작해요. 심각한 크래시가 발생했다면 알림으로 알려 드려요.",
+  "sentinel.dump_finder_will_start_with_windows": "Dump Finder가 로그인할 때 메뉴 막대에서 조용히 열려요.",
+  "sentinel.your_pc_crashed": "Mac 크래시 발생: {0}",
+  "tray_sentinel.sentinel_active_in_the_background_0": "센티널이 메뉴 막대에서 실행 중이에요. 커널 패닉이나 메모리 부족이 발생하면 알려 드려요.",
+  "health.sentinel_enabled_background_tray_monitor": "센티널 사용: 메뉴 막대에서 백그라운드 모니터링 중이에요."
 }

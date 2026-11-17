@@ -343,5 +343,16 @@
   "crashes.ask_the_ai_sends_this_crash": "«Preguntar a la IA» envía este fallo y el perfil de tu Mac al asistente configurado en Ajustes.",
   "ai.dump_finder_embeds_a_model_context": "Dump Finder incluye un servidor MCP para que tu agente IA consulte fallos, hardware e informes .panic y .ips.",
   "ai.mcp_server_antigravity_claude_code_gemin": "Servidor MCP (Claude Desktop · Claude Code · Gemini CLI · Antigravity)",
-  "mac.mcp.move_to_applications": "Mueve primero Dump Finder a la carpeta Aplicaciones y ábrelo desde allí: macOS lo está ejecutando desde una copia temporal, que una app de IA no podría encontrar después."
+  "mac.mcp.move_to_applications": "Mueve primero Dump Finder a la carpeta Aplicaciones y ábrelo desde allí: macOS lo está ejecutando desde una copia temporal, que una app de IA no podría encontrar después.",
+  "mac.sentinel.panic_title": "Kernel panic",
+  "mac.sentinel.panic_body": "macOS acaba de escribir un informe de kernel panic. Haz clic para ver el análisis.",
+  "mac.sentinel.memory_title": "Tu Mac se quedó sin memoria",
+  "mac.sentinel.memory_body": "macOS cerró apps para liberar memoria. Haz clic para ver la tarjeta Memoria unificada.",
+  "settings.stays_in_the_notification_area_and": "Permanece en la barra de menús y avisa en cuanto se registra un kernel panic o una falta de memoria.",
+  "sentinel.start_with_windows": "Abrir al iniciar sesión",
+  "sentinel.starts_the_sentinel_at_sign_in": "Inicia el Centinela al iniciar sesión, sin ventana.",
+  "sentinel.dump_finder_will_start_with_windows": "Dump Finder se abrirá al iniciar sesión, discretamente en la barra de menús.",
+  "sentinel.your_pc_crashed": "Tu Mac falló {0}",
+  "tray_sentinel.sentinel_active_in_the_background_0": "Centinela activo en la barra de menús. Recibirás una alerta si se produce un kernel panic o una falta de memoria.",
+  "health.sentinel_enabled_background_tray_monitor": "Centinela activado en la barra de menús."
 }

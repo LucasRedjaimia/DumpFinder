@@ -343,5 +343,16 @@
   "crashes.ask_the_ai_sends_this_crash": "„KI fragen“ sendet diesen Absturz und dein Mac-Profil an den in den Einstellungen gewählten Assistenten.",
   "ai.dump_finder_embeds_a_model_context": "Dump Finder enthält einen MCP-Server, über den KI-Agenten Abstürze, Hardware sowie .panic- und .ips-Berichte abfragen können.",
   "ai.mcp_server_antigravity_claude_code_gemin": "MCP-Server (Claude Desktop · Claude Code · Gemini CLI · Antigravity)",
-  "mac.mcp.move_to_applications": "Bewege Dump Finder zuerst in den Ordner „Programme“ und öffne es von dort: macOS führt es gerade aus einer temporären Kopie aus, die eine KI-App später nicht mehr finden würde."
+  "mac.mcp.move_to_applications": "Bewege Dump Finder zuerst in den Ordner „Programme“ und öffne es von dort: macOS führt es gerade aus einer temporären Kopie aus, die eine KI-App später nicht mehr finden würde.",
+  "mac.sentinel.panic_title": "Kernel-Panic",
+  "mac.sentinel.panic_body": "macOS hat gerade einen Kernel-Panic-Bericht geschrieben. Klicke, um die Analyse zu sehen.",
+  "mac.sentinel.memory_title": "Deinem Mac ist der Arbeitsspeicher ausgegangen",
+  "mac.sentinel.memory_body": "macOS hat Apps beendet, um Speicher freizugeben. Klicke, um die Karte „Gemeinsamer Arbeitsspeicher“ zu sehen.",
+  "settings.stays_in_the_notification_area_and": "Bleibt in der Menüleiste und meldet sofort Kernel-Panics oder Arbeitsspeichermangel.",
+  "sentinel.start_with_windows": "Beim Anmelden öffnen",
+  "sentinel.starts_the_sentinel_at_sign_in": "Startet den Wächter bei der Anmeldung, ohne Fenster.",
+  "sentinel.dump_finder_will_start_with_windows": "Dump Finder wird beim Anmelden geöffnet, unauffällig in der Menüleiste.",
+  "sentinel.your_pc_crashed": "Dein Mac ist abgestürzt: {0}",
+  "tray_sentinel.sentinel_active_in_the_background_0": "Wächter in der Menüleiste aktiv. Du wirst bei einer Kernel-Panic oder Arbeitsspeichermangel benachrichtigt.",
+  "health.sentinel_enabled_background_tray_monitor": "Wächter in der Menüleiste aktiviert."
 }
