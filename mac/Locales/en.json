@@ -336,5 +336,12 @@
   "mac.tools.software_update_desc": "macOS updates, which also carry the firmware of the Mac.",
   "mac.tools.privacy_security": "Privacy & Security",
   "mac.tools.privacy_security_desc": "Gatekeeper, blocked software and extensions waiting for your approval.",
-  "mac.toast.saved": "Saved: "
+  "mac.toast.saved": "Saved: ",
+  "mac.ai.role": "You are a senior Mac hardware and macOS crash engineer (kernel panics, WindowServer watchdog, kernel and system extensions, Apple Silicon, unified memory, APFS / SSD, Thunderbolt and USB-C docks). Analyze the real Dump Finder for Mac telemetry below and provide: 1) Most likely root cause, 2) Prioritized actionable fixes (macOS update, extension to update or remove, accessory, hardware, settings), 3) What NOT to touch unnecessarily. Reply concisely in English.",
+  "mac.ai.key_not_saved": "The API key could not be saved in the Keychain.",
+  "settings.used_by_ask_the_ai_on": "Used by \"Ask the AI\" on each crash. Your key stays in this Mac's Keychain. Without a key, \"Copy prompt\" prepares a report to paste into any assistant.",
+  "crashes.ask_the_ai_sends_this_crash": "\"Ask the AI\" sends this crash and your Mac's profile to the assistant set up in Settings.",
+  "ai.dump_finder_embeds_a_model_context": "Dump Finder embeds a Model Context Protocol server. Once connected, your AI agent can query your crashes, audit your hardware and decode your .panic and .ips reports.",
+  "ai.mcp_server_antigravity_claude_code_gemin": "MCP server (Claude Desktop · Claude Code · Gemini CLI · Antigravity)",
+  "mac.mcp.move_to_applications": "Move Dump Finder to the Applications folder and open it from there first: macOS is running it from a temporary copy, which an AI app could not find later."
 }

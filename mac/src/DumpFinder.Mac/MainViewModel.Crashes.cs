@@ -38,7 +38,7 @@ public sealed partial class MainViewModel
 
     void InitCrashes()
     {
-        SelectCrashCommand = new(p => { _selectedKey = p as string; RenderCrashes(); return Task.CompletedTask; });
+        SelectCrashCommand = new(p => { _selectedKey = p as string; SystemReviewVisible = false; RenderCrashes(); return Task.CompletedTask; });
         OpenCrashCommand = new(p => { if (p is string k) OpenCrash(k); return Task.CompletedTask; });
         CloseDetailCommand = new(() => { _selectedKey = null; DetailVisible = false; RenderCrashes(keepClosed: true); return Task.CompletedTask; });
         CopyForumCommand = new(CopyForumAsync);
@@ -68,6 +68,7 @@ public sealed partial class MainViewModel
             _categoryIndex = 0; Raise(nameof(CategoryIndex));
         }
         _selectedKey = key;
+        SystemReviewVisible = false;
         RenderCrashes();
     }
 
@@ -156,7 +157,7 @@ public sealed partial class MainViewModel
     bool _detailVisible;
     string _detailTitle = "", _detailMeta = "", _detailCategory = "", _detailTone = "", _detailPlain = "", _detailEvidence = "";
     string _detailExtension = "", _detailExtensionInfo = "", _detailFull = "", _detailFile = "";
-    public bool DetailVisible { get => _detailVisible; private set => Set(ref _detailVisible, value); }
+    public bool DetailVisible { get => _detailVisible; private set { Set(ref _detailVisible, value); Raise(nameof(DetailShown)); } }
     public string DetailTitle { get => _detailTitle; private set => Set(ref _detailTitle, value); }
     public string DetailMeta { get => _detailMeta; private set => Set(ref _detailMeta, value); }
     public string DetailCategory { get => _detailCategory; private set => Set(ref _detailCategory, value); }
@@ -178,6 +179,7 @@ public sealed partial class MainViewModel
 
     void ShowDetail(CrashEntry? c)
     {
+        if (c?.Key != _detail?.Key) OnDetailChanged(c?.Key);
         _detail = c;
         DetailVisible = c is not null;
         DetailAnalysis.Clear();

@@ -336,5 +336,12 @@
   "mac.tools.software_update_desc": "Aktualizacje macOS, które zawierają też firmware Maca.",
   "mac.tools.privacy_security": "Prywatność i ochrona",
   "mac.tools.privacy_security_desc": "Gatekeeper, zablokowane oprogramowanie i rozszerzenia czekające na twoją zgodę.",
-  "mac.toast.saved": "Zapisano: "
+  "mac.toast.saved": "Zapisano: ",
+  "mac.ai.role": "Jesteś doświadczonym inżynierem od sprzętu Mac i awarii macOS (panika jądra, watchdog WindowServer, rozszerzenia jądra i rozszerzenia systemowe, Apple Silicon, pamięć zunifikowana, APFS / SSD, stacje dokujące Thunderbolt i USB-C). Przeanalizuj poniższą rzeczywistą telemetrię z Dump Finder dla Maca i podaj: 1) najbardziej prawdopodobną przyczynę źródłową, 2) konkretne poprawki uszeregowane według priorytetu (aktualizacja macOS, rozszerzenie do zaktualizowania lub usunięcia, akcesorium, sprzęt, ustawienia), 3) czego NIE ruszać bez potrzeby. Odpowiedz zwięźle po polsku.",
+  "mac.ai.key_not_saved": "Nie udało się zapisać klucza API w pęku kluczy.",
+  "settings.used_by_ask_the_ai_on": "Używany przez \"Zapytaj AI\" przy każdej awarii. Twój klucz zostaje w pęku kluczy tego Maca. Bez klucza \"Kopiuj prompt\" przygotowuje raport do wklejenia do dowolnego asystenta.",
+  "crashes.ask_the_ai_sends_this_crash": "\"Zapytaj AI\" wysyła tę awarię i profil twojego Maca do asystenta skonfigurowanego w Ustawieniach.",
+  "ai.dump_finder_embeds_a_model_context": "Dump Finder zawiera wbudowany serwer Model Context Protocol. Po połączeniu twój agent AI może przeglądać twoje awarie, audytować sprzęt i dekodować twoje raporty .panic i .ips.",
+  "ai.mcp_server_antigravity_claude_code_gemin": "Serwer MCP (Claude Desktop · Claude Code · Gemini CLI · Antigravity)",
+  "mac.mcp.move_to_applications": "Najpierw przenieś Dump Finder do folderu Aplikacje i otwórz go stamtąd: macOS uruchamia go z tymczasowej kopii, której aplikacja AI nie znalazłaby później."
 }

@@ -336,5 +336,12 @@
   "mac.tools.software_update_desc": "As atualizações do macOS, que também trazem o firmware do Mac.",
   "mac.tools.privacy_security": "Privacidade e Segurança",
   "mac.tools.privacy_security_desc": "Gatekeeper, softwares bloqueados e extensões aguardando sua aprovação.",
-  "mac.toast.saved": "Salvo: "
+  "mac.toast.saved": "Salvo: ",
+  "mac.ai.role": "Você é um engenheiro especialista em hardware de Mac e falhas do macOS (kernel panics, watchdog do WindowServer, extensões de kernel e de sistema, Apple Silicon, memória unificada, APFS / SSD, docks Thunderbolt e USB-C). Analise o relatório real do Dump Finder para Mac abaixo e forneça: 1) Causa raiz mais provável, 2) Soluções prioritárias passo a passo (atualização do macOS, extensão a atualizar ou remover, acessório, hardware, configurações), 3) O que evitar alterar sem necessidade. Responda em português de forma clara e estruturada.",
+  "mac.ai.key_not_saved": "Não foi possível salvar a chave de API nas Chaves.",
+  "settings.used_by_ask_the_ai_on": "Usado por «Perguntar à IA» em cada falha. Sua chave fica nas Chaves deste Mac. Sem chave, «Copiar prompt» prepara um relatório para colar em qualquer assistente.",
+  "crashes.ask_the_ai_sends_this_crash": "«Perguntar à IA» envia esta falha e o perfil do Mac ao assistente configurado em Configurações.",
+  "ai.dump_finder_embeds_a_model_context": "O Dump Finder inclui um servidor MCP para que seu agente IA consulte falhas, hardware e relatórios .panic e .ips.",
+  "ai.mcp_server_antigravity_claude_code_gemin": "Servidor MCP (Claude Desktop · Claude Code · Gemini CLI · Antigravity)",
+  "mac.mcp.move_to_applications": "Mova primeiro o Dump Finder para a pasta Aplicativos e abra-o a partir dela: o macOS está executando-o a partir de uma cópia temporária, que um app de IA não conseguiria encontrar depois."
 }

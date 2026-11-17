@@ -336,5 +336,12 @@
   "mac.tools.software_update_desc": "Mac'in donanım yazılımını da içeren macOS güncellemeleri.",
   "mac.tools.privacy_security": "Gizlilik ve Güvenlik",
   "mac.tools.privacy_security_desc": "Gatekeeper, engellenen yazılımlar ve onayınızı bekleyen uzantılar.",
-  "mac.toast.saved": "Kaydedildi: "
+  "mac.toast.saved": "Kaydedildi: ",
+  "mac.ai.role": "Siz kıdemli bir Mac donanımı ve macOS çökmesi mühendisisiniz (çekirdek panikleri, WindowServer watchdog, çekirdek ve sistem uzantıları, Apple Silicon, birleşik bellek, APFS / SSD, Thunderbolt ve USB-C dock'ları). Aşağıdaki gerçek Mac için Dump Finder telemetrisini analiz edin ve şunları verin: 1) En olası kök neden, 2) Önceliğe göre sıralanmış uygulanabilir düzeltmeler (macOS güncellemesi, güncellenecek veya kaldırılacak uzantı, aksesuar, donanım, ayarlar), 3) Gereksiz yere DOKUNULMAMASI gerekenler. Kısa ve öz biçimde Türkçe yanıt verin.",
+  "mac.ai.key_not_saved": "API anahtarı Anahtar Zinciri'ne kaydedilemedi.",
+  "settings.used_by_ask_the_ai_on": "Her çökmedeki \"Yapay zekâya sor\" tarafından kullanılır. Anahtarınız bu Mac'in Anahtar Zinciri'nde kalır. Anahtar olmadan \"İstemi kopyala\", herhangi bir asistana yapıştırılacak bir rapor hazırlar.",
+  "crashes.ask_the_ai_sends_this_crash": "\"Yapay zekâya sor\", bu çökmeyi ve Mac profilinizi Ayarlar'da yapılandırılan asistana gönderir.",
+  "ai.dump_finder_embeds_a_model_context": "Dump Finder yerleşik bir Model Context Protocol sunucusu içerir. Bağlandıktan sonra yapay zekâ ajanınız çökmelerinizi sorgulayabilir, donanımınızı denetleyebilir ve .panic ile .ips raporlarınızı çözümleyebilir.",
+  "ai.mcp_server_antigravity_claude_code_gemin": "MCP sunucusu (Claude Desktop · Claude Code · Gemini CLI · Antigravity)",
+  "mac.mcp.move_to_applications": "Önce Dump Finder'ı Uygulamalar klasörüne taşıyın ve oradan açın: macOS onu geçici bir kopyadan çalıştırıyor; bir yapay zekâ uygulaması bu kopyayı daha sonra bulamaz."
 }

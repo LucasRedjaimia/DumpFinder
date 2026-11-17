@@ -8,6 +8,9 @@ internal static class Program
     [STAThread]
     public static int Main(string[] args)
     {
+        // MCP server for AI agents (Claude Desktop, Claude Code, Gemini CLI…): headless, JSON-RPC over stdio.
+        if (args.Length > 0 && args[0] == "--mcp")
+            return McpServer.RunStdio();
         // Command-line modes, same spirit as the Windows --*-selftest switches.
         if (args.Length > 0 && args[0] == "--selftest")
             return SelfTest.Run(Console.Out);

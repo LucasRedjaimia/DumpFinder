@@ -336,5 +336,12 @@
   "mac.tools.software_update_desc": "macOS-updates, die ook de firmware van de Mac bevatten.",
   "mac.tools.privacy_security": "Privacy en beveiliging",
   "mac.tools.privacy_security_desc": "Gatekeeper, geblokkeerde software en extensies die op je goedkeuring wachten.",
-  "mac.toast.saved": "Opgeslagen: "
+  "mac.toast.saved": "Opgeslagen: ",
+  "mac.ai.role": "Je bent een ervaren engineer in Mac-hardware en macOS-crashes (kernel panics, WindowServer-watchdog, kernel- en systeemextensies, Apple silicon, geïntegreerd geheugen, APFS / SSD, Thunderbolt- en USB-C-docks). Analyseer de echte telemetrie van Dump Finder voor Mac hieronder en geef: 1) De meest waarschijnlijke hoofdoorzaak, 2) Uitvoerbare oplossingen op volgorde van prioriteit (macOS-update, extensie om bij te werken of te verwijderen, accessoire, hardware, instellingen), 3) Wat je NIET onnodig moet aanpassen. Antwoord beknopt in het Nederlands.",
+  "mac.ai.key_not_saved": "De API-sleutel kon niet in de sleutelhanger worden bewaard.",
+  "settings.used_by_ask_the_ai_on": "Gebruikt door \"Vraag het de AI\" bij elke crash. Je sleutel blijft in de sleutelhanger van deze Mac. Zonder sleutel maakt \"Prompt kopiëren\" een rapport klaar om in een willekeurige assistent te plakken.",
+  "crashes.ask_the_ai_sends_this_crash": "\"Vraag het de AI\" stuurt deze crash en je Mac-profiel naar de assistent die in Instellingen is ingesteld.",
+  "ai.dump_finder_embeds_a_model_context": "Dump Finder bevat een Model Context Protocol-server. Eenmaal verbonden kan je AI-agent je crashes opvragen, je hardware controleren en je .panic- en .ips-rapporten decoderen.",
+  "ai.mcp_server_antigravity_claude_code_gemin": "MCP-server (Claude Desktop · Claude Code · Gemini CLI · Antigravity)",
+  "mac.mcp.move_to_applications": "Verplaats Dump Finder eerst naar de map Apps en open het vanaf daar: macOS voert het nu uit vanaf een tijdelijke kopie, die een AI-app later niet meer zou kunnen vinden."
 }

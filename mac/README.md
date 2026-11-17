@@ -1,6 +1,6 @@
 # Dump Finder for Mac (prototype)
 
-Apple Silicon version of Dump Finder: it explains why a Mac crashes or restarts and points at the usual culprits. Read-only for now: it changes nothing on the Mac. The only network access is the update check (GitHub releases API, at launch, can be turned off in Settings).
+Apple Silicon version of Dump Finder: it explains why a Mac crashes or restarts and points at the usual culprits. Read-only for now: it changes nothing on the Mac. Network access: the update check (GitHub releases API, at launch, can be turned off in Settings) and, only when you click "Ask the AI", the AI provider you chose (Google Gemini, Anthropic Claude, or Ollama on this Mac). What goes to the AI goes through `Privacy.Redact` first.
 
 ## What it reads
 
@@ -32,6 +32,7 @@ Command-line modes:
 |---|---|
 | `DumpFinder --report` | Scans and prints a text report. Exit code: number of critical findings |
 | `DumpFinder --selftest` | Parsers and rules on synthetic inputs (no access to the Mac). Exit code: failed checks |
+| `DumpFinder --mcp` | MCP server for AI agents (JSON-RPC over stdio, headless, English) |
 | `DumpFinder --screenshot <folder>` | Scans, saves every tab as a PNG, quits (the PNGs show this Mac's data) |
 
 ## Package and release
@@ -50,8 +51,8 @@ From `main`. The first run creates `mac/release-notes/v0.2.0.md` and stops; fill
 
 ## Layout
 
-- `src/DumpFinder.Mac.Core`: probes (`DiagnosticReports`, `SystemProbe`), rules (`DiagnosticsEngine`), Hardware cards and extensions (`HardwareChecks`, levels taken from the rules), crash timeline and score (`CrashTimeline`), crash detail (`CrashDetails`), known issues (`KnowledgeBase`), exports (`ReportBuilder`: HTML, JSON, Markdown, text), `Privacy`, update check (`UpdateChecker`), texts (`Loc`), settings and history (`AppStore`), self-test. No UI dependency.
-- `src/DumpFinder.Mac`: Avalonia window with the same shell as Windows (title bar, sidebar with the 7 sections and ⌘1…7, canvas, status line, toasts), Home, Crashes (History with filters and detail panel, Common crashes), Hardware (Hardware · Conflicts · Extensions), Tools (macOS tools · Report & export · History), Settings (language, theme, updates, introduction), the 3-step introduction and the new-version card.
+- `src/DumpFinder.Mac.Core`: probes (`DiagnosticReports`, `SystemProbe`), rules (`DiagnosticsEngine`), Hardware cards and extensions (`HardwareChecks`, levels taken from the rules), crash timeline and score (`CrashTimeline`), crash detail (`CrashDetails`), known issues (`KnowledgeBase`), exports (`ReportBuilder`: HTML, JSON, Markdown, text), `Privacy`, update check (`UpdateChecker`), AI assistant (`AiAssistant`, `ClaudeAdvisor`, key in the Keychain through `SecretStore`), MCP server (`McpServer`), texts (`Loc`), settings and history (`AppStore`), self-test. No UI dependency.
+- `src/DumpFinder.Mac`: Avalonia window with the same shell as Windows (title bar, sidebar with the 7 sections and ⌘1…7, canvas, status line, toasts), Home, Crashes (History with filters and detail panel, Common crashes), Hardware (Hardware · Conflicts · Extensions), Tools (macOS tools · Report & export · History), Settings (language, theme, updates, introduction, AI assistant, MCP integrations), "Ask the AI" in the crash panel and the AI check-up from Home, the 3-step introduction and the new-version card.
 - `Locales/`: Mac texts (`mac.*` keys, 14 languages) and the Mac wording of shared keys that name Windows or the PC. Every check, explanation and article is a key: `--selftest` fails when a language misses a key or a placeholder.
 
 ## Same app as on Windows
@@ -69,8 +70,14 @@ The two apps have their own interface (WPF on Windows, Avalonia here) but look a
 
 ## Not done yet
 
-Next steps, in order: AI assistant ("Ask the AI" in the crash panel) and MCP server, Sentinel (menu bar, notifications, login item), Fixes and Optimize (journal and undo; Tools › History shows an empty journal until then), stability test (CPU / memory / disk, GPU through Metal; the Hardware pill comes with it). Notarization needs an Apple Developer account.
+Next steps, in order: Sentinel (menu bar, notifications, login item), Fixes and Optimize (journal and undo; Tools › History shows an empty journal until then), stability test (CPU / memory / disk, GPU through Metal; the Hardware pill comes with it). Notarization needs an Apple Developer account.
 
 Update check: it cannot use `/releases/latest` (always the Windows release). It lists the releases, keeps the newest published `mac-v*` one and opens its `DumpFinder-mac-*.zip` in the browser: nothing is downloaded or installed by the app. Unlike Windows, it does not refresh the detection data (that file is embedded on the Mac).
 
 Font: the app uses Helvetica Neue, not SF. SF is a variable font and Avalonia's renderer drops the accent of composite capitals (É, Ü…) at SemiBold and Bold weights.
+
+## AI assistant and MCP
+
+Same as Windows: Settings › AI assistant picks Google Gemini (newest "flash" model), Anthropic Claude (official Anthropic SDK, Claude Opus 5.5 by default, effort medium, server-side refusal fallback) or Ollama on this Mac; "Ask the AI" streams the answer into the crash panel, a second click stops it. The key is stored in the login Keychain through `/usr/bin/security` (written on stdin, never as an argument), not in `settings.json`.
+
+`DumpFinder --mcp` is the Model Context Protocol server (same protocol layer as Windows). Its tools read this Mac: `mac_scan_system`, `mac_check_hardware_and_conflicts`, `mac_analyze_panic_report`, `mac_get_crash_detail`, `mac_export_report`; every answer is redacted. The Windows fix tools (`list_fixes`, `apply_fix` with on-screen approval) come with the Mac fixes. Settings › Integrations adds it to Claude Desktop (`~/Library/Application Support/Claude/claude_desktop_config.json`) or Antigravity (`~/.gemini/config/mcp_config.json`, the Windows location under the home folder), keeping the other servers and a `.bak` copy, or copies the `claude mcp add` / `gemini mcp add` command. The command points at the running binary, so register again after moving the app.

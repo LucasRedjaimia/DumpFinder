@@ -60,6 +60,49 @@
         </StackPanel>
       </Border>
 
+      <!-- AI assistant (Windows provider card): provider + Claude model | key or Ollama model | Copy prompt -->
+      <TextBlock Text="{Binding L[settings.ai_assistant]}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="2,0,0,4" />
+      <TextBlock Text="{Binding L[settings.used_by_ask_the_ai_on]}" FontSize="13" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="2,0,0,10" />
+      <Border Classes="card" Padding="18,14,18,16" Margin="0,0,0,18">
+        <Grid ColumnDefinitions="225,12,*,12,Auto">
+          <StackPanel>
+            <TextBlock Text="{Binding L[ai.ai_provider]}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}" Margin="2,0,0,4" />
+            <ComboBox HorizontalAlignment="Stretch" ItemsSource="{Binding AiProviders}" SelectedIndex="{Binding AiProviderIndex}" AutomationProperties.Name="{Binding L[ai.ai_provider]}" />
+            <ComboBox HorizontalAlignment="Stretch" Margin="0,8,0,0" ItemsSource="{Binding ClaudeModelNames}" SelectedIndex="{Binding ClaudeModelIndex}"
+                      IsVisible="{Binding IsClaude}" AutomationProperties.Name="{Binding L[ai.claude_model]}" />
+          </StackPanel>
+          <StackPanel Grid.Column="2">
+            <TextBlock Text="{Binding AiCredentialCaption}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}" Margin="2,0,0,4" />
+            <TextBox PasswordChar="•" RevealPassword="False" Text="{Binding ApiKey}" IsVisible="{Binding NeedsKey}" AutomationProperties.Name="{Binding AiCredentialCaption}" />
+            <TextBox Text="{Binding OllamaModel}" IsVisible="{Binding IsOllama}" AutomationProperties.Name="{Binding AiCredentialCaption}" />
+          </StackPanel>
+          <Button Grid.Column="4" Classes="flat accenttext" VerticalAlignment="Bottom" Command="{Binding CopyAiPromptCommand}">
+            <StackPanel Orientation="Horizontal"><PathIcon Data="{StaticResource Icon.Copy}" /><TextBlock Text="{Binding L[ai.copy_prompt]}" /></StackPanel>
+          </Button>
+        </Grid>
+      </Border>
+
+      <!-- Integrations (Windows MCP card): status badge, description, configuration preview, enable / copy buttons -->
+      <TextBlock Text="{Binding L[settings.integrations]}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="2,0,0,8" />
+      <Border Classes="card" Padding="18,16" Margin="0,0,0,22">
+        <StackPanel>
+          <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,8">
+            <TextBlock Text="{Binding L[ai.mcp_server_antigravity_claude_code_gemin]}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" TextWrapping="Wrap" />
+            <Border Grid.Column="1" Classes="pill" Classes.success="{Binding McpRegistered}" Padding="10,3"><TextBlock Text="{Binding McpStatus}" /></Border>
+          </Grid>
+          <TextBlock Text="{Binding L[ai.dump_finder_embeds_a_model_context]}" FontSize="13" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,0,0,12" />
+          <Border Background="{DynamicResource BgInput}" BorderBrush="{DynamicResource BorderCard}" BorderThickness="1" CornerRadius="8" Padding="12,9" Margin="0,0,0,12">
+            <SelectableTextBlock Text="{Binding McpPreview}" FontFamily="Menlo, monospace" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" />
+          </Border>
+          <WrapPanel>
+            <Button Classes="primary" Margin="0,0,8,6" Content="{Binding L[ai.enable_in_claude_desktop]}" Command="{Binding RegisterClaudeDesktopCommand}" />
+            <Button Classes="primary" Margin="0,0,8,6" Content="{Binding L[ai.enable_in_antigravity]}" Command="{Binding RegisterAntigravityCommand}" />
+            <Button Classes="flat" Margin="0,0,8,6" Content="{Binding L[ai.copy_claude_code_command]}" Command="{Binding CopyClaudeCodeCommand}" />
+            <Button Classes="flat" Margin="0,0,0,6" Content="{Binding L[ai.copy_gemini_cli_command]}" Command="{Binding CopyGeminiCommand}" />
+          </WrapPanel>
+        </StackPanel>
+      </Border>
+
       <TextBlock Text="{Binding L[mac.settings.about]}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="2,0,0,8" />
       <Border Classes="card" Padding="0" Margin="0,0,0,24">
         <Border Classes="setting first">

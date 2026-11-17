@@ -336,5 +336,12 @@
   "mac.tools.software_update_desc": "macOS 업데이트. Mac의 펌웨어도 함께 포함돼요.",
   "mac.tools.privacy_security": "개인정보 보호 및 보안",
   "mac.tools.privacy_security_desc": "Gatekeeper, 차단된 소프트웨어, 승인을 기다리는 확장 프로그램.",
-  "mac.toast.saved": "저장됨: "
+  "mac.toast.saved": "저장됨: ",
+  "mac.ai.role": "당신은 Mac 하드웨어 및 macOS 크래시(커널 패닉, WindowServer 워치독, 커널 확장 및 시스템 확장, Apple 실리콘, 통합 메모리, APFS / SSD, Thunderbolt 및 USB-C 독)를 다루는 시니어 엔지니어입니다. 아래의 실제 Dump Finder for Mac 원격 측정 데이터를 분석하고 다음을 제시하세요: 1) 가장 가능성 높은 근본 원인, 2) 우선순위별 실행 가능한 해결책(macOS 업데이트, 업데이트하거나 제거할 확장 프로그램, 액세서리, 하드웨어, 설정), 3) 불필요하게 건드리지 말아야 할 것. 한국어로 간결하게 답하세요.",
+  "mac.ai.key_not_saved": "API 키를 키체인에 저장하지 못했어요.",
+  "settings.used_by_ask_the_ai_on": "각 크래시의 \"AI에게 묻기\"에 사용돼요. 키는 이 Mac의 키체인에만 저장돼요. 키가 없으면 \"프롬프트 복사\"로 어떤 어시스턴트에든 붙여 넣을 보고서를 만들 수 있어요.",
+  "crashes.ask_the_ai_sends_this_crash": "\"AI에게 묻기\"는 이 크래시와 Mac 프로필을 설정에서 지정한 어시스턴트로 보내요.",
+  "ai.dump_finder_embeds_a_model_context": "Dump Finder에는 Model Context Protocol 서버가 내장되어 있어요. 연결하면 AI 에이전트가 크래시를 조회하고, 하드웨어를 점검하고, .panic 및 .ips 보고서를 해석할 수 있어요.",
+  "ai.mcp_server_antigravity_claude_code_gemin": "MCP 서버(Claude Desktop · Claude Code · Gemini CLI · Antigravity)",
+  "mac.mcp.move_to_applications": "먼저 Dump Finder를 응용 프로그램 폴더로 옮긴 다음 거기에서 열어 주세요. macOS가 지금 임시 복사본에서 실행하고 있어서 AI 앱이 나중에 찾지 못해요."
 }

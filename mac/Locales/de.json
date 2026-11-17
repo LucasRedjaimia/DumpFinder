@@ -336,5 +336,12 @@
   "mac.tools.software_update_desc": "macOS-Updates, die auch die Firmware des Mac enthalten.",
   "mac.tools.privacy_security": "Datenschutz & Sicherheit",
   "mac.tools.privacy_security_desc": "Gatekeeper, blockierte Software und Erweiterungen, die auf deine Zustimmung warten.",
-  "mac.toast.saved": "Gespeichert: "
+  "mac.toast.saved": "Gespeichert: ",
+  "mac.ai.role": "Du bist ein erfahrener Ingenieur für Mac-Hardware und macOS-Abstürze (Kernel-Panics, WindowServer-Watchdog, Kernel- und Systemerweiterungen, Apple Silicon, gemeinsamer Arbeitsspeicher, APFS / SSD, Thunderbolt- und USB-C-Docks). Analysiere den echten Bericht von Dump Finder für Mac unten und nenne: 1) Wahrscheinlichste Ursache, 2) Priorisierte Lösungsschritte (macOS-Update, zu aktualisierende oder zu entfernende Erweiterung, Zubehör, Hardware, Einstellungen), 3) Was nicht unnötig geändert werden sollte. Antworte auf Deutsch, klar und strukturiert.",
+  "mac.ai.key_not_saved": "Der API-Schlüssel konnte nicht im Schlüsselbund gespeichert werden.",
+  "settings.used_by_ask_the_ai_on": "Wird von „KI fragen“ bei jedem Absturz genutzt. Dein Schlüssel bleibt im Schlüsselbund dieses Macs. Ohne Schlüssel erstellt „Prompt kopieren“ einen Bericht zum Einfügen in einen beliebigen Assistenten.",
+  "crashes.ask_the_ai_sends_this_crash": "„KI fragen“ sendet diesen Absturz und dein Mac-Profil an den in den Einstellungen gewählten Assistenten.",
+  "ai.dump_finder_embeds_a_model_context": "Dump Finder enthält einen MCP-Server, über den KI-Agenten Abstürze, Hardware sowie .panic- und .ips-Berichte abfragen können.",
+  "ai.mcp_server_antigravity_claude_code_gemin": "MCP-Server (Claude Desktop · Claude Code · Gemini CLI · Antigravity)",
+  "mac.mcp.move_to_applications": "Bewege Dump Finder zuerst in den Ordner „Programme“ und öffne es von dort: macOS führt es gerade aus einer temporären Kopie aus, die eine KI-App später nicht mehr finden würde."
 }
