@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using DumpFinder.Mac.Core;
 
 namespace DumpFinder.Mac;
@@ -105,7 +106,7 @@ public partial class MainWindow : Window, IPlatform
         {
             (0, 0, 0, "1-home"), (1, 0, 0, "2-crashes"), (1, 1, 0, "2b-common-crashes"),
             (2, 0, 0, "3-hardware"), (2, 1, 0, "3b-conflicts"), (2, 2, 0, "3c-extensions"), (3, 0, 0, "4-fixes"),
-            (5, 0, 0, "6-tools"), (5, 1, 0, "6b-report"), (5, 2, 0, "6c-history"), (6, 0, 0, "7-settings"),
+            (1, 0, 5, "2c-ai-check-up"), (5, 0, 0, "6-tools"), (5, 1, 0, "6b-report"), (5, 2, 0, "6c-history"), (6, 0, 0, "7-settings"), (6, 0, 6, "7b-settings-ai"),
             (0, 0, 1, "8-intro-1"), (0, 0, 2, "8-intro-2"), (0, 0, 3, "8-intro-3"), (0, 0, 4, "9-update"),
         };
         foreach (var (page, sub, overlay, name) in shots)
@@ -116,7 +117,11 @@ public partial class MainWindow : Window, IPlatform
             if (page == 5) _vm.ToolsTab = sub;
             if (overlay is >= 1 and <= 3) { _vm.StartOnboarding(); _vm.OnboardingStep = overlay - 1; }
             if (overlay == 4) { _vm.OnboardingEndCommand.Execute(null); _vm.PreviewUpdate(SampleUpdate()); }
+            if (overlay == 5) _vm.SystemReviewCommand.Execute(null);
+            else if (page == 1) _vm.CloseSystemReviewCommand.Execute(null);
             await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+            if (overlay == 6 && this.GetVisualDescendants().OfType<Pages.SettingsPage>().FirstOrDefault()?.GetVisualDescendants().OfType<ScrollViewer>().FirstOrDefault() is { } sv)
+                sv.ScrollToEnd();
             await Task.Delay(350);
             await SaveCapture(Path.Combine(folder, name + ".png"));
         }

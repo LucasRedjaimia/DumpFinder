@@ -20,6 +20,11 @@
     <Style Selector="TextBlock.catlabel.danger"><Setter Property="Foreground" Value="{DynamicResource DangerFg}" /></Style>
     <Style Selector="TextBlock.catlabel.warn"><Setter Property="Foreground" Value="{DynamicResource WarnFg}" /></Style>
     <!-- Drawer section label (Windows DrawerLabel: 11 px, SemiBold, upper case, muted) -->
+    <!-- AI answer: primary text; hint / "Thinking…" muted; an error reply in Warn, an exception in Danger -->
+    <Style Selector="SelectableTextBlock.aiout"><Setter Property="FontSize" Value="13" /><Setter Property="LineHeight" Value="19" /><Setter Property="TextWrapping" Value="Wrap" /><Setter Property="Foreground" Value="{DynamicResource TextPrimary}" /></Style>
+    <Style Selector="SelectableTextBlock.aiout.muted"><Setter Property="Foreground" Value="{DynamicResource TextSecondary}" /></Style>
+    <Style Selector="SelectableTextBlock.aiout.warn"><Setter Property="Foreground" Value="{DynamicResource WarnFg}" /></Style>
+    <Style Selector="SelectableTextBlock.aiout.danger"><Setter Property="Foreground" Value="{DynamicResource DangerFg}" /></Style>
     <Style Selector="TextBlock.drawerlabel"><Setter Property="FontSize" Value="11" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="Foreground" Value="{DynamicResource TextMuted}" /><Setter Property="Margin" Value="0,20,0,8" /></Style>
     <Style Selector="Button.kbcard">
       <Setter Property="Background" Value="{DynamicResource BgCard}" /><Setter Property="BorderBrush" Value="{DynamicResource BorderCard}" /><Setter Property="BorderThickness" Value="1" />
@@ -96,7 +101,7 @@
       </Border>
 
       <!-- Detail panel (Windows drawer, 400 px) -->
-      <Border Grid.Column="1" Classes="card" Padding="0" Width="400" Margin="16,0,0,0" IsVisible="{Binding DetailVisible}">
+      <Border Grid.Column="1" Classes="card" Padding="0" Width="400" Margin="16,0,0,0" IsVisible="{Binding DetailShown}">
         <Grid RowDefinitions="*,Auto">
           <ScrollViewer>
             <StackPanel Margin="20,18,16,12">
@@ -161,15 +166,43 @@
                   <Button Classes="link" HorizontalAlignment="Left" Margin="0,8,0,0" Command="{Binding RevealFileCommand}" IsVisible="{Binding HasDetailFile}" Content="{Binding L[mac.detail.show_in_finder]}" />
                 </StackPanel>
               </Expander>
+
+              <!-- AI opinion (Windows: drawer label + streamed answer) -->
+              <TextBlock Classes="drawerlabel" Text="{Binding L[crashes.ai_opinion]}" />
+              <SelectableTextBlock Classes="aiout" Classes.muted="{Binding AiMuted}" Classes.warn="{Binding AiWarn}" Classes.danger="{Binding AiDanger}" Text="{Binding AiOutput}" />
             </StackPanel>
           </ScrollViewer>
-          <!-- Footer: Ask the AI comes with the AI step; Copy for forum -->
+          <!-- Footer: Ask the AI (second click stops) · Copy for forum -->
           <Border Grid.Row="1" BorderBrush="{DynamicResource BorderCard}" BorderThickness="0,1,0,0" Padding="16,12,16,14">
-            <Button Classes="flat" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Command="{Binding CopyForumCommand}">
-              <StackPanel Orientation="Horizontal"><PathIcon Data="{StaticResource Icon.Copy}" /><TextBlock Text="{Binding L[crashes.copy_for_forum]}" /></StackPanel>
-            </Button>
+            <Grid ColumnDefinitions="*,8,*">
+              <Button Classes="primary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Command="{Binding AskAiCommand}">
+                <StackPanel Orientation="Horizontal"><PathIcon Data="{StaticResource Icon.Robot}" /><TextBlock Text="{Binding AskAiLabel}" /></StackPanel>
+              </Button>
+              <Button Grid.Column="2" Classes="flat" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Command="{Binding CopyForumCommand}">
+                <StackPanel Orientation="Horizontal"><PathIcon Data="{StaticResource Icon.Copy}" /><TextBlock Text="{Binding L[crashes.copy_for_forum]}" /></StackPanel>
+              </Button>
+            </Grid>
           </Border>
         </Grid>
+      </Border>
+
+      <!-- Whole-system AI check-up (Windows OpenSystemAiReview, from Home when no crash needs a look) -->
+      <Border Grid.Column="1" Classes="card" Padding="0" Width="400" Margin="16,0,0,0" IsVisible="{Binding SystemReviewVisible}">
+        <ScrollViewer>
+          <StackPanel Margin="20,18,20,16">
+            <Grid ColumnDefinitions="*,Auto">
+              <Border Classes="pill accent"><TextBlock Text="{Binding L[crashes.full_check_up]}" /></Border>
+              <Button Grid.Column="1" Classes="plain" Padding="6" Command="{Binding CloseSystemReviewCommand}" AutomationProperties.Name="Close">
+                <PathIcon Data="{StaticResource Icon.Close}" Width="12" Height="12" Margin="0" />
+              </Button>
+            </Grid>
+            <TextBlock Text="{Binding L[crashes.ai_system_check_up]}" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" Margin="0,12,0,12" />
+            <SelectableTextBlock Classes="aiout" Classes.muted="{Binding AiMuted}" Classes.warn="{Binding AiWarn}" Classes.danger="{Binding AiDanger}" Text="{Binding AiOutput}" />
+            <Button Classes="primary" HorizontalAlignment="Left" Margin="0,14,0,0" Command="{Binding RunCheckUpCommand}">
+              <StackPanel Orientation="Horizontal"><PathIcon Data="{StaticResource Icon.Robot}" /><TextBlock Text="{Binding RunCheckUpLabel}" /></StackPanel>
+            </Button>
+          </StackPanel>
+        </ScrollViewer>
       </Border>
     </Grid>
 

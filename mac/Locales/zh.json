@@ -336,5 +336,12 @@
   "mac.tools.software_update_desc": "macOS 更新，其中也包含 Mac 的固件。",
   "mac.tools.privacy_security": "隐私与安全性",
   "mac.tools.privacy_security_desc": "Gatekeeper、被阻止的软件以及等待你批准的扩展。",
-  "mac.toast.saved": "已保存： "
+  "mac.toast.saved": "已保存： ",
+  "mac.ai.role": "你是一名资深的 Mac 硬件与 macOS 崩溃工程师（内核崩溃、WindowServer 看门狗、内核扩展与系统扩展、Apple 芯片、统一内存、APFS / SSD、雷雳与 USB-C 扩展坞）。请分析下方真实的 Dump Finder for Mac 遥测数据，并给出：1) 最可能的根本原因；2) 按优先级排序、可直接操作的修复方案（macOS 更新、需更新或移除的扩展、配件、硬件、设置）；3) 哪些地方不必随意改动。请用简体中文简明回答。",
+  "mac.ai.key_not_saved": "无法将 API 密钥保存到钥匙串。",
+  "settings.used_by_ask_the_ai_on": "用于每次崩溃中的“询问 AI”。你的密钥只保存在这台 Mac 的钥匙串中。没有密钥时，“复制提示词”会准备一份报告，可粘贴到任意助手中。",
+  "crashes.ask_the_ai_sends_this_crash": "“询问 AI”会将此崩溃和你的 Mac 配置信息发送给在“设置”中配置的助手。",
+  "ai.dump_finder_embeds_a_model_context": "Dump Finder 内置了一个 Model Context Protocol 服务器。连接后，你的 AI 代理可以查询你的崩溃记录、审查你的硬件，并解码你的 .panic 和 .ips 报告。",
+  "ai.mcp_server_antigravity_claude_code_gemin": "MCP 服务器（Claude Desktop · Claude Code · Gemini CLI · Antigravity）",
+  "mac.mcp.move_to_applications": "请先将 Dump Finder 移到“应用程序”文件夹，并从那里打开：macOS 当前是从一个临时副本运行它，AI 应用之后将无法找到这个副本。"
 }

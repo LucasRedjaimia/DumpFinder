@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 
 namespace DumpFinder.Mac.Core;
 
@@ -194,6 +195,61 @@ public static class SelfTest
         }
         Loc.SetLanguage("en");
         Check(exportsOk, "HTML / JSON / Markdown / text exports in 4 languages");
+        // AI assistant: prompt layout, focus question, redaction, Gemini stream chunks, key check
+        var prompt = AiAssistant.BuildPrompt(sample, summary, AiAssistant.FocusQuestion(summary.Crashes[0]));
+        Check(prompt.StartsWith(Loc.S("mac.ai.role"), StringComparison.Ordinal) && prompt.Contains("=== KERNEL PANICS ===") && prompt.Contains("com.vendor.fsdriver")
+              && prompt.Contains("USER CONTEXT") && !prompt.Contains(home), "AI prompt: role, question, panics, redacted");
+        Check(AiAssistant.GeminiChunkText("{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"Hel\"},{\"text\":\"lo\"}]}}]}") == "Hello"
+              && AiAssistant.GeminiChunkText("{\"usageMetadata\":{}}") == "" && AiAssistant.GeminiChunkText("not json") == "", "Gemini stream chunk parsing");
+        Check(SecretStore.IsSafe("sk-ant-api03-AbC_123") && !SecretStore.IsSafe("a\"b") && !SecretStore.IsSafe("a b") && !SecretStore.IsSafe(""), "API key characters check");
+
+        // MCP server: protocol layer on a synthetic scan (no access to the Mac)
+        var previousScan = McpServer.Scan;
+        McpServer.Scan = _ => (sample, summary);
+        try
+        {
+            var init = McpServer.Handle("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"2025-06-18\"}}") ?? "";
+            Check(init.Contains("\"protocolVersion\":\"2025-06-18\"") && init.Contains("\"name\":\"dumpfinder\""), "MCP initialize");
+            Check(McpServer.Handle("{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}") is null, "MCP notifications get no answer");
+            using var tools = JsonDocument.Parse(McpServer.Handle("{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/list\"}")!);
+            Check(tools.RootElement.GetProperty("result").GetProperty("tools").GetArrayLength() == 5, "MCP tools/list: 5 tools");
+            Check((McpServer.Handle("{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"nope\"}") ?? "").Contains("-32601")
+                  && (McpServer.Handle("{oops") ?? "").Contains("-32700"), "MCP unknown method and parse errors");
+            string Call(string tool, string args)
+            {
+                using var d = JsonDocument.Parse(McpServer.Handle($"{{\"jsonrpc\":\"2.0\",\"id\":\"x\",\"method\":\"tools/call\",\"params\":{{\"name\":\"{tool}\",\"arguments\":{args}}}}}")!);
+                return d.RootElement.GetProperty("result").GetProperty("content")[0].GetProperty("text").GetString() ?? "";
+            }
+            var list = Call("mac_get_crash_detail", "{}");
+            var id = McpServer.CrashId(summary.Crashes[0]);
+            Check(list.Contains("crash_id: " + id) && Call("mac_get_crash_detail", $"{{\"crash_id\":\"{id}\"}}").Contains("Plain explanation:"), "MCP crash list and detail");
+            Check(Call("mac_scan_system", "{\"days\":0}").Contains("[KERNEL PANICS]") && Call("mac_export_report", "{\"format\":\"json\"}").TrimStart().StartsWith('{'),
+                  "MCP scan and JSON report");
+        }
+        finally { McpServer.Scan = previousScan; }
+
+        // MCP registration: other servers kept, a .bak written, a non-standard file left alone
+        var tmpDir = Path.Combine(Path.GetTempPath(), "dumpfinder-selftest-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var cfg = Path.Combine(tmpDir, "cfg.json");
+            Directory.CreateDirectory(tmpDir);
+            File.WriteAllText(cfg, "{\"theme\":\"dark\",\"mcpServers\":{\"other\":{\"command\":\"x\"}}}");
+            McpServer.MergeServerIntoConfig(cfg, "/Applications/Dump Finder.app/Contents/MacOS/DumpFinder");
+            using (var merged = JsonDocument.Parse(File.ReadAllText(cfg)))
+                Check(merged.RootElement.GetProperty("theme").GetString() == "dark" && merged.RootElement.GetProperty("mcpServers").TryGetProperty("other", out _)
+                      && merged.RootElement.GetProperty("mcpServers").GetProperty("dumpfinder").GetProperty("args")[0].GetString() == "--mcp" && File.Exists(cfg + ".bak"),
+                      "MCP config merge keeps other servers");
+            var bad = Path.Combine(tmpDir, "bad.json");
+            File.WriteAllText(bad, "{ // comment\n \"mcpServers\": {} }");
+            bool refused = false;
+            try { McpServer.MergeServerIntoConfig(bad, "x"); } catch (InvalidDataException) { refused = true; }
+            Check(refused && File.ReadAllText(bad).Contains("// comment"), "MCP config: non-standard JSON left untouched");
+            Check(McpServer.IsTranslocated("/private/var/folders/x/T/AppTranslocation/ABC/d/Dump Finder.app/Contents/MacOS/DumpFinder")
+                  && !McpServer.IsTranslocated("/Applications/Dump Finder.app/Contents/MacOS/DumpFinder"), "translocated app detected before registering");
+        }
+        finally { try { Directory.Delete(tmpDir, true); } catch (IOException) { } }
+
         // Translations: every language has every Mac key, with the same placeholders ({0}, {1:…}); the "one" plural
         // form of some languages may leave out {0}.
         var en = Loc.MacTable("en");

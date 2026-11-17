@@ -336,5 +336,12 @@
   "mac.tools.software_update_desc": "macOS のアップデート。Mac のファームウェアも含まれます。",
   "mac.tools.privacy_security": "プライバシーとセキュリティ",
   "mac.tools.privacy_security_desc": "Gatekeeper、ブロックされたソフトウェア、承認待ちの機能拡張。",
-  "mac.toast.saved": "保存しました: "
+  "mac.toast.saved": "保存しました: ",
+  "mac.ai.role": "あなたは Mac ハードウェアと macOS のクラッシュ（カーネルパニック、WindowServer ウォッチドッグ、カーネル機能拡張とシステム機能拡張、Apple シリコン、ユニファイドメモリ、APFS / SSD、Thunderbolt および USB-C ドック）を専門とするシニアエンジニアです。以下の実際の Dump Finder for Mac テレメトリを分析し、次の内容を示してください：1) 最も可能性の高い根本原因、2) 優先度順の具体的な対処法（macOS のアップデート、アップデートまたは削除すべき機能拡張、アクセサリ、ハードウェア、設定）、3) 不必要に触るべきでないもの。日本語で簡潔に回答してください。",
+  "mac.ai.key_not_saved": "API キーをキーチェーンに保存できませんでした。",
+  "settings.used_by_ask_the_ai_on": "各クラッシュの「AI に質問」で使用されます。キーはこの Mac のキーチェーンに保存されます。キーがない場合は、「プロンプトをコピー」で任意のアシスタントに貼り付けられるレポートを作成できます。",
+  "crashes.ask_the_ai_sends_this_crash": "「AI に質問」は、このクラッシュと Mac のプロファイルを、設定で構成したアシスタントに送信します。",
+  "ai.dump_finder_embeds_a_model_context": "Dump Finder には Model Context Protocol サーバーが組み込まれています。接続すると、AI エージェントがクラッシュの照会、ハードウェアの監査、.panic および .ips レポートの解析を行えます。",
+  "ai.mcp_server_antigravity_claude_code_gemin": "MCP サーバー（Claude Desktop · Claude Code · Gemini CLI · Antigravity）",
+  "mac.mcp.move_to_applications": "まず Dump Finder を「アプリケーション」フォルダに移動し、そこから開いてください。macOS は現在一時的なコピーから実行しているため、AI アプリが後でそれを見つけられません。"
 }

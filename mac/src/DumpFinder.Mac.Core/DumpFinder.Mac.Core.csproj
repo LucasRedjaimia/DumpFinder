@@ -23,6 +23,9 @@
   <ItemGroup>
     <SharedWindowsSource Include="..\..\..\src\Core\Stability.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Anthropic" Version="13.8.0" />
+  </ItemGroup>
 
   <!-- Runs once per shared file (target batching). -->
   <Target Name="IncludeSharedWindowsSources" BeforeTargets="CoreCompile" Outputs="%(SharedWindowsSource.Identity)">
@@ -30,8 +33,7 @@
       <_SharedText>$([System.IO.File]::ReadAllText('%(SharedWindowsSource.FullPath)'))</_SharedText>
       <_SharedOut>$(IntermediateOutputPath)Shared/%(SharedWindowsSource.Filename).g.cs</_SharedOut>
     </PropertyGroup>
-    <WriteLinesToFile File="$(_SharedOut)" Lines="$([MSBuild]::Escape('#nullable disable&#10;$(_SharedText)'))"
-                      Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <WriteLinesToFile File="$(_SharedOut)" Lines="$([MSBuild]::Escape('#nullable disable&#xA;$(_SharedText)'))" Overwrite="true" WriteOnlyWhenDifferent="true" />
     <ItemGroup>
       <Compile Include="$(_SharedOut)" />
       <FileWrites Include="$(_SharedOut)" />

@@ -336,5 +336,12 @@
   "mac.tools.software_update_desc": "Les mises à jour de macOS, qui contiennent aussi le firmware du Mac.",
   "mac.tools.privacy_security": "Confidentialité et sécurité",
   "mac.tools.privacy_security_desc": "Gatekeeper, logiciels bloqués et extensions en attente de ton accord.",
-  "mac.toast.saved": "Enregistré : "
+  "mac.toast.saved": "Enregistré : ",
+  "mac.ai.role": "Tu es un ingénieur expert en diagnostic matériel Mac et en crashs de macOS (paniques du noyau, watchdog de WindowServer, extensions du noyau et extensions système, Apple Silicon, mémoire unifiée, APFS / SSD, docks Thunderbolt et USB-C). Analyse le rapport technique réel ci-dessous issu de Dump Finder pour Mac et donne : 1) La cause racine la plus probable, 2) Les actions précises par ordre de priorité (mise à jour de macOS, extension à mettre à jour ou à retirer, accessoire, matériel, réglages), 3) Ce qu'il faut éviter de toucher inutilement. Réponds en français de façon claire et structurée.",
+  "mac.ai.key_not_saved": "La clé API n'a pas pu être enregistrée dans le trousseau.",
+  "settings.used_by_ask_the_ai_on": "Utilisé par « Demander à l'IA » sur chaque crash. Ta clé reste dans le trousseau de ce Mac. Sans clé, « Copier le prompt » prépare un rapport à coller dans n'importe quel assistant.",
+  "crashes.ask_the_ai_sends_this_crash": "« Demander à l'IA » envoie ce crash et le profil de ton Mac à l'assistant configuré dans Paramètres.",
+  "ai.dump_finder_embeds_a_model_context": "Dump Finder intègre un serveur Model Context Protocol. Une fois connecté, ton agent IA peut consulter tes crashs, vérifier ton matériel et décoder tes rapports .panic et .ips.",
+  "ai.mcp_server_antigravity_claude_code_gemin": "Serveur MCP (Claude Desktop · Claude Code · Gemini CLI · Antigravity)",
+  "mac.mcp.move_to_applications": "Déplace d'abord Dump Finder dans le dossier Applications et ouvre-le depuis là : macOS le lance depuis une copie temporaire, qu'une app d'IA ne retrouverait pas ensuite."
 }

@@ -51,6 +51,10 @@ public sealed class AppSettings
     public bool UpdateCheckDisabled { get; set; }
     /// <summary>Version the user chose to skip ("0.3.0"); the next one is offered again.</summary>
     public string SkippedUpdateVersion { get; set; } = "";
+    /// <summary>AiProvider index (0 Gemini, 1 Claude, 2 Ollama), as on Windows. The API key is in the Keychain (SecretStore).</summary>
+    public int AiProvider { get; set; }
+    public string ClaudeModel { get; set; } = "";
+    public string OllamaModel { get; set; } = "";
 
     public static AppSettings Load() => AppStore.Read<AppSettings>("settings.json");
     public void Save() => AppStore.Write("settings.json", this);

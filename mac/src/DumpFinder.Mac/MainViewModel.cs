@@ -88,10 +88,12 @@ public sealed partial class MainViewModel : Observable
         ReportCommand = new RelayCommand(SaveHtmlReportAsync, () => _result is not null);
         ToggleSidebarCommand = new RelayCommand(() => { SidebarCollapsed = !SidebarCollapsed; return Task.CompletedTask; });
         HeroPrimaryCommand = new RelayCommand(() => { Page = TabHardware; return Task.CompletedTask; });
-        HeroSecondaryCommand = new RelayCommand(() => { if (_focusKey is not null) OpenCrash(_focusKey); return Task.CompletedTask; });
+        // Windows OnHeroSecondaryClick: the crash to look at, else the whole-system AI check-up.
+        HeroSecondaryCommand = new RelayCommand(() => { if (_focusKey is not null) OpenCrash(_focusKey); else OpenSystemReview(); return Task.CompletedTask; });
         InitCrashes();
         InitHardwareTools();
         InitOverlays();
+        InitAi();
 
         Loc.LanguageChanged += () =>
         {
@@ -102,6 +104,9 @@ public sealed partial class MainViewModel : Observable
             RenderHistory();
             OnboardingStep = OnboardingStep;
             Update = Update;
+            foreach (var n in new[] { nameof(AiCredentialCaption), nameof(AskAiLabel), nameof(RunCheckUpLabel) }) Raise(n);
+            ResetAiOutput();
+            RefreshMcp();
         };
         RefreshTexts();
     }
@@ -360,7 +365,7 @@ public sealed partial class MainViewModel : Observable
         HeroPrimary = warnings.Count > 0 ? Loc.P("mac.home.see_findings", warnings.Count) : "";
         var focus = s.Crashes.FirstOrDefault(c => (now - c.Time).TotalDays <= Stability.WindowDays && Stability.IsSevere(c.Category))
                     ?? s.Crashes.FirstOrDefault(c => (now - c.Time).TotalDays <= Stability.WindowDays);
-        HeroSecondary = focus is not null ? Loc.S("home.view_crash") : "";
+        HeroSecondary = Loc.Plain(Loc.S(focus is not null ? "home.view_crash" : "home.ai_check_up"));
 
         // Recommended actions: the 3 most serious checks (Windows: top 3 recommended fixes)
         Actions.Clear();
