@@ -203,6 +203,9 @@ namespace WinCrashDoctor
                 case "optimize-startup": SwitchOptimizeSub(2); break;
                 case "optimize-clean": SwitchOptimizeSub(3); break;
                 case "optimize-storage": SwitchOptimizeSub(OptSubStorage); break;
+                case "gpu-curve-bottom":
+                    if (_svHealthCurve != null) { _svHealthCurve.UpdateLayout(); _svHealthCurve.ScrollToEnd(); }
+                    break;
                 case "optimize-myths": SwitchOptimizeSub(5); break;
                 case "conflicts-bottom":
                     SwitchHealthSubTab(1);

@@ -103,6 +103,31 @@ namespace WinCrashDoctor
             }
             expect("Graphe de stabilité : infobulle centrée sur le point survolé et qui le suit (" + string.Join(", ", placed) + ")", follows);
 
+            // ---- Hardware › GPU curve (only on a PC with MSI Afterburner and an NVIDIA card)
+            if (await OpenGpuCurveForCapture())
+            {
+                ShowGpuCurveProfileForCapture(null);
+                await Settle();
+                VfCurveChart vc = GpuCurveChartForTest;
+                var vtip = vc != null ? vc.ToolTip as ToolTip : null;
+                bool ok = vc != null && vtip != null && vc.ActualWidth > 0 && vc.Count > 10;
+                string gap = "";
+                if (ok)
+                {
+                    vc.SetHover(vc.Count - 20);
+                    vtip.IsOpen = true;
+                    await Settle();
+                    Point pt = vc.PointToScreen(vc.HoverPoint);
+                    Point top = vtip.PointToScreen(new Point(vtip.ActualWidth / 2, 0));
+                    gap = (top.X - pt.X).ToString("0.#") + " px";
+                    ok = vtip.IsOpen && Math.Abs(top.X - pt.X) <= 2 && !string.IsNullOrEmpty(AutomationProperties.GetName(vc));
+                    vtip.IsOpen = false;
+                }
+                expect("Courbe GPU : onglet ouvert, graphe nommé, infobulle sur le point survolé (" + gap + ")", ok);
+                SwitchHealthSubTab(0);
+            }
+            else sb.AppendLine("[SKIP] Courbe GPU : pas de MSI Afterburner avec une carte NVIDIA sur ce PC");
+
             // ---- Contrast (WCAG 2.1 AA: 4.5:1 for text)
             AppThemeMode keep = ThemeManager.CurrentMode;
             foreach (AppThemeMode mode in new[] { AppThemeMode.Dark, AppThemeMode.Light })

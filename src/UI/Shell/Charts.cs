@@ -302,4 +302,190 @@ namespace WinCrashDoctor
             _tip.HorizontalOffset = _tip.HorizontalOffset == 0 ? 0.01 : 0;
         }
     }
+
+    /// <summary>
+    /// GPU voltage/frequency curve (Hardware › GPU curve): stock curve (dashed), the chosen profile (solid) and the
+    /// suggested safer curve (dotted), frequency against voltage, with a hover guide and a tooltip over the point.
+    /// </summary>
+    public class VfCurveChart : FrameworkElement
+    {
+        public static readonly DependencyProperty StockBrushProperty = Reg("StockBrush");
+        public static readonly DependencyProperty CurveBrushProperty = Reg("CurveBrush");
+        public static readonly DependencyProperty SuggestBrushProperty = Reg("SuggestBrush");
+        public static readonly DependencyProperty GridBrushProperty = Reg("GridBrush");
+        public static readonly DependencyProperty LabelBrushProperty = Reg("LabelBrush");
+
+        private static DependencyProperty Reg(string name)
+        {
+            return DependencyProperty.Register(name, typeof(Brush), typeof(VfCurveChart),
+                new FrameworkPropertyMetadata(Brushes.Gray, FrameworkPropertyMetadataOptions.AffectsRender));
+        }
+
+        public Brush StockBrush { get { return (Brush)GetValue(StockBrushProperty); } set { SetValue(StockBrushProperty, value); } }
+        public Brush CurveBrush { get { return (Brush)GetValue(CurveBrushProperty); } set { SetValue(CurveBrushProperty, value); } }
+        public Brush SuggestBrush { get { return (Brush)GetValue(SuggestBrushProperty); } set { SetValue(SuggestBrushProperty, value); } }
+        public Brush GridBrush { get { return (Brush)GetValue(GridBrushProperty); } set { SetValue(GridBrushProperty, value); } }
+        public Brush LabelBrush { get { return (Brush)GetValue(LabelBrushProperty); } set { SetValue(LabelBrushProperty, value); } }
+
+        private double[] _mv = new double[0], _stock = new double[0], _curve = new double[0], _suggest;
+        private string _curveName = "", _stockName = "", _suggestName = "";
+        private int _first, _hover = -1;
+        private double _yMin, _yMax;
+        private const double Left = 44, Bottom = 22, Top = 10, Right = 10;
+        private readonly ToolTip _tip = new ToolTip { Placement = System.Windows.Controls.Primitives.PlacementMode.Custom };
+
+        public VfCurveChart()
+        {
+            _tip.PlacementTarget = this;
+            _tip.CustomPopupPlacementCallback = (popup, target, offset) =>
+            {
+                if (_hover < 0 || ActualWidth <= 0) return new System.Windows.Controls.Primitives.CustomPopupPlacement[0];
+                double sx = target.Width / ActualWidth, sy = ActualHeight > 0 ? target.Height / ActualHeight : sx;
+                var p = new Point(X(_hover), Y(_curve[_hover]));
+                return new[]
+                {
+                    new System.Windows.Controls.Primitives.CustomPopupPlacement(new Point(p.X * sx - popup.Width / 2, (p.Y - 14) * sy - popup.Height), System.Windows.Controls.Primitives.PopupPrimaryAxis.Horizontal),
+                    new System.Windows.Controls.Primitives.CustomPopupPlacement(new Point(p.X * sx - popup.Width / 2, (p.Y + 14) * sy), System.Windows.Controls.Primitives.PopupPrimaryAxis.Horizontal)
+                };
+            };
+            ToolTip = _tip;
+            ToolTipService.SetInitialShowDelay(this, 0);
+        }
+
+        /// <summary>Same voltages for every series; <paramref name="suggest"/> may be null. The view starts a little before the first change.</summary>
+        public void SetData(double[] mv, double[] stock, double[] curve, double[] suggest, string stockName, string curveName, string suggestName)
+        {
+            _mv = mv ?? new double[0];
+            _stock = stock ?? new double[0];
+            _curve = curve ?? new double[0];
+            _suggest = suggest;
+            _stockName = stockName; _curveName = curveName; _suggestName = suggestName;
+            _hover = -1;
+            // Low voltages sit at idle clocks and only flatten the chart: start 100 MHz under the first changed point,
+            // and no lower than 60 % of the top clock.
+            double top = _curve.Concat(_stock).DefaultIfEmpty(1).Max();
+            int changed = Enumerable.Range(0, _curve.Length).FirstOrDefault(i => Math.Abs(_curve[i] - _stock[i]) >= 1 || (_suggest != null && Math.Abs(_suggest[i] - _stock[i]) >= 1));
+            double floor = Math.Max(top * 0.6, changed > 0 ? Math.Min(_curve[changed], _stock[changed]) - 100 : top * 0.6);
+            _first = Math.Max(0, Enumerable.Range(0, _curve.Length).FirstOrDefault(i => _stock[i] >= floor || _curve[i] >= floor) - 1);
+            _yMin = Math.Floor(Math.Min(floor, Math.Min(_stock[_first], _curve[_first])) / 100) * 100;
+            _yMax = Math.Ceiling((top + 40) / 100) * 100;
+            InvalidateVisual();
+        }
+
+        public int Count { get { return _mv.Length; } }
+        public double HoverMv { get { return _hover >= 0 ? _mv[_hover] : double.NaN; } }
+        public Point HoverPoint { get { return _hover >= 0 ? new Point(X(_hover), Y(_curve[_hover])) : new Point(double.NaN, double.NaN); } }
+
+        private double X(int i)
+        {
+            double span = _mv[_mv.Length - 1] - _mv[_first];
+            return Left + (span > 0 ? (_mv[i] - _mv[_first]) / span : 0) * (ActualWidth - Left - Right);
+        }
+
+        private double Y(double mhz)
+        {
+            double plot = ActualHeight - Top - Bottom;
+            return Top + (1 - (mhz - _yMin) / Math.Max(1, _yMax - _yMin)) * plot;
+        }
+
+        protected override void OnRender(DrawingContext dc)
+        {
+            double w = ActualWidth, h = ActualHeight;
+            dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, w, h));
+            if (_mv.Length < 2 || w < 80 || h < 60) return;
+            var tf = new Typeface(Ds.UiFont, FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
+            double dpi = VisualTreeHelper.GetDpi(this).PixelsPerDip;
+
+            var grid = new Pen(GridBrush, 1);
+            grid.Freeze();
+            double step = (_yMax - _yMin) > 1200 ? 500 : 250;
+            for (double v = Math.Ceiling(_yMin / step) * step; v <= _yMax; v += step)
+            {
+                double y = Math.Round(Y(v)) + 0.5;
+                dc.DrawLine(grid, new Point(Left, y), new Point(w - Right, y));
+                var ft = new FormattedText(v.ToString("0", CultureInfo.InvariantCulture), CultureInfo.InvariantCulture, FlowDirection.LeftToRight, tf, 10.5, LabelBrush, dpi);
+                dc.DrawText(ft, new Point(Left - 6 - ft.Width, y - ft.Height / 2));
+            }
+            for (double mv = Math.Ceiling(_mv[_first] / 50) * 50; mv <= _mv[_mv.Length - 1]; mv += 50)
+            {
+                int i = Nearest(mv);
+                var ft = new FormattedText(mv.ToString("0", CultureInfo.InvariantCulture), CultureInfo.InvariantCulture, FlowDirection.LeftToRight, tf, 10.5, LabelBrush, dpi);
+                double x = X(i);
+                if (x - ft.Width / 2 < Left - 4 || x + ft.Width / 2 > w) continue;
+                dc.DrawText(ft, new Point(x - ft.Width / 2, h - ft.Height));
+            }
+            var unitV = new FormattedText("mV", CultureInfo.InvariantCulture, FlowDirection.LeftToRight, tf, 10.5, LabelBrush, dpi);
+            dc.DrawText(unitV, new Point(w - Right - unitV.Width, h - Bottom - unitV.Height - 2));
+            var unitF = new FormattedText("MHz", CultureInfo.InvariantCulture, FlowDirection.LeftToRight, tf, 10.5, LabelBrush, dpi);
+            dc.DrawText(unitF, new Point(Left + 4, Top));
+
+            dc.PushClip(new RectangleGeometry(new Rect(Left, 0, w - Left, h - Bottom)));
+            DrawSeries(dc, _stock, StockBrush, 1.5, new double[] { 4, 3 });
+            DrawSeries(dc, _curve, CurveBrush, 2, null);
+            if (_suggest != null) DrawSeries(dc, _suggest, SuggestBrush, 2.2, new double[] { 1.2, 2 });   // on top: it often runs close to the curve
+            if (_hover >= _first)
+            {
+                var guide = new Pen(LabelBrush, 1) { DashStyle = new DashStyle(new double[] { 2, 3 }, 0) };
+                guide.Freeze();
+                double gx = Math.Round(X(_hover)) + 0.5;
+                dc.DrawLine(guide, new Point(gx, Top), new Point(gx, h - Bottom));
+                dc.DrawEllipse(CurveBrush, null, new Point(X(_hover), Y(_curve[_hover])), 4, 4);
+                if (_suggest != null) dc.DrawEllipse(SuggestBrush, null, new Point(X(_hover), Y(_suggest[_hover])), 3, 3);
+            }
+            dc.Pop();
+        }
+
+        private void DrawSeries(DrawingContext dc, double[] v, Brush b, double width, double[] dash)
+        {
+            var g = new StreamGeometry();
+            using (var c = g.Open())
+            {
+                c.BeginFigure(new Point(X(_first), Y(v[_first])), false, false);
+                for (int i = _first + 1; i < v.Length; i++) c.LineTo(new Point(X(i), Y(v[i])), true, true);
+            }
+            g.Freeze();
+            var pen = new Pen(b, width) { LineJoin = PenLineJoin.Round, StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round };
+            if (dash != null) pen.DashStyle = new DashStyle(dash, 0);
+            pen.Freeze();
+            dc.DrawGeometry(null, pen, g);
+        }
+
+        private int Nearest(double mv)
+        {
+            int best = 0;
+            for (int i = 1; i < _mv.Length; i++) if (Math.Abs(_mv[i] - mv) < Math.Abs(_mv[best] - mv)) best = i;
+            return best;
+        }
+
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            base.OnMouseMove(e);
+            if (_mv.Length < 2 || ActualWidth <= Left + Right) return;
+            double x = e.GetPosition(this).X;
+            int best = _first;
+            for (int i = _first; i < _mv.Length; i++) if (Math.Abs(X(i) - x) < Math.Abs(X(best) - x)) best = i;
+            SetHover(best);
+        }
+
+        protected override void OnMouseLeave(MouseEventArgs e)
+        {
+            base.OnMouseLeave(e);
+            _hover = -1;
+            InvalidateVisual();
+        }
+
+        /// <summary>Shows point <paramref name="i"/> in the tooltip, placed over it (also used by the UI self-test).</summary>
+        public void SetHover(int i)
+        {
+            if (i == _hover || i < _first || i >= _mv.Length) return;
+            _hover = i;
+            InvalidateVisual();
+            string text = GpuCurve.Mv(_mv[i])
+                          + "\n" + Localizer.F("gpu_curve.series_value", _curveName, GpuCurve.Mhz(_curve[i]))
+                          + "\n" + Localizer.F("gpu_curve.series_value", _stockName, GpuCurve.Mhz(_stock[i]));
+            if (_suggest != null) text += "\n" + Localizer.F("gpu_curve.series_value", _suggestName, GpuCurve.Mhz(_suggest[i]));
+            _tip.Content = text;
+            _tip.HorizontalOffset = _tip.HorizontalOffset == 0 ? 0.01 : 0;
+        }
+    }
 }

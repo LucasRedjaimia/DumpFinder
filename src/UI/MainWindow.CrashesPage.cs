@@ -166,6 +166,7 @@ namespace WinCrashDoctor
         private void RebuildCrashEntries(ScanResult res)
         {
             _crashEntries = CrashCatalog.Build(res);
+            if (_curveInfo != null) RenderGpuCurve();   // its first tip counts graphics driver crashes
         }
 
         private IEnumerable<CrashEntry> FilteredCrashes()

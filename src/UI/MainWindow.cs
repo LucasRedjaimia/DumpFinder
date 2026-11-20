@@ -544,6 +544,7 @@ namespace WinCrashDoctor
             BuildOptimizePage();
             HostStressInHardware();
             HostDriversInHardware();
+            HostGpuCurveInHardware();
             HostReportInTools();
             BuildHistoryView();
             AddReportButtons();
@@ -1064,6 +1065,7 @@ namespace WinCrashDoctor
             RefreshSettingsLabels();
             RefreshToolsSubLabels();
             RefreshDriverLabels();
+            RefreshGpuCurveLabels();
             RefreshHistoryLabels();
             RefreshReportLabels();
 
