@@ -202,7 +202,8 @@ namespace WinCrashDoctor
                 case "optimize-apps": SwitchOptimizeSub(1); break;
                 case "optimize-startup": SwitchOptimizeSub(2); break;
                 case "optimize-clean": SwitchOptimizeSub(3); break;
-                case "optimize-myths": SwitchOptimizeSub(4); break;
+                case "optimize-storage": SwitchOptimizeSub(OptSubStorage); break;
+                case "optimize-myths": SwitchOptimizeSub(5); break;
                 case "conflicts-bottom":
                     SwitchHealthSubTab(1);
                     _svHealthConf.UpdateLayout();

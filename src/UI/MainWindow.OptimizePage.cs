@@ -19,9 +19,9 @@ namespace WinCrashDoctor
     {
         private Grid _pageOptimize;
         private TextBlock _lblOptTitle, _lblOptSub;
-        private readonly Button[] _btnOptSub = new Button[5];
-        private readonly ScrollViewer[] _optViews = new ScrollViewer[5];
-        private readonly StackPanel[] _optPanels = new StackPanel[5];
+        private readonly Button[] _btnOptSub = new Button[6];
+        private readonly ScrollViewer[] _optViews = new ScrollViewer[6];
+        private readonly StackPanel[] _optPanels = new StackPanel[6];
         private int _optSub;
         private bool _optShownOnce;
 
@@ -52,7 +52,7 @@ namespace WinCrashDoctor
             hdr.Children.Add(titles);
 
             var seg = new WrapPanel { VerticalAlignment = VerticalAlignment.Top, HorizontalAlignment = HorizontalAlignment.Right };
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < 6; i++)
             {
                 int idx = i;
                 var b = CreateFlatButton("", "BgCard", "TextSecondary", "BorderCard", new Thickness(12, 6, 12, 6), 12.2);
@@ -68,7 +68,7 @@ namespace WinCrashDoctor
 
             var host = new Grid();
             Grid.SetRow(host, 1);
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < 6; i++)
             {
                 _optPanels[i] = new StackPanel { Margin = new Thickness(0, 0, 8, 12) };
                 _optViews[i] = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = _optPanels[i], Visibility = i == 0 ? Visibility.Visible : Visibility.Collapsed };
@@ -93,16 +93,17 @@ namespace WinCrashDoctor
                 Localizer.S("optimize.apps"),
                 Localizer.S("optimize.startup"),
                 Localizer.S("optimize.cleanup"),
+                Localizer.S("space.tab"),
                 Localizer.S("optimize.myths")
             };
-            for (int i = 0; i < 5; i++) { _btnOptSub[i].Content = names[i]; StyleTogglePill(_btnOptSub[i], i == _optSub); }
+            for (int i = 0; i < 6; i++) { _btnOptSub[i].Content = names[i]; StyleTogglePill(_btnOptSub[i], i == _optSub); }
             if (_optShownOnce) RenderOptimizeSub();
         }
 
         public void SwitchOptimizeSub(int sub)
         {
             _optSub = sub;
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < 6; i++)
             {
                 _optViews[i].Visibility = i == sub ? Visibility.Visible : Visibility.Collapsed;
                 StyleTogglePill(_btnOptSub[i], i == sub);
@@ -119,6 +120,7 @@ namespace WinCrashDoctor
                 case 1: RenderOptApps(); break;
                 case 2: RenderOptStartup(); break;
                 case 3: RenderOptClean(); break;
+                case OptSubStorage: RenderOptSpace(); break;
                 default: RenderOptMyths(); break;
             }
         }
@@ -469,10 +471,12 @@ namespace WinCrashDoctor
             _btnOptClean.Content = string.Format(Localizer.S("optimize.clean_selected"), SizeText(known));
         }
 
-        // ==================== 4 · Myths ====================
+        // ==================== 4 · Storage: MainWindow.StoragePage.cs ====================
+
+        // ==================== 5 · Myths ====================
         private void RenderOptMyths()
         {
-            var p = _optPanels[4];
+            var p = _optPanels[5];
             p.Children.Clear();
             p.Children.Add(OptActionBar(Localizer.S("optimize.widespread_optimizations_dump_finder_del"), null));
             foreach (var m in Myths())

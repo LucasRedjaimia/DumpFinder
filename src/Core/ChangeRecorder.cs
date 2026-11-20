@@ -11,7 +11,7 @@ namespace WinCrashDoctor
     /// <summary>One state captured just before Dump Finder changed it.</summary>
     public class ChangeRecord
     {
-        /// <summary>"reg", "file" or "power".</summary>
+        /// <summary>"reg", "file", "power" or "recycle" (an item moved to the Recycle Bin: FilePath, BackupPath = its $I file).</summary>
         public string Kind { get; set; }
 
         // Registry
@@ -37,6 +37,7 @@ namespace WinCrashDoctor
                 case "reg": return KeyPath + " \\ " + ValueName + " = " + (Existed ? Data : "(absent)");
                 case "file": return FilePath;
                 case "power": return "powercfg " + PowerSub + " " + PowerSetting + " = " + PowerOldAc;
+                case "recycle": return FilePath;
                 default: return Kind;
             }
         }
@@ -222,6 +223,12 @@ namespace WinCrashDoctor
                             { error = "refused: " + c.PowerSetting; continue; }
                             RunHidden(SysTools.Path("powercfg.exe"), "/setacvalueindex SCHEME_CURRENT " + sub.ToString("D") + " " + c.PowerSetting + " " + c.PowerOldAc);
                             RunHidden(SysTools.Path("powercfg.exe"), "/setactive SCHEME_CURRENT");
+                            done++;
+                            break;
+                        case "recycle":
+                            // Optimiser › Storage: back from the Recycle Bin, checked again (this account's bin, matching path).
+                            string recycleWhy = WinCrashDoctor.Optimize.OptSpace.RestoreRecycled(c);
+                            if (recycleWhy != null) { error = c.FilePath + " (" + recycleWhy + ")"; continue; }
                             done++;
                             break;
                         default:
