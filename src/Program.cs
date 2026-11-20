@@ -173,6 +173,12 @@ namespace WinCrashDoctor
                             sWin.CaptureSubView("optimize-clean");
                             await System.Threading.Tasks.Task.Delay(2500);
                             await shot(-1, "v6_7d_optimiser_nettoyage.png");
+                            await sWin.RunStorageScanForCapture();
+                            await shot(-1, "v6_7f_optimiser_stockage_dossiers.png");
+                            sWin.ShowStorageModeForCapture(0);
+                            await shot(-1, "v6_7g_optimiser_stockage_programmes.png");
+                            sWin.ShowStorageModeForCapture(2);
+                            await shot(-1, "v6_7h_optimiser_stockage_fichiers.png");
                             sWin.CaptureSubView("optimize-myths");
                             await shot(-1, "v6_7e_optimiser_mythes.png");
                             await shot(5, "v6_7_outils.png");

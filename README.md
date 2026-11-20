@@ -14,7 +14,7 @@ Dump Finder helps you understand why a Windows PC crashes (blue screens, GPU tim
 - **Hardware**: BIOS, memory (EXPO/XMP), GPU, SSDs (SMART), risky drivers, Windows version.
 - **Stress test**: CPU (core by core), memory, GPU (OpenCL) and disk, with verified results and CPU temperature.
 - **Fixes**: well-known Windows settings that stabilise a PC (TDR, MPO, NVMe SSD HMB…), all reversible.
-- **Optimise**: official Windows settings, preinstalled apps, startup programs, temporary file cleanup.
+- **Optimise**: official Windows settings, preinstalled apps, startup programs, temporary file cleanup, and **Storage**: the largest programs (with their own uninstaller), folders (drill-down of the user folder or a whole drive) and files, each with Show in Explorer and Move to Recycle Bin (undoable from Tools › History). Windows, programs, the profile's standard folders, AppData's Microsoft parts and keys only get Show in Explorer.
 - **AI assistant** (optional, with your own API key) and an MCP server.
 - Interface in 14 languages: English, French, Spanish, German, Italian, Portuguese, Polish, Dutch, Turkish, Russian, Ukrainian, Simplified Chinese, Japanese and Korean.
 - Keyboard and screen readers: every control has a name for Narrator / NVDA, **Ctrl+1…7** open the sections, **F5** runs a new scan, **Esc** closes the crash details; Windows contrast themes are followed.
@@ -40,7 +40,7 @@ The app has built-in self-tests. Each one writes a report and returns the number
 | `DumpFinder.exe --parse-selftest out.txt` | crash dump parsers on truncated / corrupted files (no exception, no hang) |
 | `DumpFinder.exe --detect-selftest out.txt` | detection rules (drivers, Windows versions, BIOS, NVMe), read-only |
 | `DumpFinder.exe --update-selftest out.txt` | version parsing, release link safety, one request to GitHub |
-| `DumpFinder.exe --optimize-selftest out.txt` | Optimise page; applies then undoes one harmless setting (Game Mode) |
+| `DumpFinder.exe --optimize-selftest out.txt` | Optimise page; applies then undoes one harmless setting (Game Mode); Storage sizes, protection, Recycle Bin and undo in a temporary folder |
 | `DumpFinder.exe --stress-selftest out.txt [cpu,ram,disk,gpu]` | each stress engine, clean (must pass) and with an injected fault (must fail) |
 | `DumpFinder.exe --ui-selftest out.txt` | opens the window: text contrast of both themes (WCAG AA), a screen-reader name on every control, keyboard shortcuts |
 

@@ -111,6 +111,10 @@ namespace WinCrashDoctor
         public const string Speed = "";
         public const string Play = "";
 
+        public const string Folder = "";
+        public const string AllApps = "";
+        public const string Up = "";
+
         /// <summary>Legacy emoji / dingbat prefixes in localized labels → Fluent glyphs.</summary>
         public static readonly Dictionary<int, string> FromLegacySymbol = new Dictionary<int, string>
         {
