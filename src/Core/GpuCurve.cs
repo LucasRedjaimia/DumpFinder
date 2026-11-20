@@ -72,8 +72,10 @@ namespace WinCrashDoctor
 
         // ---------- Saved profiles ----------
         /// <summary>
-        /// A VFCurve= value: header (format 0x00020000, point count) then per point three little-endian floats:
-        /// offset MHz, voltage mV, base frequency MHz. Null when the value is empty or not in that format.
+        /// A VFCurve= value: a 12-byte header (format 0x00020000, point count, a reserved DWORD) then per point three
+        /// little-endian floats: voltage mV, base frequency MHz, offset MHz (the same order as the live control memory).
+        /// Checked against the live curve on an RTX 5080: base + offset of every saved point equals the applied clock.
+        /// Null when the value is empty or not in that format.
         /// </summary>
         public static List<VfPoint> ParseSaved(string hex)
         {
@@ -89,17 +91,19 @@ namespace WinCrashDoctor
             }
             if (BitConverter.ToUInt32(b, 0) != 0x00020000) return null;
             uint n = BitConverter.ToUInt32(b, 4);
-            if (n < 2 || n > 256 || 8 + n * 12 > b.Length) return null;
+            if (n < 2 || n > 256 || SavedHeader + n * 12 > b.Length) return null;
             var pts = new List<VfPoint>((int)n);
             for (int k = 0; k < n; k++)
             {
-                int o = 8 + k * 12;
-                var p = new VfPoint { OffsetMHz = BitConverter.ToSingle(b, o), MilliVolts = BitConverter.ToSingle(b, o + 4), BaseMHz = BitConverter.ToSingle(b, o + 8) };
+                int o = SavedHeader + k * 12;
+                var p = new VfPoint { MilliVolts = BitConverter.ToSingle(b, o), BaseMHz = BitConverter.ToSingle(b, o + 4), OffsetMHz = BitConverter.ToSingle(b, o + 8) };
                 if (!Sane(p)) return null;
                 pts.Add(p);
             }
             return Ordered(pts);
         }
+
+        private const int SavedHeader = 12;
 
         private static int HexVal(char c)
         {

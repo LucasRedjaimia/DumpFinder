@@ -158,6 +158,17 @@ namespace WinCrashDoctor
                 && GpuCurve.ParseSaved("00000100" + userHex.Substring(8)) == null && GpuCurve.ParseSaved(userHex.Substring(0, 200)) == null
                 && GpuCurve.ParseSaved(SavedCurveHex(new List<double> { 900, 850, 950 }, stockAt, stockAt)) == null);
 
+            // Real data (RTX 5080, Afterburner 4.6): 31 points (890–1075 mV) of a saved undervolt that the card, once it
+            // was applied, ran flat at 2850 MHz from 950 mV, exactly as Afterburner's editor drew it. Reading the
+            // fields in the wrong order once shifted every offset by one point and invented a spike: never again.
+            const string realCurve = "000002001F0000000000000000805E4400F013450000204100C05F44001016450000C0400000614400801745000050410080634400B018450000104100C0644400D01A450000A0400000664400A01B450000E0400040674400601D450000004200C0694400B01E450000D84200006B440050204500001D4300406C44009021450000454300806D4400002345000072430000704400F0234500006343004071440050254500004D43008072440040264500003E4300C0734400B02745000027430040764400A02845000018430080774400002A450000024300C0784400F02A450000E64200007A4400502D4500009A4200807C4400B02E4500005C4200C07D4400A02F450000204200007F44009030450000C84100208044008031450000204100608144007032450000A0C000008244006033450000A0C100A082440050344500000CC20040834400403545000048C20080844400303645000082C200208544002037450000A0C200C0854400A037450000B0C200608644000039450000DCC2";
+            List<VfPoint> real = GpuCurve.ParseSaved(realCurve);
+            bool flat = real != null && real.Count == 31 && real.Where(p => p.MilliVolts >= 950).All(p => Math.Abs(p.MHz - 2850) < 0.5)
+                        && Math.Abs(real.First(p => p.MilliVolts == 940).MHz - 2722) < 0.5 && Math.Abs(real.First(p => p.MilliVolts == 950).OffsetMHz - 242) < 0.5;
+            CurveAdvice realAdvice = real != null ? GpuCurve.Analyze(new VfProfile { Id = "Startup", Points = real }, null) : null;
+            expect("vraie courbe Afterburner : plate à 2850 MHz dès 950 mV comme dans l'éditeur, sans faux pic",
+                flat && realAdvice != null && realAdvice.TargetMv == 950 && realAdvice.RunsAtMv == 950 && realAdvice.Tips.All(t => t.Kind != CurveTipKind.Danger));
+
             // Live control memory with Profile 1 applied: the profile is recognised, base clocks drifted by temperature do not matter.
             // Afterburner applied Profile 1 on a warmer GPU: base clocks one bin lower, offsets recomputed (seen on a real
             // RTX 5080), real clocks within a bin of the saved ones. It must still be recognised.
@@ -215,11 +226,12 @@ namespace WinCrashDoctor
             var b = new List<byte>();
             b.AddRange(BitConverter.GetBytes(0x00020000u));
             b.AddRange(BitConverter.GetBytes((uint)mv.Count));
+            b.AddRange(BitConverter.GetBytes(0u));
             foreach (double v in mv)
             {
-                b.AddRange(BitConverter.GetBytes((float)(curve(v) - stock(v))));
                 b.AddRange(BitConverter.GetBytes((float)v));
                 b.AddRange(BitConverter.GetBytes((float)stock(v)));
+                b.AddRange(BitConverter.GetBytes((float)(curve(v) - stock(v))));
             }
             return string.Concat(b.Select(x => x.ToString("X2")));
         }
