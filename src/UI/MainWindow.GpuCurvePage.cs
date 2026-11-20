@@ -132,6 +132,16 @@ namespace WinCrashDoctor
             }
             _curvePanel.Children.Add(pills);
 
+            // A saved profile is not necessarily what runs: say so when it differs from the applied curve (the one
+            // Afterburner's editor shows), e.g. a curve edited and applied without being saved.
+            double gap;
+            if (curve.Id != "Live" && info.Live != null && !info.ActiveIds.Contains(curve.Id) && info.GapToLive.TryGetValue(curve.Id, out gap))
+                _curvePanel.Children.Add(TipCard(new CurveTip
+                {
+                    Kind = CurveTipKind.Warning,
+                    Text = Localizer.F("gpu_curve.saved_differs", GpuCurve.ProfileName(curve.Id), double.IsInfinity(gap) ? "?" : GpuCurve.Mhz(gap))
+                }));
+
             // ---- Chart and legend
             var chartBox = new StackPanel();
             var legend = new WrapPanel { Margin = new Thickness(0, 0, 0, 8) };
@@ -155,8 +165,15 @@ namespace WinCrashDoctor
             chartBox.Children.Add(_curveChart);
             _curvePanel.Children.Add(OptCard(chartBox));
 
-            // ---- Tips
+            // ---- Tips (first: graphics driver crashes of the last 30 days, when a modified curve is shown or applied)
             _curvePanel.Children.Add(OptSectionTitle(Localizer.S("gpu_curve.tips")));
+            List<CrashEntry> gpuCrashes = _crashEntries.Where(c => c.Time > DateTime.Now.AddDays(-30) && IsGpuDriverCrash(c)).OrderByDescending(c => c.Time).ToList();
+            if (gpuCrashes.Count > 0 && (curve.Modified || (info.Live != null && info.Live.Modified)))
+                _curvePanel.Children.Add(TipCard(new CurveTip
+                {
+                    Kind = CurveTipKind.Danger,
+                    Text = Localizer.P("gpu_curve.tip_driver_crashes", gpuCrashes.Count, gpuCrashes[0].Time.ToString("g", Localizer.Culture))
+                }));
             foreach (CurveTip t in advice.Tips) _curvePanel.Children.Add(TipCard(t));
 
             // ---- Suggested values to set by hand, and the test
@@ -188,6 +205,26 @@ namespace WinCrashDoctor
                 _curvePanel.Children.Add(OptCard(vals));
             }
             _curvePanel.Children.Add(OptNote(Localizer.F("gpu_curve.file_note", info.ProfileFile)));
+        }
+
+        /// <summary>
+        /// A crash of the graphics driver: blue screen 0x116 / 0x117 (VIDEO_TDR_FAILURE / TIMEOUT_DETECTED), 0x119,
+        /// 0x10E, or a crash whose culprit or source is the NVIDIA driver (nvlddmkm).
+        /// </summary>
+        internal static bool IsGpuDriverCrash(CrashEntry c)
+        {
+            if (c.Dump != null)
+            {
+                uint code = c.Dump.BugCheckCode;
+                if (code == 0x116 || code == 0x117 || code == 0x119 || code == 0x10E) return true;
+                if ((c.Dump.PrimaryCulpritModule ?? "").StartsWith("nvlddmkm", StringComparison.OrdinalIgnoreCase)) return true;
+            }
+            if (c.Event != null)
+            {
+                if ((c.Event.Source ?? "").IndexOf("nvlddmkm", StringComparison.OrdinalIgnoreCase) >= 0) return true;
+                if (System.Text.RegularExpressions.Regex.IsMatch(c.Event.CodeOrId ?? "", @"0x0*(116|117|119|10E)\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase)) return true;
+            }
+            return false;
         }
 
         private UIElement LegendItem(string brushKey, bool dashed, string text)

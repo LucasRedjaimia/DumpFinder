@@ -57,6 +57,7 @@ namespace WinCrashDoctor
         public VfProfile Stock;            // base frequencies, no offset
         public VfProfile Live;             // null when Afterburner is not running (or its interface is off)
         public List<string> ActiveIds = new List<string>();   // saved profiles matching the live curve ("Stock" when untouched)
+        public Dictionary<string, double> GapToLive = new Dictionary<string, double>();   // per saved profile: largest clock gap to the live curve
         public bool LiveIsCustom { get { return Live != null && ActiveIds.Count == 0; } }
     }
 
@@ -287,39 +288,42 @@ namespace WinCrashDoctor
                 VfProfile p;
                 if (sections.TryGetValue(id, out p) && p.Points != null) info.Profiles.Add(p);
             }
+            // The stock curve as Afterburner draws it (grey line): the driver's current base clocks when it runs, which
+            // drift with temperature, else the defaults saved in the file.
             VfProfile defaults;
-            VfProfile src = sections.TryGetValue("Defaults", out defaults) && defaults.Points != null ? defaults
-                          : info.Profiles.FirstOrDefault() ?? live;
+            VfProfile src = live ?? (sections.TryGetValue("Defaults", out defaults) && defaults.Points != null ? defaults : info.Profiles.FirstOrDefault());
             if (src == null) return null;
             info.Stock = new VfProfile { Id = "Stock", Points = src.Points.Select(p => new VfPoint { MilliVolts = p.MilliVolts, BaseMHz = p.BaseMHz }).ToList() };
 
             if (live != null)
             {
-                // The live base frequencies move with temperature: compare offsets only, and show the live curve on the saved bases.
-                info.Live = new VfProfile
-                {
-                    Id = "Live",
-                    CoreBoostMHz = live.CoreBoostMHz,
-                    MemBoostMHz = live.MemBoostMHz,
-                    Points = info.Stock.Points.Select(s => new VfPoint { MilliVolts = s.MilliVolts, BaseMHz = s.BaseMHz, OffsetMHz = OffsetAt(live, s.MilliVolts) }).ToList()
-                };
+                info.Live = new VfProfile { Id = "Live", CoreBoostMHz = live.CoreBoostMHz, MemBoostMHz = live.MemBoostMHz, Points = live.Points };
+                // Afterburner recomputes the offsets when it applies a profile (the base clocks are not the saved ones):
+                // a saved profile is the applied one when its real clocks match, point by point, within two clock bins.
                 if (!info.Live.Modified) info.ActiveIds.Add("Stock");
                 foreach (VfProfile p in info.Profiles)
-                    if (SameOffsets(p, info.Live) && p.MemBoostMHz == info.Live.MemBoostMHz) info.ActiveIds.Add(p.Id);
-                if (!info.Live.Modified) info.ActiveIds.RemoveAll(id => id != "Stock" && info.Profiles.First(p => p.Id == id).Modified);
+                {
+                    double gap = GapMHz(p, info.Live);
+                    info.GapToLive[p.Id] = gap;
+                    if (gap <= MatchTolerance && p.Modified == info.Live.Modified && p.MemBoostMHz == info.Live.MemBoostMHz) info.ActiveIds.Add(p.Id);
+                }
             }
             return info;
         }
 
-        private static double OffsetAt(VfProfile c, double mv)
-        {
-            VfPoint near = c.Points.OrderBy(p => Math.Abs(p.MilliVolts - mv)).First();
-            return Math.Abs(near.MilliVolts - mv) <= 1 ? near.OffsetMHz : 0;
-        }
+        /// <summary>Two clock bins: what temperature alone moves a point by between saving and applying.</summary>
+        public const double MatchTolerance = 30;
 
-        private static bool SameOffsets(VfProfile a, VfProfile b)
+        /// <summary>Largest difference in real clock between two curves, over the voltages both have (infinity when none).</summary>
+        public static double GapMHz(VfProfile a, VfProfile b)
         {
-            return a.Points.All(p => Math.Abs(p.OffsetMHz - OffsetAt(b, p.MilliVolts)) <= 1);
+            double gap = -1;
+            foreach (VfPoint p in a.Points)
+            {
+                VfPoint q = b.Points.FirstOrDefault(x => Math.Abs(x.MilliVolts - p.MilliVolts) <= 1);
+                if (q != null) gap = Math.Max(gap, Math.Abs(p.MHz - q.MHz));
+            }
+            return gap < 0 ? double.PositiveInfinity : gap;
         }
 
         // ---------- Analysis ----------

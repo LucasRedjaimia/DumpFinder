@@ -159,11 +159,19 @@ namespace WinCrashDoctor
                 && GpuCurve.ParseSaved(SavedCurveHex(new List<double> { 900, 850, 950 }, stockAt, stockAt)) == null);
 
             // Live control memory with Profile 1 applied: the profile is recognised, base clocks drifted by temperature do not matter.
-            byte[] macm = LiveMemory("VEN_10DE&DEV_2C02&SUBSYS_89E01043&REV_A1&BUS_1&DEV_0&FN_0", mv, v => stockAt(v) - 15, v => userAt(v) - stockAt(v), 2000);
+            // Afterburner applied Profile 1 on a warmer GPU: base clocks one bin lower, offsets recomputed (seen on a real
+            // RTX 5080), real clocks within a bin of the saved ones. It must still be recognised.
+            byte[] macm = LiveMemory("VEN_10DE&DEV_2C02&SUBSYS_89E01043&REV_A1&BUS_1&DEV_0&FN_0", mv, v => stockAt(v) - 15, v => userAt(v) - (stockAt(v) - 15) - (v % 10 == 0 ? 7 : 0), 2000);
             var live = GpuCurve.ParseLive(macm);
             GpuCurveInfo info = GpuCurve.Build("x", "x.cfg", lines, live.Count == 1 ? live[0].Item2 : null);
-            expect("mémoire en direct décodée et profil appliqué reconnu (Profil 1)",
-                live.Count == 1 && live[0].Item1.StartsWith("VEN_10DE&DEV_2C02", StringComparison.Ordinal) && info.ActiveIds.SequenceEqual(new[] { "Profile1" }) && !info.LiveIsCustom);
+            expect("mémoire en direct décodée et profil appliqué reconnu malgré des décalages recalculés (Profil 1)",
+                live.Count == 1 && live[0].Item1.StartsWith("VEN_10DE&DEV_2C02", StringComparison.Ordinal) && info.ActiveIds.SequenceEqual(new[] { "Profile1" }) && !info.LiveIsCustom
+                && Math.Abs(info.Stock.Points[mv.IndexOf(950)].BaseMHz - 2595) < 0.5);
+            // A curve edited and applied without being saved: 40 MHz higher on the plateau. Not Profile 1, and the gap is known.
+            byte[] edited = LiveMemory("VEN_10DE", mv, v => stockAt(v), v => userAt(v) - stockAt(v) + (v >= 950 ? 40 : 0), 2000);
+            GpuCurveInfo editedInfo = GpuCurve.Build("x", "x.cfg", lines, GpuCurve.ParseLive(edited)[0].Item2);
+            expect("courbe appliquée non enregistrée : aucun profil reconnu, écart avec Profil 1 de 40 MHz",
+                editedInfo.LiveIsCustom && Math.Abs(editedInfo.GapToLive["Profile1"] - 40) < 0.5);
             byte[] stockLive = LiveMemory("VEN_10DE", mv, v => stockAt(v), v => 0, 0);
             GpuCurveInfo stockInfo = GpuCurve.Build("x", "x.cfg", lines, GpuCurve.ParseLive(stockLive)[0].Item2);
             expect("courbe d'origine appliquée reconnue (et Démarrage, identique)", stockInfo.ActiveIds.Contains("Stock") && stockInfo.ActiveIds.Contains("Startup") && !stockInfo.ActiveIds.Contains("Profile1"));
