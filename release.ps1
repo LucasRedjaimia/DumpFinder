@@ -13,11 +13,22 @@ $ErrorActionPreference = "Stop"
 $root = $PSScriptRoot
 Set-Location $root
 
+# Runs git / gh and fails only on their exit code. Windows PowerShell 5.1 turns anything a native program writes
+# to stderr (git's "LF will be replaced by CRLF" warnings, git push progress) into an error when the output is
+# captured, which stopped a release half-way under $ErrorActionPreference = "Stop".
+function Invoke-Native([string]$What, [scriptblock]$Command) {
+    $saved = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try { & $Command 2>&1 | ForEach-Object { "$_" } }
+    finally { $ErrorActionPreference = $saved }
+    if ($LASTEXITCODE -ne 0) { throw "$What failed (exit code $LASTEXITCODE)" }
+}
+
 $gh = (Get-Command gh -ErrorAction SilentlyContinue).Source
 if (-not $gh -and (Test-Path "$env:ProgramFiles\GitHub CLI\gh.exe")) { $gh = "$env:ProgramFiles\GitHub CLI\gh.exe" }
 if (-not $gh) { throw "GitHub CLI not found. Install it: winget install GitHub.cli" }
-& $gh auth status *> $null
-if ($LASTEXITCODE -ne 0) { throw "GitHub CLI is not signed in. Run: gh auth login" }
+try { Invoke-Native "gh auth status" { & $gh auth status } | Out-Null }
+catch { throw "GitHub CLI is not signed in. Run: gh auth login" }
 
 # 1. Release notes
 $notesDir = Join-Path $root "release-notes"
@@ -58,21 +69,18 @@ $built = (Get-Item $exe).VersionInfo.FileVersion
 if ($built -ne "$Version.0") { throw "Built exe reports $built, expected $Version.0" }
 
 # 5. Commit, tag, push
-git add -A
-git commit -m "Version $Version"
-if ($LASTEXITCODE -ne 0) { throw "git commit failed" }
-git tag -a "v$Version" -m "Dump Finder $Version"
-git push origin HEAD
-git push origin "v$Version"
-if ($LASTEXITCODE -ne 0) { throw "git push failed" }
+Invoke-Native "git add" { git add -A }
+Invoke-Native "git commit" { git commit -m "Version $Version" }
+Invoke-Native "git tag" { git tag -a "v$Version" -m "Dump Finder $Version" }
+Invoke-Native "git push" { git push origin HEAD }
+Invoke-Native "git push (tag)" { git push origin "v$Version" }
 
 # 6. GitHub release with the exe
 # --latest: installed Windows apps read /releases/latest, so it must always be a Windows release
 # (Mac releases are published with --latest=false by mac/release.sh).
 $ghArgs = @("release", "create", "v$Version", $exe, "--title", "Dump Finder $Version", "--notes-file", $notes, "--verify-tag", "--latest")
 if ($Draft) { $ghArgs += "--draft" }
-& $gh @ghArgs
-if ($LASTEXITCODE -ne 0) { throw "gh release create failed" }
+Invoke-Native "gh release create" { & $gh @ghArgs }
 
 $hash = (Get-FileHash $exe -Algorithm SHA256).Hash
 Write-Output ""
