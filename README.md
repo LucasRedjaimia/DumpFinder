@@ -11,7 +11,7 @@ Dump Finder helps you understand why a Windows PC crashes (blue screens, GPU tim
 ## Features
 
 - **Crashes**: reads the Windows event logs and crash dumps (minidumps), identifies the driver or component involved and explains its common causes.
-- **Hardware**: BIOS, memory (EXPO/XMP), GPU, SSDs (SMART), risky drivers, Windows version.
+- **Hardware**: BIOS, memory (EXPO/XMP), GPU, SSDs (SMART), risky drivers, Windows version, and the **GPU curve** (NVIDIA, with MSI Afterburner): the voltage/frequency curve of each saved profile and the one applied right now (read through Afterburner's documented control shared memory), over the stock curve, with a safer suggested version, tips (a point above the plateau, points pushed harder than the target, memory offset) and the values to set by hand. Read-only: Dump Finder never writes the curve.
 - **Stress test**: CPU (core by core), memory, GPU (OpenCL) and disk, with verified results and CPU temperature.
 - **Fixes**: well-known Windows settings that stabilise a PC (TDR, MPO, NVMe SSD HMB…), all reversible.
 - **Optimise**: official Windows settings, preinstalled apps, startup programs, temporary file cleanup, and **Storage**: the largest programs (with their own uninstaller), folders (drill-down of the user folder or a whole drive) and files, each with Show in Explorer and Move to Recycle Bin (undoable from Tools › History). Windows, programs, the profile's standard folders, AppData's Microsoft parts and keys only get Show in Explorer.
@@ -37,7 +37,7 @@ The app has built-in self-tests. Each one writes a report and returns the number
 
 | Command | Checks |
 |---|---|
-| `DumpFinder.exe --parse-selftest out.txt` | crash dump parsers on truncated / corrupted files (no exception, no hang) |
+| `DumpFinder.exe --parse-selftest out.txt` | crash dump parsers on truncated / corrupted files (no exception, no hang); Afterburner curve and control memory decoding, active profile, curve analysis |
 | `DumpFinder.exe --detect-selftest out.txt` | detection rules (drivers, Windows versions, BIOS, NVMe), read-only |
 | `DumpFinder.exe --update-selftest out.txt` | version parsing, release link safety, one request to GitHub |
 | `DumpFinder.exe --optimize-selftest out.txt` | Optimise page; applies then undoes one harmless setting (Game Mode); Storage sizes, protection, Recycle Bin and undo in a temporary folder |

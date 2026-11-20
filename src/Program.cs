@@ -159,6 +159,14 @@ namespace WinCrashDoctor
                             }
                             sWin.SwitchHealthSubTab(3);
                             await shot(-1, "v6_5b_materiel_pilotes.png");
+                            if (await sWin.OpenGpuCurveForCapture())     // only with MSI Afterburner and an NVIDIA card
+                            {
+                                await shot(-1, "v6_5e_materiel_courbe_gpu.png");
+                                sWin.ShowGpuCurveProfileForCapture(null);
+                                await shot(-1, "v6_5f_materiel_courbe_gpu_profil.png");
+                                sWin.CaptureSubView("gpu-curve-bottom");
+                                await shot(-1, "v6_5g_materiel_courbe_gpu_valeurs.png");
+                            }
                             sWin.SwitchHealthSubTab(0);
                             await shot(3, "v6_6_correctifs.png");
                             sWin.CaptureSubView("fixes-bottom");

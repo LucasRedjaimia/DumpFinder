@@ -228,8 +228,10 @@ namespace WinCrashDoctor
             _pageStress.Visibility = (sub == 2) ? Visibility.Visible : Visibility.Collapsed;
             if (_svHealthDrivers != null) _svHealthDrivers.Visibility = (sub == 3) ? Visibility.Visible : Visibility.Collapsed;
             if (_btnHealthSubDrivers != null) StyleTogglePill(_btnHealthSubDrivers, sub == 3);
-            FrameworkElement[] views = { _svHealthHw, _svHealthConf, _pageStress, _svHealthDrivers };
-            AnimatePageIn(views[Math.Max(0, Math.Min(3, sub))]);
+            if (_svHealthCurve != null) _svHealthCurve.Visibility = (sub == HealthSubGpuCurve) ? Visibility.Visible : Visibility.Collapsed;
+            if (_btnHealthSubCurve != null) StyleTogglePill(_btnHealthSubCurve, sub == HealthSubGpuCurve);
+            FrameworkElement[] views = { _svHealthHw, _svHealthConf, _pageStress, _svHealthDrivers, _svHealthCurve };
+            AnimatePageIn(views[Math.Max(0, Math.Min(views.Length - 1, sub))] ?? _svHealthHw);
 
             StyleTogglePill(_btnHealthSubHw, sub == 0);
             StyleTogglePill(_btnHealthSubConf, sub == 1);
