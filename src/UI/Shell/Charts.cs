@@ -90,13 +90,45 @@ namespace WinCrashDoctor
         private List<StabilityDay> _days = new List<StabilityDay>();
         private const double LabelBand = 20;
         private const double TopPad = 8;
-        private readonly ToolTip _tip = new ToolTip { Placement = System.Windows.Controls.Primitives.PlacementMode.Mouse };
+        private readonly ToolTip _tip = new ToolTip { Placement = System.Windows.Controls.Primitives.PlacementMode.Custom };
+
+        /// <summary>Day under the mouse (-1: none). The tooltip sits above that day's point, not where the mouse came in.</summary>
+        private int _hover = -1;
 
         public StabilityChart()
         {
+            _tip.PlacementTarget = this;
+            _tip.CustomPopupPlacementCallback = PlaceTip;
             ToolTip = _tip;
             ToolTipService.SetInitialShowDelay(this, 0);
             Background = Brushes.Transparent;
+        }
+
+        /// <summary>The hovered day's point on the line, in the chart's coordinates.</summary>
+        public Point HoverPoint
+        {
+            get { return _hover < 0 || _hover >= _days.Count ? new Point(double.NaN, double.NaN) : new Point(X(_hover, ActualWidth), Y(_days[_hover].Score, ActualHeight)); }
+        }
+
+        /// <summary>
+        /// Centred above the hovered point, else below it when there is no room above (top of the screen).
+        /// WPF gives the sizes in device pixels: the ratio between the target size and ActualWidth converts our
+        /// coordinates whatever the display scaling.
+        /// </summary>
+        private System.Windows.Controls.Primitives.CustomPopupPlacement[] PlaceTip(Size popupSize, Size targetSize, Point offset)
+        {
+            Point p = HoverPoint;
+            if (double.IsNaN(p.X) || ActualWidth <= 0) return new System.Windows.Controls.Primitives.CustomPopupPlacement[0];
+            double sx = targetSize.Width / ActualWidth, sy = ActualHeight > 0 ? targetSize.Height / ActualHeight : sx;
+            const double gap = 12;
+            double left = p.X * sx - popupSize.Width / 2;
+            var above = new Point(left, (p.Y - gap) * sy - popupSize.Height);
+            var below = new Point(left, (p.Y + gap) * sy);
+            return new[]
+            {
+                new System.Windows.Controls.Primitives.CustomPopupPlacement(above, System.Windows.Controls.Primitives.PopupPrimaryAxis.Horizontal),
+                new System.Windows.Controls.Primitives.CustomPopupPlacement(below, System.Windows.Controls.Primitives.PopupPrimaryAxis.Horizontal)
+            };
         }
 
         /// <summary>Transparent background so the whole area is hit-testable for the tooltip.</summary>
@@ -106,6 +138,7 @@ namespace WinCrashDoctor
         {
             _days = days ?? new List<StabilityDay>();
             _reliability = (reliability ?? new List<ReliabilityPoint>()).GroupBy(p => p.Date.Date).ToDictionary(g => g.Key, g => g.Last().Index);
+            _hover = -1;   // new scan: the next mouse move refills the tooltip with the new data
             InvalidateVisual();
         }
 
@@ -204,6 +237,19 @@ namespace WinCrashDoctor
                 dc.DrawEllipse(b, null, p, r, r);
             }
 
+            // Hovered day: a guide line down to the axis and a ring on its point, so the tooltip clearly belongs to it
+            if (_hover >= 0 && _hover < _days.Count)
+            {
+                var hp = new Point(X(_hover, w), Y(_days[_hover].Score, h));
+                var guide = new Pen(LabelBrush, 1) { DashStyle = new DashStyle(new double[] { 2, 3 }, 0) };
+                guide.Freeze();
+                double gx = Math.Round(hp.X) + 0.5;
+                dc.DrawLine(guide, new Point(gx, TopPad), new Point(gx, h - LabelBand));
+                var ring = new Pen(LineBrush, 1.5);
+                ring.Freeze();
+                dc.DrawEllipse(null, ring, hp, 12, 12);   // around the crash marker too, without hiding its colour
+            }
+
             // Date labels (every 7 days + today)
             var culture = Localizer.Culture; // axis dates in the app language, not the Windows one
             var tf = new Typeface(Ds.UiFont, FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
@@ -226,7 +272,22 @@ namespace WinCrashDoctor
             if (_days.Count == 0 || ActualWidth <= 12) return;
             double x = e.GetPosition(this).X;
             int i = (int)Math.Round((x - 6) / ((ActualWidth - 12) / Math.Max(1, _days.Count - 1)));
-            i = Math.Max(0, Math.Min(_days.Count - 1, i));
+            SetHover(Math.Max(0, Math.Min(_days.Count - 1, i)));
+        }
+
+        protected override void OnMouseLeave(MouseEventArgs e)
+        {
+            base.OnMouseLeave(e);
+            _hover = -1;
+            InvalidateVisual();
+        }
+
+        /// <summary>Shows day <paramref name="i"/> in the tooltip and moves the tooltip over its point (also used by the UI self-test).</summary>
+        public void SetHover(int i)
+        {
+            if (i == _hover || i < 0 || i >= _days.Count) return;
+            _hover = i;
+            InvalidateVisual();
             var d = _days[i];
             int n = d.Events != null ? d.Events.Count : 0;
             string head = d.Date.ToString("dddd d MMMM", Localizer.Culture);
@@ -237,6 +298,8 @@ namespace WinCrashDoctor
             if (_reliability.TryGetValue(d.Date.Date, out widx))
                 body += "\n" + Localizer.S("charts.windows_index") + widx.ToString("0.0") + " / 10";
             _tip.Content = head + "\n" + body;
+            // An open popup only re-runs its placement when an offset changes: nudge it so it follows the new point.
+            _tip.HorizontalOffset = _tip.HorizontalOffset == 0 ? 0.01 : 0;
         }
     }
 }

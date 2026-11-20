@@ -76,6 +76,33 @@ namespace WinCrashDoctor
             expect("Après l'analyse : boutons du résumé affichés", _heroButtons.Visibility == Visibility.Visible);
             await Settle();
 
+            // ---- Stability chart: the tooltip sits over the hovered day's point and follows it
+            SwitchTab(0);
+            await Settle();
+            var tip = _stabilityChart.ToolTip as ToolTip;
+            var placed = new List<string>();
+            bool follows = tip != null && _stabilityChart.ActualWidth > 0;
+            if (follows)
+            {
+                double lastX = double.NaN;
+                foreach (int day in new[] { 9, 20 })
+                {
+                    _stabilityChart.SetHover(day);
+                    tip.IsOpen = true;
+                    await Settle();
+                    Point pt = _stabilityChart.PointToScreen(_stabilityChart.HoverPoint);
+                    Point tipTop = tip.PointToScreen(new Point(tip.ActualWidth / 2, 0));
+                    Point tipBottom = tip.PointToScreen(new Point(tip.ActualWidth / 2, tip.ActualHeight));
+                    bool centred = Math.Abs(tipTop.X - pt.X) <= 2;
+                    bool clear = tipBottom.Y <= pt.Y || tipTop.Y >= pt.Y;   // above the point, or below it near the top of the screen
+                    placed.Add("jour " + day + " : écart " + (tipTop.X - pt.X).ToString("0.#") + " px");
+                    follows &= tip.IsOpen && centred && clear && (double.IsNaN(lastX) || tipTop.X > lastX + 20);
+                    lastX = tipTop.X;
+                }
+                tip.IsOpen = false;
+            }
+            expect("Graphe de stabilité : infobulle centrée sur le point survolé et qui le suit (" + string.Join(", ", placed) + ")", follows);
+
             // ---- Contrast (WCAG 2.1 AA: 4.5:1 for text)
             AppThemeMode keep = ThemeManager.CurrentMode;
             foreach (AppThemeMode mode in new[] { AppThemeMode.Dark, AppThemeMode.Light })
