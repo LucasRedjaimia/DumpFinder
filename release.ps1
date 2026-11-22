@@ -75,14 +75,25 @@ Invoke-Native "git tag" { git tag -a "v$Version" -m "Dump Finder $Version" }
 Invoke-Native "git push" { git push origin HEAD }
 Invoke-Native "git push (tag)" { git push origin "v$Version" }
 
-# 6. GitHub release with the exe
+# 6. GitHub release with the exe, named after its version (DumpFinder-6.4.1.exe, like the Mac zip). With one name
+# for every release, browsers saved updates as "DumpFinder (1).exe", "DumpFinder (2).exe"… next to the old
+# DumpFinder.exe, and opening DumpFinder.exe started the old version again. Installed apps take the first .exe
+# asset whatever its name, so every version (6.0 and later) still finds it.
 # --latest: installed Windows apps read /releases/latest, so it must always be a Windows release
 # (Mac releases are published with --latest=false by mac/release.sh).
-$ghArgs = @("release", "create", "v$Version", $exe, "--title", "Dump Finder $Version", "--notes-file", $notes, "--verify-tag", "--latest")
-if ($Draft) { $ghArgs += "--draft" }
-Invoke-Native "gh release create" { & $gh @ghArgs }
+$assetDir = Join-Path ([IO.Path]::GetTempPath()) ("dumpfinder-release-" + [Guid]::NewGuid().ToString("N"))
+New-Item -ItemType Directory -Force $assetDir | Out-Null
+$asset = Join-Path $assetDir "DumpFinder-$Version.exe"
+Copy-Item $exe $asset
+try
+{
+    $ghArgs = @("release", "create", "v$Version", $asset, "--title", "Dump Finder $Version", "--notes-file", $notes, "--verify-tag", "--latest")
+    if ($Draft) { $ghArgs += "--draft" }
+    Invoke-Native "gh release create" { & $gh @ghArgs }
+}
+finally { Remove-Item -Recurse -Force $assetDir -ErrorAction SilentlyContinue }
 
 $hash = (Get-FileHash $exe -Algorithm SHA256).Hash
 Write-Output ""
 Write-Output "Released Dump Finder $Version"
-Write-Output "SHA-256 of DumpFinder.exe: $hash"
+Write-Output "SHA-256 of DumpFinder-$Version.exe: $hash"

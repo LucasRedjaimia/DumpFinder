@@ -4,7 +4,7 @@
 
 Dump Finder helps you understand why a Windows PC crashes (blue screens, GPU timeouts, sudden reboots) and suggests fixes.
 
-**[Download the latest version](https://github.com/LucasRedjaimia/DumpFinder/releases/latest)**: a single `DumpFinder.exe`, no installation needed (Windows 10 / 11, 64-bit).
+**[Download the latest version](https://github.com/LucasRedjaimia/DumpFinder/releases/latest)**: a single `DumpFinder-<version>.exe`, no installation needed (Windows 10 / 11, 64-bit).
 
 **Mac (preview)**: [Dump Finder for Mac](mac/README.md) for Apple Silicon is in early development, with its own versions: [Mac releases](https://github.com/LucasRedjaimia/DumpFinder/releases?q=mac-v&expanded=true).
 
@@ -93,7 +93,7 @@ Requirements: [GitHub CLI](https://cli.github.com/), signed in (`gh auth login`)
 
 1. Run `.\release.ps1 -Version 6.1.0`. The first time, the script creates `release-notes\v6.1.0.md` and stops.
 2. Write the new features and fixes in that file (Markdown).
-3. Run `.\release.ps1 -Version 6.1.0` again. The script bumps the version number, builds, commits, tags, pushes and publishes the release with `DumpFinder.exe`.
+3. Run `.\release.ps1 -Version 6.1.0` again. The script bumps the version number, builds, commits, tags, pushes and publishes the release with the exe named after its version (`DumpFinder-6.1.0.exe`), so downloaded updates never take an older version's file name.
 
 Users see the new version the next time they open the app.
 
