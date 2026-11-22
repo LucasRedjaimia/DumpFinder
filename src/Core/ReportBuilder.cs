@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net;
-using System.Reflection;
 using System.Text;
 using System.Web.Script.Serialization;
 
@@ -27,9 +26,10 @@ namespace WinCrashDoctor
     /// </summary>
     public static class ReportBuilder
     {
+        /// <summary>Full version (6.5.1): a fix release must be told apart from the one it fixes.</summary>
         private static string Version
         {
-            get { var v = Assembly.GetExecutingAssembly().GetName().Version; return v.Major + "." + v.Minor; }
+            get { return UpdateChecker.CurrentVersionText; }
         }
 
         private static string H(string s) { return WebUtility.HtmlEncode(s ?? ""); }

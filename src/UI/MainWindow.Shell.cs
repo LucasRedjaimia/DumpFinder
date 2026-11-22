@@ -1,5 +1,4 @@
 using System;
-using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -72,14 +71,15 @@ namespace WinCrashDoctor
             ResFg(word, "TextPrimary");
             left.Children.Add(word);
 
-            Version v = Assembly.GetExecutingAssembly().GetName().Version;
+            // Full version (6.5.1, not 6.5): after a fix release the badge must show that the update happened.
+            string versionText = UpdateChecker.CurrentVersionText;
             Border ver = ResBg(new Border
             {
                 CornerRadius = new CornerRadius(8),
                 Padding = new Thickness(6, 1, 6, 2),
                 Margin = new Thickness(9, 1, 0, 0),
                 VerticalAlignment = VerticalAlignment.Center,
-                Child = ResFg(new TextBlock { Text = v.Major + "." + v.Minor, FontSize = 11, FontWeight = FontWeights.SemiBold }, "TextMuted")
+                Child = ResFg(new TextBlock { Text = versionText, FontSize = 11, FontWeight = FontWeights.SemiBold }, "TextMuted")
             }, "BgSubtle");
             left.Children.Add(ver);
 
