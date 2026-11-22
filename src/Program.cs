@@ -242,6 +242,17 @@ namespace WinCrashDoctor
             };
             MainWindow win = new MainWindow(saved);
             Autostart.RefreshPathIfEnabled();
+
+            // After an in-app update: say so once the window is up. Either way, remove the exes left aside by
+            // earlier updates (a few seconds later: the previous process may still be closing).
+            int updatedArg = args != null ? Array.IndexOf(args, SelfUpdate.UpdatedArg) : -1;
+            if (updatedArg >= 0 && updatedArg + 1 < args.Length)
+            {
+                string updatedTo = args[updatedArg + 1];
+                win.Loaded += (s, e) => win.ShowUpdatedToast(updatedTo);
+            }
+            System.Threading.Tasks.Task.Delay(updatedArg >= 0 ? 4000 : 1000).ContinueWith(t => SelfUpdate.CleanupOld());
+
             if (trayStart)
             {
                 app.ShutdownMode = ShutdownMode.OnMainWindowClose;

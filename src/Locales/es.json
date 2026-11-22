@@ -1309,5 +1309,16 @@
   "gpu_curve.tip_plateau": "Meseta a {0} desde {1}, es decir {2} MHz sobre el original a esa tensión. Valídala con la prueba de estabilidad de la GPU antes de aplicarla al iniciar: cada chip es distinto, ninguna curva es fiable sin prueba.",
   "gpu_curve.tip_memory": "Memoria {0} MHz en el perfil de esta curva: la memoria gráfica reciente (GDDR6X, GDDR7) corrige sus propios errores, así que un ajuste demasiado alto pierde rendimiento antes de fallar. Prueba la memoria por separado.",
   "gpu_curve.saved_differs": "Esta es la versión guardada de {0}. Difiere de la curva aplicada ahora (hasta {1} de diferencia), que es la que muestra el editor de Afterburner: elige «Aplicada ahora» para verla.",
-  "gpu_curve.tip_driver_crashes": "one: {0} fallo del controlador gráfico (pantalla azul 0x116 o controlador NVIDIA) en los últimos 30 días, el último el {1}. Una curva o memoria demasiado forzada es la causa más habitual: vuelve a la curva original en Afterburner (Restablecer) hasta que esta curva haya pasado la prueba de estabilidad. | other: {0} fallos del controlador gráfico (pantalla azul 0x116 o controlador NVIDIA) en los últimos 30 días, el último el {1}. Una curva o memoria demasiado forzada es la causa más habitual: vuelve a la curva original en Afterburner (Restablecer) hasta que esta curva haya pasado la prueba de estabilidad."
+  "gpu_curve.tip_driver_crashes": "one: {0} fallo del controlador gráfico (pantalla azul 0x116 o controlador NVIDIA) en los últimos 30 días, el último el {1}. Una curva o memoria demasiado forzada es la causa más habitual: vuelve a la curva original en Afterburner (Restablecer) hasta que esta curva haya pasado la prueba de estabilidad. | other: {0} fallos del controlador gráfico (pantalla azul 0x116 o controlador NVIDIA) en los últimos 30 días, el último el {1}. Una curva o memoria demasiado forzada es la causa más habitual: vuelve a la curva original en Afterburner (Restablecer) hasta que esta curva haya pasado la prueba de estabilidad.",
+  "self_update.install": "Actualizar a {0}",
+  "self_update.downloading": "Descargando Dump Finder {0}… {1} %",
+  "self_update.restarting": "Dump Finder {0} está verificado y listo: reiniciando…",
+  "self_update.busy": "Hay un cambio o una prueba de estabilidad en curso: deja que termine y luego actualiza (el reinicio la interrumpiría).",
+  "self_update.not_installable": "Esta versión no se puede instalar desde la app.",
+  "self_update.failed_download": "La descarga no funcionó.",
+  "self_update.failed_check": "El archivo descargado no es el publicado (tamaño, suma de comprobación o versión), así que no se instaló.",
+  "self_update.folder_read_only": "No se puede escribir en la carpeta de Dump Finder sin derechos de administrador.",
+  "self_update.failed_replace": "La nueva versión no pudo reemplazar a esta; se conservó la versión actual.",
+  "self_update.fallback": "Haz clic de nuevo para obtenerla desde la página de descarga.",
+  "self_update.updated": "Dump Finder está actualizado: versión {0}."
 }

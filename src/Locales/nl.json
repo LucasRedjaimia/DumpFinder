@@ -1309,5 +1309,16 @@
   "gpu_curve.tip_plateau": "Plateau op {0} vanaf {1}, dus {2} MHz boven het origineel bij die spanning. Controleer het met de GPU-stabiliteitstest voordat je het bij het opstarten toepast: elke chip is anders, geen curve is betrouwbaar zonder test.",
   "gpu_curve.tip_memory": "Geheugen {0} MHz in het profiel van deze curve: recent grafisch geheugen (GDDR6X, GDDR7) herstelt zijn eigen fouten, dus een te hoge instelling kost prestaties voordat het crasht. Test het geheugen apart.",
   "gpu_curve.saved_differs": "Dit is de opgeslagen versie van {0}. Die wijkt af van de nu toegepaste curve (tot {1} verschil), de curve die de editor van Afterburner toont: kies \"Nu toegepast\" om die te zien.",
-  "gpu_curve.tip_driver_crashes": "one: {0} crash van het grafische stuurprogramma (blauw scherm 0x116 of NVIDIA-driver) in de afgelopen 30 dagen, de laatste op {1}. Een te ver opgedreven curve of geheugen is de meest voorkomende oorzaak: ga in Afterburner terug naar de originele curve (Reset) totdat deze curve de stabiliteitstest heeft doorstaan. | other: {0} crashes van het grafische stuurprogramma (blauw scherm 0x116 of NVIDIA-driver) in de afgelopen 30 dagen, de laatste op {1}. Een te ver opgedreven curve of geheugen is de meest voorkomende oorzaak: ga in Afterburner terug naar de originele curve (Reset) totdat deze curve de stabiliteitstest heeft doorstaan."
+  "gpu_curve.tip_driver_crashes": "one: {0} crash van het grafische stuurprogramma (blauw scherm 0x116 of NVIDIA-driver) in de afgelopen 30 dagen, de laatste op {1}. Een te ver opgedreven curve of geheugen is de meest voorkomende oorzaak: ga in Afterburner terug naar de originele curve (Reset) totdat deze curve de stabiliteitstest heeft doorstaan. | other: {0} crashes van het grafische stuurprogramma (blauw scherm 0x116 of NVIDIA-driver) in de afgelopen 30 dagen, de laatste op {1}. Een te ver opgedreven curve of geheugen is de meest voorkomende oorzaak: ga in Afterburner terug naar de originele curve (Reset) totdat deze curve de stabiliteitstest heeft doorstaan.",
+  "self_update.install": "Bijwerken naar {0}",
+  "self_update.downloading": "Dump Finder {0} downloaden… {1} %",
+  "self_update.restarting": "Dump Finder {0} is gecontroleerd en geplaatst: opnieuw starten…",
+  "self_update.busy": "Er loopt een wijziging of stabiliteitstest: laat die eerst afronden en werk daarna bij (opnieuw starten zou hem afbreken).",
+  "self_update.not_installable": "Deze versie kan niet vanuit de app worden geïnstalleerd.",
+  "self_update.failed_download": "Het downloaden is niet gelukt.",
+  "self_update.failed_check": "Het gedownloade bestand is niet het gepubliceerde (grootte, controlesom of versie) en is niet geïnstalleerd.",
+  "self_update.folder_read_only": "In de map van Dump Finder kan niet worden geschreven zonder beheerdersrechten.",
+  "self_update.failed_replace": "De nieuwe versie kon deze niet vervangen; de huidige versie is behouden.",
+  "self_update.fallback": "Klik opnieuw om hem via de downloadpagina te halen.",
+  "self_update.updated": "Dump Finder is bijgewerkt: versie {0}."
 }

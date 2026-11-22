@@ -1309,5 +1309,16 @@
   "gpu_curve.tip_plateau": "从 {1} 起平台为 {0}，即该电压下比原始曲线高 {2} MHz。在设为启动时应用之前，请先用 GPU 稳定性测试验证：每颗芯片都不同，没有测试就没有可靠的曲线。",
   "gpu_curve.tip_memory": "此曲线的配置文件中显存为 {0} MHz：新型显存 (GDDR6X、GDDR7) 会自行重传出错的数据，因此设置过高会先导致性能下降，然后才会崩溃。请单独测试显存。",
   "gpu_curve.saved_differs": "这是 {0} 的已保存版本。它与当前应用的曲线不同 (最多相差 {1})，Afterburner 编辑器显示的是当前应用的曲线：选择“当前应用”即可查看。",
-  "gpu_curve.tip_driver_crashes": "过去 30 天内发生了 {0} 次显卡驱动崩溃 (蓝屏 0x116 或 NVIDIA 驱动)，最近一次在 {1}。最常见的原因是曲线或显存设置过于激进：在此曲线通过稳定性测试之前，请在 Afterburner 中恢复原始曲线 (重置)。"
+  "gpu_curve.tip_driver_crashes": "过去 30 天内发生了 {0} 次显卡驱动崩溃 (蓝屏 0x116 或 NVIDIA 驱动)，最近一次在 {1}。最常见的原因是曲线或显存设置过于激进：在此曲线通过稳定性测试之前，请在 Afterburner 中恢复原始曲线 (重置)。",
+  "self_update.install": "更新到 {0}",
+  "self_update.downloading": "正在下载 Dump Finder {0}… {1}%",
+  "self_update.restarting": "Dump Finder {0} 已校验并就位：正在重新启动…",
+  "self_update.busy": "有更改或稳定性测试正在进行：请等它完成后再更新 (重新启动会中断它)。",
+  "self_update.not_installable": "此版本无法在应用内安装。",
+  "self_update.failed_download": "下载未成功。",
+  "self_update.failed_check": "下载的文件与发布的文件不一致 (大小、校验和或版本)，因此未安装。",
+  "self_update.folder_read_only": "没有管理员权限无法写入 Dump Finder 所在的文件夹。",
+  "self_update.failed_replace": "新版本无法替换当前版本，已保留当前版本。",
+  "self_update.fallback": "再次点击即可从下载页面获取。",
+  "self_update.updated": "Dump Finder 已是最新：版本 {0}。"
 }

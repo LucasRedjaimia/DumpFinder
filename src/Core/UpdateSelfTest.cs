@@ -40,6 +40,10 @@ namespace WinCrashDoctor
             expect("asset hors repo remplacé par la page de la release", foreign != null && UpdateChecker.IsOwnUrl(foreign.DownloadUrl));
 
             sb.AppendLine();
+            sb.AppendLine("=== Mise à jour dans l'app ===");
+            SelfUpdateCases(expect);
+
+            sb.AppendLine();
             sb.AppendLine("=== Tables de détection (data/detection.json) ===");
             DetectionDataCases(expect, sb);
 
@@ -49,7 +53,8 @@ namespace WinCrashDoctor
                 UpdateInfo live = UpdateChecker.GetLatestAsync(cts.Token).GetAwaiter().GetResult();
                 sb.AppendLine(live == null
                     ? "GitHub : aucune release publiée lue (repo absent, sans release, ou hors ligne)"
-                    : "GitHub : dernière release " + live.Version.ToString(3) + " · " + live.DownloadUrl + (live.Version > UpdateChecker.CurrentVersion ? " → mise à jour proposée" : " → déjà à jour"));
+                    : "GitHub : dernière release " + live.Version.ToString(3) + " · " + live.DownloadUrl + (live.Version > UpdateChecker.CurrentVersion ? " → mise à jour proposée" : " → déjà à jour")
+                      + " · installable dans l'app : " + (SelfUpdate.CannotInstall(live) ?? "oui (" + live.ExeSize + " octets, SHA-256 " + live.ExeSha256.Substring(0, 12) + "…)"));
             }
             string onlineData = DetectionData.DownloadAsync().GetAwaiter().GetResult();
             string onlineWhy = null;
@@ -69,6 +74,64 @@ namespace WinCrashDoctor
         /// Downloaded detection tables: validation, version rule, size cap, and the security limit (a downloaded
         /// driver can be detected, never disabled or reverted). In memory only: nothing is written to the cache.
         /// </summary>
+        /// <summary>
+        /// In-app update, without downloading anything: checksum and size read from the release, allowed download
+        /// hosts, the file checks (on a copy of this exe), the swap with rollback and the cleanup, in a temp folder.
+        /// </summary>
+        private static void SelfUpdateCases(Action<string, bool> expect)
+        {
+            string hex = new string('a', 64);
+            expect("empreinte GitHub lue (sha256:…), valeurs invalides refusées",
+                UpdateChecker.Sha256Of("sha256:" + hex.ToUpperInvariant()) == hex && UpdateChecker.Sha256Of("sha256:abc") == null
+                && UpdateChecker.Sha256Of("md5:" + hex) == null && UpdateChecker.Sha256Of("sha256:" + new string('g', 64)) == null && UpdateChecker.Sha256Of(null) == null);
+
+            string withDigest = "{\"tag_name\":\"v9.1.0\",\"html_url\":\"" + UpdateChecker.RepoUrl + "/releases/tag/v9.1.0\",\"draft\":false,\"prerelease\":false," +
+                                "\"assets\":[{\"name\":\"DumpFinder-9.1.0.exe\",\"size\":9476096,\"digest\":\"sha256:" + hex + "\",\"browser_download_url\":\"" + UpdateChecker.RepoUrl + "/releases/download/v9.1.0/DumpFinder-9.1.0.exe\"}]}";
+            UpdateInfo u = UpdateChecker.Parse(withDigest);
+            UpdateInfo noDigest = UpdateChecker.Parse(withDigest.Replace(",\"digest\":\"sha256:" + hex + "\"", ""));
+            UpdateInfo foreign = UpdateChecker.Parse(withDigest.Replace(UpdateChecker.RepoUrl + "/releases/download", "https://evil.example"));
+            expect("release installable dans l'app seulement avec un exe du repo et son empreinte",
+                u != null && u.ExeSha256 == hex && u.ExeSize == 9476096 && SelfUpdate.CannotInstall(u) == null
+                && SelfUpdate.CannotInstall(noDigest) != null && foreign.ExeUrl == null && SelfUpdate.CannotInstall(foreign) != null);
+            expect("téléchargement limité aux serveurs GitHub en HTTPS",
+                SelfUpdate.IsDownloadHost(new Uri("https://github.com/x")) && SelfUpdate.IsDownloadHost(new Uri("https://release-assets.githubusercontent.com/x"))
+                && SelfUpdate.IsDownloadHost(new Uri("https://objects.githubusercontent.com/x")) && !SelfUpdate.IsDownloadHost(new Uri("http://github.com/x"))
+                && !SelfUpdate.IsDownloadHost(new Uri("https://evil.example/x")) && !SelfUpdate.IsDownloadHost(new Uri("https://github.com.evil.example/x")));
+
+            string dir = Path.Combine(Path.GetTempPath(), "dumpfinder-update-selftest-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+            try
+            {
+                // File checks on a copy of this exe: right size, checksum, product and version accepted; anything else refused.
+                string copy = Path.Combine(dir, "copy.download");
+                File.Copy(SelfUpdate.ExePath, copy);
+                var me = new UpdateInfo { Version = UpdateChecker.CurrentVersion, ExeSize = new FileInfo(copy).Length, ExeSha256 = SelfUpdate.Sha256(copy) };
+                var otherHash = new UpdateInfo { Version = me.Version, ExeSize = me.ExeSize, ExeSha256 = hex };
+                var otherVersion = new UpdateInfo { Version = new Version(me.Version.Major + 1, 0, 0), ExeSize = me.ExeSize, ExeSha256 = me.ExeSha256 };
+                var otherSize = new UpdateInfo { Version = me.Version, ExeSize = me.ExeSize + 1, ExeSha256 = me.ExeSha256 };
+                expect("fichier vérifié : accepté s'il est identique, refusé si empreinte, version ou taille diffèrent",
+                    SelfUpdate.Verify(copy, me) == null && SelfUpdate.Verify(copy, otherHash) != null && SelfUpdate.Verify(copy, otherVersion) != null && SelfUpdate.Verify(copy, otherSize) != null);
+
+                // Swap: the new file takes the exe's name, the old one is kept aside, then cleaned up.
+                string exe = Path.Combine(dir, "App.exe"), dl = Path.Combine(dir, "App.download");
+                File.WriteAllText(exe, "old");
+                File.WriteAllText(dl, "new");
+                string old = SelfUpdate.Swap(dl, exe);
+                bool swapped = File.ReadAllText(exe) == "new" && File.ReadAllText(old) == "old" && !File.Exists(dl) && Path.GetFileName(old).StartsWith("App.old_", StringComparison.Ordinal);
+                int cleaned = SelfUpdate.CleanupOld(exe);
+                expect("échange : le nouvel exe prend le nom, l'ancien est mis de côté puis supprimé au démarrage suivant", swapped && cleaned == 1 && !File.Exists(old) && File.Exists(exe));
+
+                // A failed swap (the new file vanished) puts the current exe back.
+                bool threw = false;
+                try { SelfUpdate.Swap(Path.Combine(dir, "missing.download"), exe); } catch (UpdateException) { threw = true; }
+                expect("échange raté : l'exe actuel est remis en place", threw && File.ReadAllText(exe) == "new" && Directory.GetFiles(dir, "App.old_*").Length == 0);
+            }
+            finally
+            {
+                try { Directory.Delete(dir, true); } catch (Exception) { }
+            }
+        }
+
         private static void DetectionDataCases(Action<string, bool> expect, StringBuilder sb)
         {
             string why;

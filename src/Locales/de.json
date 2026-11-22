@@ -1309,5 +1309,16 @@
   "gpu_curve.tip_plateau": "Plateau bei {0} ab {1}, also {2} MHz über dem Original bei dieser Spannung. Prüfe es mit dem GPU-Stabilitätstest, bevor du es beim Start anwendest: Jeder Chip ist anders, keine Kurve ist ohne Test zuverlässig.",
   "gpu_curve.tip_memory": "Speicher {0} MHz im Profil dieser Kurve: Aktueller Grafikspeicher (GDDR6X, GDDR7) wiederholt fehlerhafte Übertragungen selbst, daher kostet eine zu hohe Einstellung Leistung, bevor es abstürzt. Teste den Speicher separat.",
   "gpu_curve.saved_differs": "Das ist die gespeicherte Version von {0}. Sie weicht von der gerade angewendeten Kurve ab (bis zu {1}), die der Kurveneditor von Afterburner zeigt: Wähle „Gerade angewendet“, um sie zu sehen.",
-  "gpu_curve.tip_driver_crashes": "one: {0} Absturz des Grafiktreibers (Bluescreen 0x116 oder NVIDIA-Treiber) in den letzten 30 Tagen, zuletzt am {1}. Eine zu weit getriebene Kurve oder Speichereinstellung ist die häufigste Ursache: Kehre in Afterburner zur Originalkurve zurück (Zurücksetzen), bis diese Kurve den Stabilitätstest bestanden hat. | other: {0} Abstürze des Grafiktreibers (Bluescreen 0x116 oder NVIDIA-Treiber) in den letzten 30 Tagen, zuletzt am {1}. Eine zu weit getriebene Kurve oder Speichereinstellung ist die häufigste Ursache: Kehre in Afterburner zur Originalkurve zurück (Zurücksetzen), bis diese Kurve den Stabilitätstest bestanden hat."
+  "gpu_curve.tip_driver_crashes": "one: {0} Absturz des Grafiktreibers (Bluescreen 0x116 oder NVIDIA-Treiber) in den letzten 30 Tagen, zuletzt am {1}. Eine zu weit getriebene Kurve oder Speichereinstellung ist die häufigste Ursache: Kehre in Afterburner zur Originalkurve zurück (Zurücksetzen), bis diese Kurve den Stabilitätstest bestanden hat. | other: {0} Abstürze des Grafiktreibers (Bluescreen 0x116 oder NVIDIA-Treiber) in den letzten 30 Tagen, zuletzt am {1}. Eine zu weit getriebene Kurve oder Speichereinstellung ist die häufigste Ursache: Kehre in Afterburner zur Originalkurve zurück (Zurücksetzen), bis diese Kurve den Stabilitätstest bestanden hat.",
+  "self_update.install": "Auf {0} aktualisieren",
+  "self_update.downloading": "Dump Finder {0} wird heruntergeladen … {1} %",
+  "self_update.restarting": "Dump Finder {0} ist geprüft und installiert: Neustart …",
+  "self_update.busy": "Eine Änderung oder ein Stabilitätstest läuft: Lass ihn erst fertig werden und aktualisiere dann (der Neustart würde ihn abbrechen).",
+  "self_update.not_installable": "Diese Version kann nicht aus der App installiert werden.",
+  "self_update.failed_download": "Der Download hat nicht funktioniert.",
+  "self_update.failed_check": "Die heruntergeladene Datei ist nicht die veröffentlichte (Größe, Prüfsumme oder Version) und wurde nicht installiert.",
+  "self_update.folder_read_only": "In den Ordner von Dump Finder kann ohne Administratorrechte nicht geschrieben werden.",
+  "self_update.failed_replace": "Die neue Version konnte diese nicht ersetzen; die aktuelle Version bleibt erhalten.",
+  "self_update.fallback": "Klicke erneut, um sie über die Downloadseite zu holen.",
+  "self_update.updated": "Dump Finder ist aktuell: Version {0}."
 }

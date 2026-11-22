@@ -22,7 +22,8 @@ namespace WinCrashDoctor
         private StackPanel _updNotes;
         private Button _btnUpdDownload, _btnUpdLater, _btnUpdSkip, _btnUpdPage;
         private UpdateInfo _shownUpdate, _pendingUpdate;
-        private bool _updateChecking;
+        private bool _updateChecking, _updateInstalling;
+        private TextBlock _lblUpdStatus;
 
         private Button _btnUpdToggle, _btnUpdCheckNow;
         private TextBlock _lblSetUpdTitle, _lblSetUpdDesc;
@@ -64,6 +65,9 @@ namespace WinCrashDoctor
             }, "BgSubtle"), "BorderCard");
             sp.Children.Add(notesBox);
 
+            _lblUpdStatus = ResFg(new TextBlock { FontSize = 12.5, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 12, 0, 0), Visibility = Visibility.Collapsed }, "TextSecondary");
+            sp.Children.Add(_lblUpdStatus);
+
             Grid foot = new Grid { Margin = new Thickness(0, 18, 0, 0) };
             foot.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             foot.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -83,7 +87,12 @@ namespace WinCrashDoctor
             _btnUpdLater.Click += (s, e) => HideUpdate();
             _btnUpdDownload = CreatePrimaryButton("", "Accent", "OnAccent", new Thickness(18, 7, 18, 7), 13);
             _btnUpdDownload.Margin = new Thickness(8, 0, 0, 0);
-            _btnUpdDownload.Click += (s, e) => { if (_shownUpdate != null) OpenRepoUrl(_shownUpdate.DownloadUrl); HideUpdate(); };
+            _btnUpdDownload.Click += async (s, e) =>
+            {
+                if (_shownUpdate == null) return;
+                if (SelfUpdate.CannotInstall(_shownUpdate) == null) await InstallShownUpdateAsync();
+                else { OpenRepoUrl(_shownUpdate.DownloadUrl); HideUpdate(); }
+            };
             btns.Children.Add(_btnUpdSkip);
             btns.Children.Add(_btnUpdLater);
             btns.Children.Add(_btnUpdDownload);
@@ -111,7 +120,10 @@ namespace WinCrashDoctor
 
             RenderReleaseNotes(u.Notes);
 
-            _btnUpdDownload.Content = Localizer.S("updates.download") + ver;
+            // In place when the release has a checkable exe; otherwise (older releases) the download page as before.
+            _btnUpdDownload.Content = SelfUpdate.CannotInstall(u) == null ? Localizer.F("self_update.install", ver) : Localizer.S("updates.download") + ver;
+            _lblUpdStatus.Visibility = Visibility.Collapsed;
+            SetUpdateButtonsEnabled(true);
             _btnUpdLater.Content = Localizer.S("updates.later");
             _btnUpdSkip.Content = Localizer.S("updates.skip_this_version");
             _btnUpdPage.Content = Localizer.S("updates.view_on_github");
@@ -122,8 +134,74 @@ namespace WinCrashDoctor
 
         private void HideUpdate()
         {
+            if (_updateInstalling) return;          // the card stays until the install ends (restart or error)
             if (_updateOverlay != null) _updateOverlay.Visibility = Visibility.Collapsed;
             _shownUpdate = null;
+        }
+
+        private void SetUpdateButtonsEnabled(bool on)
+        {
+            foreach (Button b in new[] { _btnUpdDownload, _btnUpdLater, _btnUpdSkip, _btnUpdPage }) if (b != null) b.IsEnabled = on;
+        }
+
+        private void SetUpdateStatus(string text, string fgKey)
+        {
+            _lblUpdStatus.Text = text;
+            _lblUpdStatus.SetResourceReference(TextBlock.ForegroundProperty, fgKey);
+            _lblUpdStatus.Visibility = Visibility.Visible;
+        }
+
+        /// <summary>
+        /// Downloads and checks the new exe, swaps it in place of this one and restarts. Refused while a change or a
+        /// stress test runs (restarting would cut it). On failure the current version stays, with the reason and the
+        /// download page as a fallback.
+        /// </summary>
+        private async Task InstallShownUpdateAsync()
+        {
+            UpdateInfo u = _shownUpdate;
+            if (u == null || _updateInstalling) return;
+            if (_fixInProgress || _stressRunner.IsRunning)
+            {
+                SetUpdateStatus(Localizer.S("self_update.busy"), "WarnFg");
+                return;
+            }
+            _updateInstalling = true;
+            SetUpdateButtonsEnabled(false);
+            string ver = u.Version.ToString(3);
+            try
+            {
+                var progress = new Progress<double>(p => SetUpdateStatus(Localizer.F("self_update.downloading", ver, (int)Math.Round(p * 100)), "TextSecondary"));
+                SetUpdateStatus(Localizer.F("self_update.downloading", ver, 0), "TextSecondary");
+                string file;
+                using (var cts = new CancellationTokenSource(TimeSpan.FromMinutes(10)))
+                    file = await SelfUpdate.DownloadAsync(u, progress, cts.Token);
+                SetUpdateStatus(Localizer.F("self_update.restarting", ver), "SuccessFg");
+                string exe = SelfUpdate.ExePath;
+                string old = SelfUpdate.Swap(file, exe);
+                Log.Info("Updated " + UpdateChecker.CurrentVersionText + " → " + ver + " (previous exe: " + old + ")");
+                await Task.Delay(400);                  // let the status show
+                SelfUpdate.Restart(exe, u.Version);
+                _forceExit = true;
+                RunExitCleanup();
+                Application.Current.Shutdown();
+            }
+            catch (Exception ex)
+            {
+                var ue = ex as UpdateException;
+                Log.Warn(ex, "in-app update" + (ue != null ? ": " + ue.Detail : ""));
+                _updateInstalling = false;
+                SetUpdateButtonsEnabled(true);
+                SetUpdateStatus((ue != null ? ue.Message : Localizer.S("self_update.failed_download")) + " " + Localizer.S("self_update.fallback"), "WarnFg");
+                _btnUpdDownload.Content = Localizer.S("updates.download") + ver;      // next click: the download page
+                _shownUpdate = new UpdateInfo { Version = u.Version, Tag = u.Tag, Title = u.Title, Notes = u.Notes, DownloadUrl = u.DownloadUrl, PageUrl = u.PageUrl, PublishedAt = u.PublishedAt };
+            }
+        }
+
+        /// <summary>First launch after an in-app update.</summary>
+        public void ShowUpdatedToast(string version)
+        {
+            Version v = UpdateChecker.ParseVersion(version);
+            if (v != null && v == UpdateChecker.CurrentVersion) SetToast(Localizer.F("self_update.updated", UpdateChecker.CurrentVersionText), "SuccessFg");
         }
 
         private void SkipShownUpdate()
