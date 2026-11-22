@@ -12,7 +12,7 @@ namespace WinCrashDoctor
     public static class McpServer
     {
         public const string ServerName = "dumpfinder";
-        public const string ServerVersion = "6.5.2";
+        public const string ServerVersion = "6.5.3";
 
         public static string GetExePath()
         {
