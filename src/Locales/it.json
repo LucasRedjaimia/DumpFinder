@@ -1309,5 +1309,16 @@
   "gpu_curve.tip_plateau": "Plateau a {0} da {1}, cioè {2} MHz sopra l'originale a quella tensione. Convalidalo con il test di stabilità GPU prima di applicarlo all'avvio: ogni chip è diverso, nessuna curva è affidabile senza test.",
   "gpu_curve.tip_memory": "Memoria {0} MHz nel profilo di questa curva: la memoria grafica recente (GDDR6X, GDDR7) corregge da sola i propri errori, quindi un'impostazione troppo alta fa perdere prestazioni prima di andare in crash. Testa la memoria separatamente.",
   "gpu_curve.saved_differs": "Questa è la versione salvata di {0}. È diversa dalla curva applicata ora (fino a {1} di differenza), quella mostrata dall'editor di Afterburner: scegli «Applicata ora» per vederla.",
-  "gpu_curve.tip_driver_crashes": "one: {0} crash del driver grafico (schermata blu 0x116 o driver NVIDIA) negli ultimi 30 giorni, l'ultimo il {1}. Una curva o una memoria spinte troppo sono la causa più frequente: torna alla curva originale in Afterburner (Ripristina) finché questa curva non ha superato il test di stabilità. | other: {0} crash del driver grafico (schermata blu 0x116 o driver NVIDIA) negli ultimi 30 giorni, l'ultimo il {1}. Una curva o una memoria spinte troppo sono la causa più frequente: torna alla curva originale in Afterburner (Ripristina) finché questa curva non ha superato il test di stabilità."
+  "gpu_curve.tip_driver_crashes": "one: {0} crash del driver grafico (schermata blu 0x116 o driver NVIDIA) negli ultimi 30 giorni, l'ultimo il {1}. Una curva o una memoria spinte troppo sono la causa più frequente: torna alla curva originale in Afterburner (Ripristina) finché questa curva non ha superato il test di stabilità. | other: {0} crash del driver grafico (schermata blu 0x116 o driver NVIDIA) negli ultimi 30 giorni, l'ultimo il {1}. Una curva o una memoria spinte troppo sono la causa più frequente: torna alla curva originale in Afterburner (Ripristina) finché questa curva non ha superato il test di stabilità.",
+  "self_update.install": "Aggiorna a {0}",
+  "self_update.downloading": "Download di Dump Finder {0}… {1} %",
+  "self_update.restarting": "Dump Finder {0} è verificato e installato: riavvio…",
+  "self_update.busy": "È in corso una modifica o un test di stabilità: lascialo terminare, poi aggiorna (il riavvio lo interromperebbe).",
+  "self_update.not_installable": "Questa versione non può essere installata dall'app.",
+  "self_update.failed_download": "Il download non è riuscito.",
+  "self_update.failed_check": "Il file scaricato non è quello pubblicato (dimensione, checksum o versione): non è stato installato.",
+  "self_update.folder_read_only": "La cartella di Dump Finder non è modificabile senza diritti di amministratore.",
+  "self_update.failed_replace": "La nuova versione non ha potuto sostituire questa: la versione attuale è stata mantenuta.",
+  "self_update.fallback": "Fai di nuovo clic per scaricarla dalla pagina di download.",
+  "self_update.updated": "Dump Finder è aggiornato: versione {0}."
 }

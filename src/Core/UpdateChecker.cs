@@ -19,6 +19,9 @@ namespace WinCrashDoctor
         public string DownloadUrl;  // the .exe (or .zip) asset, else the release page
         public string PageUrl;
         public DateTime? PublishedAt;
+        public string ExeUrl;       // the .exe asset itself (null when the release has none)
+        public string ExeSha256;    // its SHA-256 as GitHub computed it ("digest"), lowercase hex; null when not given
+        public long ExeSize;        // its size in bytes, 0 when unknown
     }
 
     /// <summary>
@@ -94,7 +97,8 @@ namespace WinCrashDoctor
             if (v == null) return null;
 
             string page = Str(root, "html_url");
-            string exe = null, zip = null;
+            string exe = null, zip = null, exeDigest = null;
+            long exeSize = 0;
             var assets = root.ContainsKey("assets") ? root["assets"] as IEnumerable : null;
             if (assets != null)
             {
@@ -104,7 +108,13 @@ namespace WinCrashDoctor
                     if (a == null) continue;
                     string name = Str(a, "name") ?? "";
                     string url = Str(a, "browser_download_url");
-                    if (exe == null && name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) exe = url;
+                    if (exe == null && name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                    {
+                        exe = url;
+                        exeDigest = Sha256Of(Str(a, "digest"));
+                        object size;
+                        if (a.TryGetValue("size", out size) && size != null) long.TryParse(Convert.ToString(size, System.Globalization.CultureInfo.InvariantCulture), out exeSize);
+                    }
                     else if (zip == null && name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) zip = url;
                 }
             }
@@ -112,6 +122,9 @@ namespace WinCrashDoctor
             DateTime published;
             return new UpdateInfo
             {
+                ExeUrl = IsOwnUrl(exe) ? exe : null,
+                ExeSha256 = exeDigest,
+                ExeSize = exeSize,
                 Version = v,
                 Tag = tag,
                 Title = Str(root, "name"),
@@ -143,6 +156,16 @@ namespace WinCrashDoctor
             return !string.IsNullOrEmpty(url) &&
                    (url.StartsWith(RepoUrl + "/", StringComparison.OrdinalIgnoreCase) || url.StartsWith(RawPrefix, StringComparison.OrdinalIgnoreCase)) &&
                    Uri.IsWellFormedUriString(url, UriKind.Absolute);
+        }
+
+        /// <summary>"sha256:ab12…" (GitHub asset digest) → "ab12…" when it is 64 hex characters, else null.</summary>
+        internal static string Sha256Of(string digest)
+        {
+            if (string.IsNullOrEmpty(digest) || !digest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase)) return null;
+            string hex = digest.Substring(7).Trim().ToLowerInvariant();
+            if (hex.Length != 64) return null;
+            foreach (char c in hex) if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'))) return null;
+            return hex;
         }
 
         private static string Str(Dictionary<string, object> d, string k) { object v; return d.TryGetValue(k, out v) ? v as string : null; }

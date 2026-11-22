@@ -1309,5 +1309,16 @@
   "gpu_curve.tip_plateau": "Platô em {0} a partir de {1}, ou seja {2} MHz acima do original nessa tensão. Valide-o com o teste de estabilidade da GPU antes de aplicá-lo na inicialização: cada chip é diferente, nenhuma curva é confiável sem teste.",
   "gpu_curve.tip_memory": "Memória {0} MHz no perfil desta curva: a memória gráfica recente (GDDR6X, GDDR7) corrige os próprios erros, então um ajuste alto demais perde desempenho antes de travar. Teste a memória separadamente.",
   "gpu_curve.saved_differs": "Esta é a versão salva de {0}. Ela difere da curva aplicada agora (até {1} de diferença), que é a mostrada pelo editor do Afterburner: escolha \"Aplicada agora\" para vê-la.",
-  "gpu_curve.tip_driver_crashes": "one: {0} falha do driver gráfico (tela azul 0x116 ou driver NVIDIA) nos últimos 30 dias, a última em {1}. Uma curva ou memória forçada demais é a causa mais comum: volte à curva original no Afterburner (Redefinir) até esta curva passar no teste de estabilidade. | other: {0} falhas do driver gráfico (tela azul 0x116 ou driver NVIDIA) nos últimos 30 dias, a última em {1}. Uma curva ou memória forçada demais é a causa mais comum: volte à curva original no Afterburner (Redefinir) até esta curva passar no teste de estabilidade."
+  "gpu_curve.tip_driver_crashes": "one: {0} falha do driver gráfico (tela azul 0x116 ou driver NVIDIA) nos últimos 30 dias, a última em {1}. Uma curva ou memória forçada demais é a causa mais comum: volte à curva original no Afterburner (Redefinir) até esta curva passar no teste de estabilidade. | other: {0} falhas do driver gráfico (tela azul 0x116 ou driver NVIDIA) nos últimos 30 dias, a última em {1}. Uma curva ou memória forçada demais é a causa mais comum: volte à curva original no Afterburner (Redefinir) até esta curva passar no teste de estabilidade.",
+  "self_update.install": "Atualizar para {0}",
+  "self_update.downloading": "Baixando o Dump Finder {0}… {1} %",
+  "self_update.restarting": "O Dump Finder {0} foi verificado e instalado: reiniciando…",
+  "self_update.busy": "Há uma alteração ou um teste de estabilidade em andamento: deixe terminar e depois atualize (reiniciar o interromperia).",
+  "self_update.not_installable": "Esta versão não pode ser instalada pelo app.",
+  "self_update.failed_download": "O download não funcionou.",
+  "self_update.failed_check": "O arquivo baixado não é o publicado (tamanho, soma de verificação ou versão), então não foi instalado.",
+  "self_update.folder_read_only": "A pasta do Dump Finder não pode ser alterada sem direitos de administrador.",
+  "self_update.failed_replace": "A nova versão não pôde substituir esta; a versão atual foi mantida.",
+  "self_update.fallback": "Clique de novo para obtê-la na página de download.",
+  "self_update.updated": "O Dump Finder está atualizado: versão {0}."
 }

@@ -1309,5 +1309,16 @@
   "gpu_curve.tip_plateau": "{1} から {0} のプラトーで、この電圧では標準より {2} MHz 高くなっています。起動時に適用する前に GPU 安定性テストで確認してください。チップはそれぞれ異なり、テストなしで信頼できるカーブはありません。",
   "gpu_curve.tip_memory": "このカーブのプロファイルではメモリが {0} MHz です。最近のグラフィックスメモリ (GDDR6X、GDDR7) は自らエラーを再送するため、設定が高すぎるとクラッシュする前に性能が落ちます。メモリは単独でテストしてください。",
   "gpu_curve.saved_differs": "これは {0} の保存済みバージョンです。現在適用中のカーブ (最大 {1} の差) とは異なります。Afterburner のエディターが表示しているのは適用中のカーブなので、「現在適用中」を選んで確認してください。",
-  "gpu_curve.tip_driver_crashes": "過去 30 日間にグラフィックスドライバーのクラッシュ (ブルースクリーン 0x116 または NVIDIA ドライバー) が {0} 件あり、最新は {1} です。最も多い原因は攻めすぎたカーブやメモリ設定です。このカーブが安定性テストに合格するまで、Afterburner で標準カーブに戻してください (リセット)。"
+  "gpu_curve.tip_driver_crashes": "過去 30 日間にグラフィックスドライバーのクラッシュ (ブルースクリーン 0x116 または NVIDIA ドライバー) が {0} 件あり、最新は {1} です。最も多い原因は攻めすぎたカーブやメモリ設定です。このカーブが安定性テストに合格するまで、Afterburner で標準カーブに戻してください (リセット)。",
+  "self_update.install": "{0} に更新",
+  "self_update.downloading": "Dump Finder {0} をダウンロード中… {1} %",
+  "self_update.restarting": "Dump Finder {0} を確認して配置しました。再起動しています…",
+  "self_update.busy": "変更または安定性テストの実行中です。終わってから更新してください (再起動すると中断されます)。",
+  "self_update.not_installable": "このバージョンはアプリから導入できません。",
+  "self_update.failed_download": "ダウンロードできませんでした。",
+  "self_update.failed_check": "ダウンロードしたファイルが公開版と一致しない (サイズ、チェックサム、バージョン) ため、導入しませんでした。",
+  "self_update.folder_read_only": "管理者権限がないと Dump Finder のフォルダーに書き込めません。",
+  "self_update.failed_replace": "新しいバージョンに置き換えられなかったため、現在のバージョンを残しました。",
+  "self_update.fallback": "もう一度クリックすると、ダウンロードページから入手できます。",
+  "self_update.updated": "Dump Finder は最新です: バージョン {0}。"
 }

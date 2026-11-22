@@ -1309,5 +1309,16 @@
   "gpu_curve.tip_plateau": "Plateau at {0} from {1}, i.e. {2} MHz over stock at that voltage. Validate it with the GPU stability test before applying it at startup: every chip is different, so no curve is reliable without a test.",
   "gpu_curve.tip_memory": "Memory {0} MHz in this curve's profile: recent graphics memory (GDDR6X, GDDR7) retries its own errors, so a setting too high loses performance before it crashes. Test the memory on its own.",
   "gpu_curve.saved_differs": "This is the saved version of {0}. It differs from the curve applied right now (up to {1} apart), which is the one Afterburner's editor shows: choose \"Applied now\" to see it.",
-  "gpu_curve.tip_driver_crashes": "one: {0} graphics driver crash (blue screen 0x116 or the NVIDIA driver) in the last 30 days, the last on {1}. A curve or memory pushed too far is the most common cause: go back to the stock curve in Afterburner (Reset) until this curve has passed the stability test. | other: {0} graphics driver crashes (blue screen 0x116 or the NVIDIA driver) in the last 30 days, the last on {1}. A curve or memory pushed too far is the most common cause: go back to the stock curve in Afterburner (Reset) until this curve has passed the stability test."
+  "gpu_curve.tip_driver_crashes": "one: {0} graphics driver crash (blue screen 0x116 or the NVIDIA driver) in the last 30 days, the last on {1}. A curve or memory pushed too far is the most common cause: go back to the stock curve in Afterburner (Reset) until this curve has passed the stability test. | other: {0} graphics driver crashes (blue screen 0x116 or the NVIDIA driver) in the last 30 days, the last on {1}. A curve or memory pushed too far is the most common cause: go back to the stock curve in Afterburner (Reset) until this curve has passed the stability test.",
+  "self_update.install": "Update to {0}",
+  "self_update.downloading": "Downloading Dump Finder {0}… {1} %",
+  "self_update.restarting": "Dump Finder {0} is checked and in place: restarting…",
+  "self_update.busy": "A change or a stability test is running: let it finish, then update (restarting would cut it).",
+  "self_update.not_installable": "This release can't be installed from the app.",
+  "self_update.failed_download": "The download didn't work.",
+  "self_update.failed_check": "The downloaded file isn't the published one (size, checksum or version), so it wasn't installed.",
+  "self_update.folder_read_only": "Dump Finder's folder can't be written to without administrator rights.",
+  "self_update.failed_replace": "The new version couldn't take the place of this one; the current version was kept.",
+  "self_update.fallback": "Click again to get it from the download page.",
+  "self_update.updated": "Dump Finder is up to date: version {0}."
 }

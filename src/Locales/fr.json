@@ -1309,5 +1309,16 @@
   "gpu_curve.tip_plateau": "Plateau à {0} dès {1}, soit {2} MHz au-dessus de l'origine à cette tension. Valide-le avec le test de stabilité GPU avant de l'appliquer au démarrage : chaque puce est différente, aucune courbe n'est fiable sans test.",
   "gpu_curve.tip_memory": "Mémoire {0} MHz dans le profil de cette courbe : la mémoire graphique récente (GDDR6X, GDDR7) corrige ses propres erreurs, donc un réglage trop haut fait perdre des performances avant de planter. Teste la mémoire séparément.",
   "gpu_curve.saved_differs": "C'est la version enregistrée de {0}. Elle diffère de la courbe appliquée en ce moment (jusqu'à {1} d'écart), celle que montre l'éditeur d'Afterburner : choisis « Appliquée maintenant » pour la voir.",
-  "gpu_curve.tip_driver_crashes": "one: {0} plantage du pilote graphique (écran bleu 0x116 ou pilote NVIDIA) ces 30 derniers jours, le dernier le {1}. Une courbe ou une mémoire poussée trop loin en est la cause la plus fréquente : reviens à la courbe d'origine dans Afterburner (Réinitialiser) tant que cette courbe n'a pas passé le test de stabilité. | other: {0} plantages du pilote graphique (écran bleu 0x116 ou pilote NVIDIA) ces 30 derniers jours, le dernier le {1}. Une courbe ou une mémoire poussée trop loin en est la cause la plus fréquente : reviens à la courbe d'origine dans Afterburner (Réinitialiser) tant que cette courbe n'a pas passé le test de stabilité."
+  "gpu_curve.tip_driver_crashes": "one: {0} plantage du pilote graphique (écran bleu 0x116 ou pilote NVIDIA) ces 30 derniers jours, le dernier le {1}. Une courbe ou une mémoire poussée trop loin en est la cause la plus fréquente : reviens à la courbe d'origine dans Afterburner (Réinitialiser) tant que cette courbe n'a pas passé le test de stabilité. | other: {0} plantages du pilote graphique (écran bleu 0x116 ou pilote NVIDIA) ces 30 derniers jours, le dernier le {1}. Une courbe ou une mémoire poussée trop loin en est la cause la plus fréquente : reviens à la courbe d'origine dans Afterburner (Réinitialiser) tant que cette courbe n'a pas passé le test de stabilité.",
+  "self_update.install": "Mettre à jour vers {0}",
+  "self_update.downloading": "Téléchargement de Dump Finder {0}… {1} %",
+  "self_update.restarting": "Dump Finder {0} est vérifié et en place : redémarrage…",
+  "self_update.busy": "Une modification ou un test de stabilité est en cours : laisse-le se terminer, puis mets à jour (le redémarrage l'interromprait).",
+  "self_update.not_installable": "Cette version ne peut pas être installée depuis l'app.",
+  "self_update.failed_download": "Le téléchargement n'a pas abouti.",
+  "self_update.failed_check": "Le fichier téléchargé n'est pas celui publié (taille, empreinte ou version) : il n'a pas été installé.",
+  "self_update.folder_read_only": "Le dossier de Dump Finder n'est pas modifiable sans droits administrateur.",
+  "self_update.failed_replace": "La nouvelle version n'a pas pu remplacer celle-ci : la version actuelle a été conservée.",
+  "self_update.fallback": "Clique à nouveau pour la récupérer depuis la page de téléchargement.",
+  "self_update.updated": "Dump Finder est à jour : version {0}."
 }

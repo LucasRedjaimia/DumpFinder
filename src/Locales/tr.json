@@ -1309,5 +1309,16 @@
   "gpu_curve.tip_plateau": "{1} itibarıyla {0} plato, yani bu voltajda orijinalin {2} MHz üzerinde. Başlangıçta uygulamadan önce GPU kararlılık testiyle doğrula: her çip farklıdır, testsiz hiçbir eğri güvenilir değildir.",
   "gpu_curve.tip_memory": "Bu eğrinin profilinde bellek {0} MHz: yeni grafik belleği (GDDR6X, GDDR7) kendi hatalarını yeniden dener, bu yüzden fazla yüksek bir ayar çökmeden önce performans kaybettirir. Belleği ayrıca test et.",
   "gpu_curve.saved_differs": "Bu, {0} profilinin kayıtlı sürümü. Şu an uygulanan eğriden ({1} kadar) farklı; Afterburner düzenleyicisinin gösterdiği eğri o: görmek için \"Şu an uygulanan\"ı seç.",
-  "gpu_curve.tip_driver_crashes": "one: Son 30 günde {0} grafik sürücüsü çökmesi (mavi ekran 0x116 veya NVIDIA sürücüsü), sonuncusu {1}. En sık neden fazla zorlanmış bir eğri ya da bellektir: bu eğri kararlılık testini geçene kadar Afterburner'da orijinal eğriye dön (Sıfırla). | other: Son 30 günde {0} grafik sürücüsü çökmesi (mavi ekran 0x116 veya NVIDIA sürücüsü), sonuncusu {1}. En sık neden fazla zorlanmış bir eğri ya da bellektir: bu eğri kararlılık testini geçene kadar Afterburner'da orijinal eğriye dön (Sıfırla)."
+  "gpu_curve.tip_driver_crashes": "one: Son 30 günde {0} grafik sürücüsü çökmesi (mavi ekran 0x116 veya NVIDIA sürücüsü), sonuncusu {1}. En sık neden fazla zorlanmış bir eğri ya da bellektir: bu eğri kararlılık testini geçene kadar Afterburner'da orijinal eğriye dön (Sıfırla). | other: Son 30 günde {0} grafik sürücüsü çökmesi (mavi ekran 0x116 veya NVIDIA sürücüsü), sonuncusu {1}. En sık neden fazla zorlanmış bir eğri ya da bellektir: bu eğri kararlılık testini geçene kadar Afterburner'da orijinal eğriye dön (Sıfırla).",
+  "self_update.install": "{0} sürümüne güncelle",
+  "self_update.downloading": "Dump Finder {0} indiriliyor… %{1}",
+  "self_update.restarting": "Dump Finder {0} doğrulandı ve yerine kondu: yeniden başlatılıyor…",
+  "self_update.busy": "Bir değişiklik ya da kararlılık testi sürüyor: bitmesini bekle, sonra güncelle (yeniden başlatma onu yarıda keser).",
+  "self_update.not_installable": "Bu sürüm uygulamadan yüklenemiyor.",
+  "self_update.failed_download": "İndirme başarısız oldu.",
+  "self_update.failed_check": "İndirilen dosya yayımlanan dosya değil (boyut, sağlama toplamı veya sürüm), bu yüzden yüklenmedi.",
+  "self_update.folder_read_only": "Dump Finder klasörüne yönetici hakları olmadan yazılamıyor.",
+  "self_update.failed_replace": "Yeni sürüm bunun yerine geçemedi; mevcut sürüm korundu.",
+  "self_update.fallback": "İndirme sayfasından almak için yeniden tıkla.",
+  "self_update.updated": "Dump Finder güncel: sürüm {0}."
 }
