@@ -67,28 +67,29 @@ namespace WinCrashDoctor
             }, "BgSubtle"), "BorderCard");
             sp.Children.Add(notesBox);
 
-            _lblUpdStatus = ResFg(new TextBlock { FontSize = 12.5, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 12, 0, 0), Visibility = Visibility.Collapsed }, "TextSecondary");
+            // "View on GitHub" sits under the notes, on its own: in the button row the four items did not fit the
+            // 580 px card in French ("Mettre à jour vers 6.5.2" was cut off on the right).
+            _btnUpdPage = CreateFlatButton("", "BgCard", "AccentText", "BgCard", new Thickness(0, 4, 0, 4), 12.5);
+            _btnUpdPage.BorderThickness = new Thickness(0);
+            _btnUpdPage.HorizontalAlignment = HorizontalAlignment.Left;
+            _btnUpdPage.Margin = new Thickness(0, 8, 0, 0);
+            _btnUpdPage.Click += (s, e) => { if (_shownUpdate != null) OpenRepoUrl(_shownUpdate.PageUrl); };
+            sp.Children.Add(_btnUpdPage);
+
+            _lblUpdStatus = ResFg(new TextBlock { FontSize = 12.5, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 10, 0, 0), Visibility = Visibility.Collapsed }, "TextSecondary");
             sp.Children.Add(_lblUpdStatus);
 
-            Grid foot = new Grid { Margin = new Thickness(0, 18, 0, 0) };
-            foot.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            foot.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            foot.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-            _btnUpdPage = CreateFlatButton("", "BgCard", "AccentText", "BgCard", new Thickness(0, 7, 12, 7), 12.5);
-            _btnUpdPage.BorderThickness = new Thickness(0);
-            _btnUpdPage.Click += (s, e) => { if (_shownUpdate != null) OpenRepoUrl(_shownUpdate.PageUrl); };
-            foot.Children.Add(_btnUpdPage);
-
-            StackPanel btns = new StackPanel { Orientation = Orientation.Horizontal };
+            // Buttons on the right; in a longer language they move to a second line instead of being cut off.
+            WrapPanel btns = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 14, 0, 0) };
             _btnUpdSkip = CreateFlatButton("", "BgCard", "TextSecondary", "BgCard", new Thickness(12, 7, 12, 7), 13);
             _btnUpdSkip.BorderThickness = new Thickness(0);
+            _btnUpdSkip.Margin = new Thickness(0, 4, 0, 0);
             _btnUpdSkip.Click += (s, e) => SkipShownUpdate();
             _btnUpdLater = CreateFlatButton("", "BgCard", "TextPrimary", "BorderStrong", new Thickness(14, 7, 14, 7), 13);
-            _btnUpdLater.Margin = new Thickness(6, 0, 0, 0);
+            _btnUpdLater.Margin = new Thickness(6, 4, 0, 0);
             _btnUpdLater.Click += (s, e) => HideUpdate();
             _btnUpdDownload = CreatePrimaryButton("", "Accent", "OnAccent", new Thickness(18, 7, 18, 7), 13);
-            _btnUpdDownload.Margin = new Thickness(8, 0, 0, 0);
+            _btnUpdDownload.Margin = new Thickness(8, 4, 0, 0);
             _btnUpdDownload.Click += async (s, e) =>
             {
                 if (_shownUpdate == null) return;
@@ -98,9 +99,7 @@ namespace WinCrashDoctor
             btns.Children.Add(_btnUpdSkip);
             btns.Children.Add(_btnUpdLater);
             btns.Children.Add(_btnUpdDownload);
-            Grid.SetColumn(btns, 2);
-            foot.Children.Add(btns);
-            sp.Children.Add(foot);
+            sp.Children.Add(btns);
 
             card.Child = sp;
             _updateOverlay.Children.Add(card);
@@ -290,7 +289,11 @@ namespace WinCrashDoctor
                 PublishedAt = DateTime.Now,
                 Notes = "## What's new\n- **Optimise** tab: settings, apps, startup and cleanup\n- CPU temperature during the stress test\n\n## Fixes\n- The HMB advice no longer shows outside Windows 11 24H2\n- \"It's already the latest version\" button on the BIOS warning",
                 DownloadUrl = UpdateChecker.RepoUrl + "/releases/latest",
-                PageUrl = UpdateChecker.RepoUrl + "/releases/latest"
+                PageUrl = UpdateChecker.RepoUrl + "/releases/latest",
+                // Installable from the app, so the card shows its real button ("Update to x"), the longest one.
+                ExeUrl = UpdateChecker.RepoUrl + "/releases/latest",
+                ExeSha256 = new string('0', 64),
+                ExeSize = 1
             });
         }
 
