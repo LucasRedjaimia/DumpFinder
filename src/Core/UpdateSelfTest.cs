@@ -33,6 +33,9 @@ namespace WinCrashDoctor
             UpdateInfo u = UpdateChecker.Parse(sample);
             expect("release lue (9.1.0, lien vers l'exe)", u != null && u.Version == new Version(9, 1, 0) && u.DownloadUrl.EndsWith("/DumpFinder.exe") && u.Notes == "- Nouveau");
             expect("pré-version ignorée", UpdateChecker.Parse(sample.Replace("\"prerelease\":false", "\"prerelease\":true")) == null);
+            // Since 6.4.1 the exe is published as DumpFinder-<version>.exe: the download button must still point to it.
+            UpdateInfo named = UpdateChecker.Parse(sample.Replace("DumpFinder.exe", "DumpFinder-9.1.0.exe"));
+            expect("exe nommé avec sa version (DumpFinder-9.1.0.exe) trouvé", named != null && named.DownloadUrl == UpdateChecker.RepoUrl + "/releases/download/v9.1.0/DumpFinder-9.1.0.exe");
             UpdateInfo foreign = UpdateChecker.Parse(sample.Replace(UpdateChecker.RepoUrl + "/releases/download", "https://evil.example"));
             expect("asset hors repo remplacé par la page de la release", foreign != null && UpdateChecker.IsOwnUrl(foreign.DownloadUrl));
 
