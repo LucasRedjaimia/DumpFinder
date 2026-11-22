@@ -48,6 +48,10 @@ namespace WinCrashDoctor
             DetectionDataCases(expect, sb);
 
             sb.AppendLine();
+            sb.AppendLine("=== Démarrage avec Windows (clé Run, registre non touché) ===");
+            AutostartCases(expect);
+
+            sb.AppendLine();
             using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(20)))
             {
                 UpdateInfo live = UpdateChecker.GetLatestAsync(cts.Token).GetAwaiter().GetResult();
@@ -68,6 +72,37 @@ namespace WinCrashDoctor
             sb.AppendLine(bad == 0 ? "TOUT EST CONFORME" : bad + " ÉCART(S)");
             System.IO.File.WriteAllText(outPath, sb.ToString(), new UTF8Encoding(false));
             return bad;
+        }
+
+        /// <summary>
+        /// Start-with-Windows repoint decision, as a pure function: a second copy of the exe must never take over
+        /// an entry that still points at a valid exe. The file check is faked; the real registry is never read or written.
+        /// </summary>
+        private static void AutostartCases(Action<string, bool> expect)
+        {
+            const string installed = @"C:\Users\Me\Apps\Dump Finder\DumpFinder.exe";
+            const string copy = @"C:\Users\Me\Downloads\DumpFinder (3).exe";
+            const string devBuild = @"C:\Code\DumpFinder\src\bin\Release\DumpFinder.exe";
+            string registered = Autostart.BuildCommand(installed);
+            Func<string, bool> present = p => string.Equals(p, installed, StringComparison.OrdinalIgnoreCase);
+            Func<string, bool> gone = p => false;
+
+            expect("commande lue : chemin entre guillemets puis --tray", Autostart.ParseExePath(registered) == installed);
+            expect("commande lue : chemin sans guillemets puis --tray", Autostart.ParseExePath(@"C:\Apps\DumpFinder.exe --tray") == @"C:\Apps\DumpFinder.exe");
+            expect("commande mal formée refusée (guillemet non fermé)", Autostart.ParseExePath(@"""C:\Apps\DumpFinder.exe --tray") == null);
+            expect("commande mal formée refusée (pas un .exe)", Autostart.ParseExePath(@"""C:\Apps\notes.txt"" --tray") == null);
+            expect("commande mal formée refusée (chemin vide)", Autostart.ParseExePath(@""""" --tray") == null);
+            expect("commande mal formée refusée (chemin relatif)", Autostart.ParseExePath(@"""DumpFinder.exe"" --tray") == null);
+
+            expect("autre copie lancée, exe enregistré présent → entrée conservée", !Autostart.ShouldRepoint(registered, copy, present));
+            expect("build de dev lancé, exe enregistré présent → entrée conservée", !Autostart.ShouldRepoint(registered, devBuild, present));
+            expect("exe enregistré déplacé ou supprimé → entrée repointée", Autostart.ShouldRepoint(registered, copy, gone));
+            expect("même exe (casse différente) → rien à réécrire", !Autostart.ShouldRepoint(registered, installed.ToUpperInvariant(), gone));
+            expect("entrée mal formée → repointée", Autostart.ShouldRepoint(@"""C:\Apps\DumpFinder.exe --tray", copy, present));
+            expect("option désactivée (pas d'entrée) → rien", !Autostart.ShouldRepoint(null, copy, gone));
+            expect("valeur sans --tray (pas la nôtre) → rien", !Autostart.ShouldRepoint(@"""" + installed + @"""", copy, gone));
+            expect("vérification du fichier en échec → entrée conservée",
+                   !Autostart.ShouldRepoint(registered, copy, p => { throw new UnauthorizedAccessException(); }));
         }
 
         /// <summary>
