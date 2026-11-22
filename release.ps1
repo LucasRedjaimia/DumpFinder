@@ -27,6 +27,12 @@ function Invoke-Native([string]$What, [scriptblock]$Command) {
 $gh = (Get-Command gh -ErrorAction SilentlyContinue).Source
 if (-not $gh -and (Test-Path "$env:ProgramFiles\GitHub CLI\gh.exe")) { $gh = "$env:ProgramFiles\GitHub CLI\gh.exe" }
 if (-not $gh) { throw "GitHub CLI not found. Install it: winget install GitHub.cli" }
+# owner/name of this repository, passed to gh with --repo: without it gh looks git up itself to read the
+# remote, and from Windows PowerShell it reports "unable to find git executable in PATH" even when git is
+# there, which stopped every release at its last step (6.3.1, 6.4.0, 6.5.0).
+$originUrl = (git remote get-url origin 2>$null | Select-Object -First 1)
+if ($originUrl -notmatch 'github\.com[:/](?<slug>[^/]+/[^/]+?)(\.git)?/?$') { throw "Could not read the GitHub repository from the origin remote ($originUrl)" }
+$repoSlug = $Matches['slug']
 try { Invoke-Native "gh auth status" { & $gh auth status } | Out-Null }
 catch { throw "GitHub CLI is not signed in. Run: gh auth login" }
 
@@ -87,7 +93,7 @@ $asset = Join-Path $assetDir "DumpFinder-$Version.exe"
 Copy-Item $exe $asset
 try
 {
-    $ghArgs = @("release", "create", "v$Version", $asset, "--title", "Dump Finder $Version", "--notes-file", $notes, "--verify-tag", "--latest")
+    $ghArgs = @("release", "create", "v$Version", $asset, "--repo", $repoSlug, "--title", "Dump Finder $Version", "--notes-file", $notes, "--verify-tag", "--latest")
     if ($Draft) { $ghArgs += "--draft" }
     Invoke-Native "gh release create" { & $gh @ghArgs }
 }

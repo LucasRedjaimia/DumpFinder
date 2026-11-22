@@ -1320,5 +1320,8 @@
   "self_update.folder_read_only": "A pasta do Dump Finder não pode ser alterada sem direitos de administrador.",
   "self_update.failed_replace": "A nova versão não pôde substituir esta; a versão atual foi mantida.",
   "self_update.fallback": "Clique de novo para obtê-la na página de download.",
-  "self_update.updated": "O Dump Finder está atualizado: versão {0}."
+  "self_update.updated": "O Dump Finder está atualizado: versão {0}.",
+  "running_copies.older_running": "Uma versão anterior do Dump Finder ({0}) ainda está em execução, provavelmente na área de notificação.\n\nFechá-la para manter só a versão {1}?",
+  "running_copies.closed": "Dump Finder {0} fechado.",
+  "running_copies.not_closed": "Não foi possível fechar a versão anterior (talvez esteja sendo executada como administrador): feche-a pelo ícone na área de notificação."
 }

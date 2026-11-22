@@ -1320,5 +1320,8 @@
   "self_update.folder_read_only": "管理者権限がないと Dump Finder のフォルダーに書き込めません。",
   "self_update.failed_replace": "新しいバージョンに置き換えられなかったため、現在のバージョンを残しました。",
   "self_update.fallback": "もう一度クリックすると、ダウンロードページから入手できます。",
-  "self_update.updated": "Dump Finder は最新です: バージョン {0}。"
+  "self_update.updated": "Dump Finder は最新です: バージョン {0}。",
+  "running_copies.older_running": "古いバージョンの Dump Finder ({0}) がまだ実行中です (おそらく通知領域)。\n\n閉じて、バージョン {1} だけにしますか?",
+  "running_copies.closed": "Dump Finder {0} を閉じました。",
+  "running_copies.not_closed": "古いバージョンを閉じられませんでした (管理者として実行中の可能性があります)。通知領域のアイコンから閉じてください。"
 }

@@ -1320,5 +1320,8 @@
   "self_update.folder_read_only": "In de map van Dump Finder kan niet worden geschreven zonder beheerdersrechten.",
   "self_update.failed_replace": "De nieuwe versie kon deze niet vervangen; de huidige versie is behouden.",
   "self_update.fallback": "Klik opnieuw om hem via de downloadpagina te halen.",
-  "self_update.updated": "Dump Finder is bijgewerkt: versie {0}."
+  "self_update.updated": "Dump Finder is bijgewerkt: versie {0}.",
+  "running_copies.older_running": "Een oudere versie van Dump Finder ({0}) draait nog, waarschijnlijk in het systeemvak.\n\nDeze sluiten zodat alleen versie {1} overblijft?",
+  "running_copies.closed": "Dump Finder {0} gesloten.",
+  "running_copies.not_closed": "De oudere versie kon niet worden gesloten (misschien draait die als administrator): sluit hem via zijn pictogram in het systeemvak."
 }
