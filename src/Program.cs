@@ -5,8 +5,8 @@ using System.Windows;
 [assembly: AssemblyTitle("Dump Finder")]
 [assembly: AssemblyDescription("Windows Crash & Minidump Diagnostics, Hardware Check, AI Advisor, Native MCP Server & Stress Tester")]
 [assembly: AssemblyProduct("Dump Finder")]
-[assembly: AssemblyVersion("6.5.0.0")]
-[assembly: AssemblyFileVersion("6.5.0.0")]
+[assembly: AssemblyVersion("6.5.1.0")]
+[assembly: AssemblyFileVersion("6.5.1.0")]
 
 namespace WinCrashDoctor
 {
