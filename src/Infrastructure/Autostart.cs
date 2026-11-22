@@ -70,14 +70,42 @@ namespace WinCrashDoctor
         }
 
         /// <summary>
-        /// Called on every normal launch. Repoints the entry at the current exe only when the registered exe is
-        /// gone (the user moved or deleted it). A second copy (another download, a dev build, a temp copy) must
-        /// never take over an entry that still points at a valid exe.
+        /// Called on every normal launch. Repoints the entry at the current exe when the registered exe is gone
+        /// (moved or deleted) or is an older Dump Finder (a new version downloaded by hand next to the old file).
+        /// Another copy of the same or an older version (a second download, a dev build) never takes it over.
         /// </summary>
         public static void RefreshPathIfEnabled()
         {
             string registered = RegisteredCommand;
-            if (ShouldRepoint(registered, Elevation.ExePath, File.Exists)) Set(true);
+            if (ShouldRepoint(registered, Elevation.ExePath, File.Exists, DumpFinderVersionOf, UpdateChecker.CurrentVersion)) Set(true);
+        }
+
+        /// <summary>The version of a Dump Finder exe, null when the file is not Dump Finder or cannot be read.</summary>
+        internal static Version DumpFinderVersionOf(string exe)
+        {
+            try
+            {
+                var v = System.Diagnostics.FileVersionInfo.GetVersionInfo(exe);
+                return v.ProductName == "Dump Finder" ? UpdateChecker.ParseVersion(v.FileVersion) : null;
+            }
+            catch (Exception) { return null; }
+        }
+
+        /// <summary>
+        /// Same as the 3-argument decision, plus: an entry naming an existing but older Dump Finder is taken over
+        /// by <paramref name="currentVersion"/>. An unknown version (not Dump Finder, unreadable) is left alone.
+        /// </summary>
+        internal static bool ShouldRepoint(string registeredCommand, string currentExe, Func<string, bool> fileExists,
+                                           Func<string, Version> versionOf, Version currentVersion)
+        {
+            if (ShouldRepoint(registeredCommand, currentExe, fileExists)) return true;
+            if (versionOf == null || currentVersion == null || !IsOurCommand(registeredCommand)) return false;
+            string registeredExe = ParseExePath(registeredCommand);
+            if (registeredExe == null || SamePath(registeredExe, currentExe)) return false;
+            Version registered;
+            try { registered = versionOf(registeredExe); }
+            catch { registered = null; }
+            return registered != null && registered < currentVersion;
         }
 
         /// <summary>

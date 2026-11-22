@@ -1320,5 +1320,8 @@
   "self_update.folder_read_only": "Folderu Dump Finder nie można zmieniać bez uprawnień administratora.",
   "self_update.failed_replace": "Nowa wersja nie mogła zastąpić tej; zachowano bieżącą wersję.",
   "self_update.fallback": "Kliknij ponownie, aby pobrać ją ze strony pobierania.",
-  "self_update.updated": "Dump Finder jest aktualny: wersja {0}."
+  "self_update.updated": "Dump Finder jest aktualny: wersja {0}.",
+  "running_copies.older_running": "Starsza wersja Dump Finder ({0}) nadal działa, prawdopodobnie w obszarze powiadomień.\n\nZamknąć ją, aby została tylko wersja {1}?",
+  "running_copies.closed": "Zamknięto Dump Finder {0}.",
+  "running_copies.not_closed": "Nie udało się zamknąć starszej wersji (może działa jako administrator): zamknij ją z ikony w obszarze powiadomień."
 }

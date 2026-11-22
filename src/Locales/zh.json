@@ -1320,5 +1320,8 @@
   "self_update.folder_read_only": "没有管理员权限无法写入 Dump Finder 所在的文件夹。",
   "self_update.failed_replace": "新版本无法替换当前版本，已保留当前版本。",
   "self_update.fallback": "再次点击即可从下载页面获取。",
-  "self_update.updated": "Dump Finder 已是最新：版本 {0}。"
+  "self_update.updated": "Dump Finder 已是最新：版本 {0}。",
+  "running_copies.older_running": "旧版本的 Dump Finder ({0}) 仍在运行，可能位于通知区域。\n\n要关闭它，只保留版本 {1} 吗？",
+  "running_copies.closed": "已关闭 Dump Finder {0}。",
+  "running_copies.not_closed": "无法关闭旧版本 (它可能以管理员身份运行)：请通过通知区域中的图标将其关闭。"
 }

@@ -1320,5 +1320,8 @@
   "self_update.folder_read_only": "In den Ordner von Dump Finder kann ohne Administratorrechte nicht geschrieben werden.",
   "self_update.failed_replace": "Die neue Version konnte diese nicht ersetzen; die aktuelle Version bleibt erhalten.",
   "self_update.fallback": "Klicke erneut, um sie über die Downloadseite zu holen.",
-  "self_update.updated": "Dump Finder ist aktuell: Version {0}."
+  "self_update.updated": "Dump Finder ist aktuell: Version {0}.",
+  "running_copies.older_running": "Eine ältere Version von Dump Finder ({0}) läuft noch, vermutlich im Infobereich.\n\nSie schließen, damit nur Version {1} übrig bleibt?",
+  "running_copies.closed": "Dump Finder {0} geschlossen.",
+  "running_copies.not_closed": "Die ältere Version konnte nicht geschlossen werden (sie läuft eventuell als Administrator): Schließe sie über ihr Symbol im Infobereich."
 }

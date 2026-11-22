@@ -1320,5 +1320,8 @@
   "self_update.folder_read_only": "Dump Finder klasörüne yönetici hakları olmadan yazılamıyor.",
   "self_update.failed_replace": "Yeni sürüm bunun yerine geçemedi; mevcut sürüm korundu.",
   "self_update.fallback": "İndirme sayfasından almak için yeniden tıkla.",
-  "self_update.updated": "Dump Finder güncel: sürüm {0}."
+  "self_update.updated": "Dump Finder güncel: sürüm {0}.",
+  "running_copies.older_running": "Dump Finder'ın eski bir sürümü ({0}) hâlâ çalışıyor, muhtemelen bildirim alanında.\n\nYalnızca {1} sürümü kalsın diye kapatılsın mı?",
+  "running_copies.closed": "Dump Finder {0} kapatıldı.",
+  "running_copies.not_closed": "Eski sürüm kapatılamadı (yönetici olarak çalışıyor olabilir): bildirim alanındaki simgesinden kapat."
 }

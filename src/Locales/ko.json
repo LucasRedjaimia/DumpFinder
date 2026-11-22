@@ -1320,5 +1320,8 @@
   "self_update.folder_read_only": "관리자 권한 없이는 Dump Finder 폴더에 쓸 수 없어요.",
   "self_update.failed_replace": "새 버전으로 바꾸지 못해 현재 버전을 그대로 두었어요.",
   "self_update.fallback": "다시 클릭하면 다운로드 페이지에서 받을 수 있어요.",
-  "self_update.updated": "Dump Finder가 최신 버전이에요: {0}."
+  "self_update.updated": "Dump Finder가 최신 버전이에요: {0}.",
+  "running_copies.older_running": "이전 버전의 Dump Finder({0})가 아직 실행 중이에요. 아마 알림 영역에 있을 거예요.\n\n닫고 {1} 버전만 남길까요?",
+  "running_copies.closed": "Dump Finder {0}을(를) 닫았어요.",
+  "running_copies.not_closed": "이전 버전을 닫지 못했어요(관리자 권한으로 실행 중일 수 있어요). 알림 영역의 아이콘에서 닫으세요."
 }

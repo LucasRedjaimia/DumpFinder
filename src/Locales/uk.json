@@ -1320,5 +1320,8 @@
   "self_update.folder_read_only": "Теку Dump Finder не можна змінити без прав адміністратора.",
   "self_update.failed_replace": "Нова версія не змогла замінити поточну; поточну версію збережено.",
   "self_update.fallback": "Натисніть ще раз, щоб отримати її зі сторінки завантаження.",
-  "self_update.updated": "Dump Finder оновлено: версія {0}."
+  "self_update.updated": "Dump Finder оновлено: версія {0}.",
+  "running_copies.older_running": "Старіша версія Dump Finder ({0}) досі працює, імовірно, в області сповіщень.\n\nЗакрити її, щоб залишилася лише версія {1}?",
+  "running_copies.closed": "Dump Finder {0} закрито.",
+  "running_copies.not_closed": "Не вдалося закрити старішу версію (можливо, вона запущена від імені адміністратора): закрийте її через значок в області сповіщень."
 }

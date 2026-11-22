@@ -1320,5 +1320,8 @@
   "self_update.folder_read_only": "Dump Finder's folder can't be written to without administrator rights.",
   "self_update.failed_replace": "The new version couldn't take the place of this one; the current version was kept.",
   "self_update.fallback": "Click again to get it from the download page.",
-  "self_update.updated": "Dump Finder is up to date: version {0}."
+  "self_update.updated": "Dump Finder is up to date: version {0}.",
+  "running_copies.older_running": "An older Dump Finder ({0}) is still running, probably in the notification area.\n\nClose it so only version {1} is left?",
+  "running_copies.closed": "Dump Finder {0} closed.",
+  "running_copies.not_closed": "The older version couldn't be closed (it may run as administrator): close it from its icon in the notification area."
 }

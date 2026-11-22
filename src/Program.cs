@@ -252,6 +252,8 @@ namespace WinCrashDoctor
                 win.Loaded += (s, e) => win.ShowUpdatedToast(updatedTo);
             }
             System.Threading.Tasks.Task.Delay(updatedArg >= 0 ? 4000 : 1000).ContinueWith(t => SelfUpdate.CleanupOld());
+            // Opened by hand (not at logon): an older version left running, typically in the tray, is offered to be closed.
+            if (!trayStart) win.Loaded += (s, e) => win.OfferToCloseOlderCopies();
 
             if (trayStart)
             {

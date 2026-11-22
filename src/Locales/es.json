@@ -1320,5 +1320,8 @@
   "self_update.folder_read_only": "No se puede escribir en la carpeta de Dump Finder sin derechos de administrador.",
   "self_update.failed_replace": "La nueva versión no pudo reemplazar a esta; se conservó la versión actual.",
   "self_update.fallback": "Haz clic de nuevo para obtenerla desde la página de descarga.",
-  "self_update.updated": "Dump Finder está actualizado: versión {0}."
+  "self_update.updated": "Dump Finder está actualizado: versión {0}.",
+  "running_copies.older_running": "Una versión anterior de Dump Finder ({0}) sigue en ejecución, probablemente en el área de notificación.\n\n¿Cerrarla para quedarte solo con la versión {1}?",
+  "running_copies.closed": "Dump Finder {0} cerrado.",
+  "running_copies.not_closed": "No se pudo cerrar la versión anterior (quizá se ejecuta como administrador): ciérrala desde su icono en el área de notificación."
 }

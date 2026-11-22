@@ -103,6 +103,31 @@ namespace WinCrashDoctor
             expect("valeur sans --tray (pas la nôtre) → rien", !Autostart.ShouldRepoint(@"""" + installed + @"""", copy, gone));
             expect("vérification du fichier en échec → entrée conservée",
                    !Autostart.ShouldRepoint(registered, copy, p => { throw new UnauthorizedAccessException(); }));
+
+            // Manual update: the new version, downloaded next to the old file, takes the entry over; never an equal or
+            // older copy (dev build, second download), nor a file whose version cannot be read.
+            var v640 = new Version(6, 4, 0); var v650 = new Version(6, 5, 0);
+            expect("nouvelle version lancée, ancienne version enregistrée et présente → entrée reprise",
+                Autostart.ShouldRepoint(registered, copy, present, p => v640, v650));
+            expect("même version ou plus ancienne (build de dev, autre téléchargement) → entrée conservée",
+                !Autostart.ShouldRepoint(registered, devBuild, present, p => v650, v650) && !Autostart.ShouldRepoint(registered, copy, present, p => v650, v640));
+            expect("version de l'exe enregistré illisible → entrée conservée",
+                !Autostart.ShouldRepoint(registered, copy, present, p => null, v650) && !Autostart.ShouldRepoint(registered, copy, present, p => { throw new IOException(); }, v650));
+            expect("version lue sur un vrai exe (celui-ci)", Autostart.DumpFinderVersionOf(SelfUpdate.ExePath) == UpdateChecker.CurrentVersion
+                && Autostart.DumpFinderVersionOf(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "notepad.exe")) == null);
+
+            // Other running copies: the older ones (left by a manual update) and those of a replaced exe (in-app update).
+            var copies = new[]
+            {
+                new RunningCopy { Pid = 1, Path = copy, Version = v640 },
+                new RunningCopy { Pid = 2, Path = installed, Version = v650 },
+                new RunningCopy { Pid = 3, Path = devBuild, Version = null },
+                new RunningCopy { Pid = 4, Path = @"C:\Users\Me\Apps\Dump Finder\DumpFinder.old_1234abcd.exe", Version = v640 }
+            };
+            expect("copies plus anciennes trouvées (6.4.0), ni la même version ni une version illisible",
+                RunningCopies.OlderThan(copies, v650).Select(c => c.Pid).SequenceEqual(new[] { 1, 4 }));
+            expect("copies d'un exe remplacé trouvées par leur chemin (actuel ou mis de côté)",
+                RunningCopies.From(copies, installed.ToUpperInvariant(), @"C:\Users\Me\Apps\Dump Finder\DumpFinder.old_1234abcd.exe").Select(c => c.Pid).SequenceEqual(new[] { 2, 4 }));
         }
 
         /// <summary>

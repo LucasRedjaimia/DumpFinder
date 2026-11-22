@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -179,6 +181,10 @@ namespace WinCrashDoctor
                 string exe = SelfUpdate.ExePath;
                 string old = SelfUpdate.Swap(file, exe);
                 Log.Info("Updated " + UpdateChecker.CurrentVersionText + " → " + ver + " (previous exe: " + old + ")");
+                // Other processes of the replaced exe (the tray Sentinel started at logon, a second window) still run
+                // the old version: end them so only the new one is left.
+                int others = await Task.Run(() => RunningCopies.Close(RunningCopies.From(RunningCopies.Find(), exe, old)));
+                if (others > 0) Log.Info("Closed " + others + " other process(es) of the previous version");
                 await Task.Delay(400);                  // let the status show
                 SelfUpdate.Restart(exe, u.Version);
                 _forceExit = true;
@@ -195,6 +201,23 @@ namespace WinCrashDoctor
                 _btnUpdDownload.Content = Localizer.S("updates.download") + ver;      // next click: the download page
                 _shownUpdate = new UpdateInfo { Version = u.Version, Tag = u.Tag, Title = u.Title, Notes = u.Notes, DownloadUrl = u.DownloadUrl, PageUrl = u.PageUrl, PublishedAt = u.PublishedAt };
             }
+        }
+
+        /// <summary>
+        /// At launch: an older Dump Finder still running (typically the previous version in the tray after a manual
+        /// update) is offered to be closed, so only this version is left.
+        /// </summary>
+        public async void OfferToCloseOlderCopies()
+        {
+            List<RunningCopy> older;
+            try { older = await Task.Run(() => RunningCopies.OlderThan(RunningCopies.Find(), UpdateChecker.CurrentVersion)); }
+            catch (Exception ex) { Log.Warn(ex, "older copies"); return; }
+            if (older.Count == 0) return;
+            string versions = string.Join(", ", older.Select(c => c.Version.ToString(3)).Distinct());
+            string msg = Localizer.F("running_copies.older_running", versions, UpdateChecker.CurrentVersionText);
+            if (MessageBox.Show(this, msg, "Dump Finder", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.Yes) != MessageBoxResult.Yes) return;
+            int closed = await Task.Run(() => RunningCopies.Close(older));
+            SetToast(closed == older.Count ? Localizer.F("running_copies.closed", versions) : Localizer.S("running_copies.not_closed"), closed == older.Count ? "SuccessFg" : "WarnFg");
         }
 
         /// <summary>First launch after an in-app update.</summary>
