@@ -594,12 +594,20 @@ namespace WinCrashDoctor
             List<string> riskyFound = new List<string>();
             string driversDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "drivers");
             if (File.Exists(Path.Combine(driversDir, "cfosspeed.sys"))) riskyFound.Add("cfosspeed.sys (cFosSpeed Network Shaper)");
-            if (IsProcActive("GbtCloudMatrix") || IsServiceRunning("GigabyteUpdateService")) riskyFound.Add("Gigabyte Update / CloudMatrix");
+            // The motherboard firmware (ACPI WPBT table) drops GigabyteUpdateService.exe into System32 and
+            // re-registers it at every boot, so uninstalling it from Windows never sticks.
+            bool gigabyteFromFirmware = IsGigabyteUpdateFromFirmware();
+            if (IsProcActive("GbtCloudMatrix") || IsServiceRunning("GigabyteUpdateService"))
+                riskyFound.Add(gigabyteFromFirmware
+                    ? "Gigabyte Update / CloudMatrix (" + Localizer.S("system_health_scanner.reinstalled_by_the_bios_at_every_boot") + ")"
+                    : "Gigabyte Update / CloudMatrix");
             if (IsProcActive("PatriotViperRGB") || IsProcActive("AAChal")) riskyFound.Add("Legacy RGB Service (ene.sys)");
 
             string riskyGuideTitle = Localizer.S("system_health_scanner.guide_removing_risky_oem_components_driv");
 
-            string riskyGuideSteps = Localizer.S("system_health_scanner.1_click_neutralize_in_1_click");
+            string riskyGuideSteps = gigabyteFromFirmware
+                ? Localizer.S("system_health_scanner.gigabyte_update_is_reinstalled_by_the_bios")
+                : Localizer.S("system_health_scanner.1_click_neutralize_in_1_click");
 
             list.Add(new ConflictCheckItem
             {
@@ -775,6 +783,28 @@ namespace WinCrashDoctor
         private static bool IsProcActive(string name)
         {
             try { return Process.GetProcessesByName(name).Length > 0; }
+            catch (Exception ex) { Log.Warn(ex); return false; }
+        }
+
+        /// <summary>
+        /// True when GigabyteUpdateService runs from System32: that copy is written there at boot by the
+        /// motherboard firmware (WPBT), not by an installer, and only a BIOS setting stops it coming back.
+        /// </summary>
+        private static bool IsGigabyteUpdateFromFirmware()
+        {
+            try
+            {
+                using (RegistryKey bk = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
+                using (RegistryKey sk = bk.OpenSubKey(@"SYSTEM\CurrentControlSet\Services\GigabyteUpdateService", false))
+                {
+                    if (sk == null) return false;
+                    string imagePath = Convert.ToString(sk.GetValue("ImagePath", "", RegistryValueOptions.DoNotExpandEnvironmentNames));
+                    string expanded = Environment.ExpandEnvironmentVariables(imagePath).Trim().Trim('"');
+                    string inSystem32 = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "GigabyteUpdateService.exe");
+                    return expanded.StartsWith(inSystem32, StringComparison.OrdinalIgnoreCase)
+                        || imagePath.IndexOf(@"\system32\GigabyteUpdateService.exe", StringComparison.OrdinalIgnoreCase) >= 0;
+                }
+            }
             catch (Exception ex) { Log.Warn(ex); return false; }
         }
 

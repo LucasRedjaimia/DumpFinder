@@ -507,6 +507,8 @@
   "system_health_scanner.download_ddu": "\uD83D\uDD0D 下载 DDU",
   "system_health_scanner.guide_removing_risky_oem_components_driv": "指南：移除有风险的 OEM 组件和驱动",
   "system_health_scanner.1_click_neutralize_in_1_click": "1. 点击“⚡ 一键清除”，立即终止相关进程并禁用其 Windows 服务。\r\n2. 打开“已安装的应用”，彻底卸载厂商软件套件（Gigabyte Control Center、App Center、cFosSpeed）。\r\n3. 在技嘉/华硕主板上：重启进入 UEFI BIOS，禁用“Gigabyte Download Assistant”或“Armoury Crate Auto Install”，防止 Windows 再次自动安装它们。",
+  "system_health_scanner.gigabyte_update_is_reinstalled_by_the_bios": "在技嘉主板上，GigabyteUpdateService 并不是已安装的应用：它存储在 BIOS 中，Windows 每次开机都会把它重新复制到 System32（WPBT 功能）。卸载或删除都没用，下次重启它还会回来。\r\n1. 重启进入 BIOS（开机时按 Del 键），按 F2 切换到高级模式。\r\n2. 进入 Settings → Miscellaneous，将“GIGABYTE Utilities Downloader Configuration”（取决于 BIOS 版本，也可能是“APP Center Download & Install”）设为 Disabled。按 F10 保存。\r\n3. 回到 Windows 后，点击“⚡ 一键清除冗余软件”停止已安装的副本。之后它不会再回来。",
+  "system_health_scanner.reinstalled_by_the_bios_at_every_boot": "每次开机都会由 BIOS 重新安装",
   "system_health_scanner.known_unstable_drivers_oem_bloat_service": "已知不稳定的驱动与 OEM 冗余服务",
   "system_health_scanner.no_unstable_oem_services_active": "没有不稳定的 OEM 服务在运行",
   "system_health_scanner.services_notorious_for_memory_leaks_or": "以内存泄漏或蓝屏著称的服务（GigabyteUpdateService、cFosSpeed、旧版 RGB 环形驱动）不存在或已禁用。",
