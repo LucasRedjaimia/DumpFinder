@@ -65,7 +65,7 @@
             <Run Text="Dump" FontWeight="Bold" /><Run Text="Finder" FontWeight="Medium" Foreground="{DynamicResource TextSecondary}" />
           </TextBlock>
           <Border CornerRadius="8" Padding="6,1,6,2" Margin="9,1,0,0" VerticalAlignment="Center" Background="{DynamicResource BgSubtle}">
-            <TextBlock Text="{Binding VersionShort}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}" />
+            <TextBlock Text="{Binding VersionBadge}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}" />
           </Border>
         </StackPanel>
       </Border>
@@ -253,14 +253,14 @@
               </StackPanel>
             </ScrollViewer>
           </Border>
-          <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,20,0,0">
-            <Button Classes="link" Content="{Binding L[updates.view_on_github]}" Command="{Binding UpdateGitHubCommand}" />
-            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
-              <Button Classes="link" Content="{Binding L[updates.skip_this_version]}" Command="{Binding UpdateSkipCommand}" />
-              <Button Classes="flat" Content="{Binding L[updates.later]}" Command="{Binding UpdateLaterCommand}" />
-              <Button Classes="primary" Content="{Binding UpdateDownloadText}" Command="{Binding UpdateDownloadCommand}" />
-            </StackPanel>
-          </Grid>
+          <!-- "View on GitHub" under the notes, on its own: in the button row the four items did not fit the 580 px card in
+               French or German. The buttons wrap to a second line in a longer language instead of being cut off. -->
+          <Button Classes="link" HorizontalAlignment="Left" Margin="0,8,0,0" Content="{Binding L[updates.view_on_github]}" Command="{Binding UpdateGitHubCommand}" />
+          <WrapPanel HorizontalAlignment="Right" Margin="0,14,0,0" ItemSpacing="8" LineSpacing="6">
+            <Button Classes="link" Content="{Binding L[updates.skip_this_version]}" Command="{Binding UpdateSkipCommand}" />
+            <Button Classes="flat" Content="{Binding L[updates.later]}" Command="{Binding UpdateLaterCommand}" />
+            <Button Classes="primary" Content="{Binding UpdateDownloadText}" Command="{Binding UpdateDownloadCommand}" />
+          </WrapPanel>
         </StackPanel>
       </Border>
       </Grid>

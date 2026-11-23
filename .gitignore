@@ -25,3 +25,6 @@ branding/logo-concepts.html
 
 # Mac app bundle and zip (mac/build.sh)
 mac/out/
+
+# macOS Finder metadata
+.DS_Store

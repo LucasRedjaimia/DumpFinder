@@ -198,8 +198,38 @@ public partial class MainWindow : Window, IPlatform
                 sv.ScrollToEnd();
             await Task.Delay(350);
             await SaveCapture(Path.Combine(folder, name + ".png"));
+            if (name == "1-home") await CaptureChartHoverAsync(folder);
         }
         Close();
+    }
+
+    /// <summary>
+    /// Stability chart: hovers two days and writes where the tooltip lands (chart-tooltip.txt, screen coordinates),
+    /// then saves the chart with its guide line. The tooltip is its own window, so it is not in the PNG.
+    /// </summary>
+    async Task CaptureChartHoverAsync(string folder)
+    {
+        var chart = this.GetVisualDescendants().OfType<StabilityChart>().FirstOrDefault();
+        if (chart is null || chart.Days is not { Count: > 20 }) return;
+        var lines = new List<string>();
+        // The ToolTip control Avalonia creates for a string tip is kept in an internal attached property.
+        var prop = typeof(ToolTip).GetField("ToolTipProperty", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)?.GetValue(null) as AvaloniaProperty;
+        foreach (int day in new[] { 9, 20 })
+        {
+            chart.SetHover(day);
+            await Task.Delay(500);
+            var pt = chart.PointToScreen(chart.HoverPoint);
+            if (prop is not null && chart.GetValue(prop) is ToolTip tip && tip.IsVisible && tip.Bounds.Width > 0)
+            {
+                var top = tip.PointToScreen(new Point(tip.Bounds.Width / 2, 0));
+                var bottom = tip.PointToScreen(new Point(tip.Bounds.Width / 2, tip.Bounds.Height));
+                lines.Add($"day {day}: point {pt.X},{pt.Y}  tooltip centre x {top.X}  top {top.Y} bottom {bottom.Y}  dx {top.X - pt.X}  above {bottom.Y <= pt.Y}");
+            }
+            else lines.Add($"day {day}: point {pt.X},{pt.Y}  tooltip not found");
+        }
+        await SaveCapture(Path.Combine(folder, "1b-home-chart-hover.png"));
+        ToolTip.SetIsOpen(chart, false);
+        File.WriteAllLines(Path.Combine(folder, "chart-tooltip.txt"), lines);
     }
 
     static void CopyTree(string from, string to)
