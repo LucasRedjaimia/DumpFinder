@@ -71,6 +71,8 @@ namespace WinCrashDoctor
                     return MainWindow.RunUiSelfTest(args[1]);
                 if (args[0] == "--update-selftest" && args.Length >= 2)
                     return UpdateSelfTest.Run(args[1]);
+                if (args[0] == "--driver-update-selftest" && args.Length >= 2)
+                    return DriverUpdateSelfTest.Run(args[1]);
                 if (args[0] == "--stress-selftest" && args.Length >= 2)
                     return WinCrashDoctor.Stress.StressSelfTest.Run(args[1], args.Length >= 3 ? args[2] : null);
                 if (args[0] == "--deep-analyze")
