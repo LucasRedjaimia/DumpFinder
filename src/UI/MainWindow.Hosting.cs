@@ -31,6 +31,12 @@ namespace WinCrashDoctor
         private StackPanel _driversPanel;
         private Button _btnHealthSubDrivers;
         private TextBlock _lblDriversSummary;
+        private TextBlock _lblDriversWu;
+        private Button _btnDriversWuRecheck;
+        // Windows Update driver catalog: null until the first answer; the error stays null while it succeeds.
+        private DriverUpdateResult _wuDrivers;
+        private bool _wuChecking;
+        private string _wuError;
 
         private void HostDriversInHardware()
         {
@@ -42,8 +48,21 @@ namespace WinCrashDoctor
 
             _svHealthDrivers = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Visibility = Visibility.Collapsed };
             StackPanel wrap = new StackPanel { Margin = new Thickness(0, 0, 6, 0) };
-            _lblDriversSummary = ResFg(new TextBlock { FontSize = 13, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(2, 0, 0, 12) }, "TextSecondary");
+            _lblDriversSummary = ResFg(new TextBlock { FontSize = 13, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(2, 0, 0, 4) }, "TextSecondary");
             wrap.Children.Add(_lblDriversSummary);
+
+            Grid wuLine = new Grid { Margin = new Thickness(2, 0, 0, 12) };
+            wuLine.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            wuLine.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            _lblDriversWu = ResFg(new TextBlock { FontSize = 12, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center }, "TextMuted");
+            wuLine.Children.Add(_lblDriversWu);
+            _btnDriversWuRecheck = CreateFlatButton("", "BgCard", "AccentText", "BorderCard", new Thickness(10, 3, 10, 3), 12);
+            _btnDriversWuRecheck.Margin = new Thickness(10, 0, 0, 0);
+            _btnDriversWuRecheck.VerticalAlignment = VerticalAlignment.Center;
+            _btnDriversWuRecheck.Click += (s, e) => StartDriverUpdateCheck(true);
+            Grid.SetColumn(_btnDriversWuRecheck, 1);
+            wuLine.Children.Add(_btnDriversWuRecheck);
+            wrap.Children.Add(wuLine);
             Border card = MakeCard(new Thickness(6), new Thickness(0));
             _driversPanel = new StackPanel();
             card.Child = _driversPanel;
@@ -74,9 +93,11 @@ namespace WinCrashDoctor
             _driversPanel.Children.Clear();
             var drivers = res != null && res.Drivers != null ? res.Drivers : new System.Collections.Generic.List<DriverInfo>();
 
+            var offers = _wuDrivers != null ? _wuDrivers.Offers : null;
             var ordered = drivers
-                .Select(d => new { D = d, Crashes = CrashCountForImage(d.ImageName) })
+                .Select(d => new { D = d, Crashes = CrashCountForImage(d.ImageName), Newer = DriverUpdateCheck.FindNewer(offers, d) })
                 .OrderByDescending(x => x.Crashes)
+                .ThenByDescending(x => x.Newer != null)
                 .ThenByDescending(x => x.D.IsOld)
                 .ThenBy(x => x.D.DeviceClass)
                 .ThenBy(x => x.D.DeviceName)
@@ -84,6 +105,7 @@ namespace WinCrashDoctor
 
             int old = ordered.Count(x => x.D.IsOld), linked = ordered.Count(x => x.Crashes > 0);
             _lblDriversSummary.Text = Localizer.F("hosting.third_party_drivers_installed_older_than", ordered.Count, old, linked);
+            RenderDriverUpdateStatus(ordered.Count(x => x.Newer != null));
 
             if (ordered.Count == 0)
             {
@@ -94,10 +116,58 @@ namespace WinCrashDoctor
             }
 
             for (int i = 0; i < ordered.Count; i++)
-                _driversPanel.Children.Add(BuildDriverRow(ordered[i].D, ordered[i].Crashes, i == 0));
+                _driversPanel.Children.Add(BuildDriverRow(ordered[i].D, ordered[i].Crashes, ordered[i].Newer, i == 0));
+
+            // First list shown: ask Windows Update in the background (cached for a few hours).
+            if (_wuDrivers == null && _wuError == null && !_wuChecking)
+                StartDriverUpdateCheck(false);
         }
 
-        private UIElement BuildDriverRow(DriverInfo d, int crashes, bool first)
+        /// <summary>Searches the Windows Update driver catalog off the UI thread, then redraws the list with its answer.</summary>
+        private async void StartDriverUpdateCheck(bool force)
+        {
+            if (_wuChecking) return;
+            _wuChecking = true;
+            _wuError = null;
+            RenderDriverUpdateStatus(0);
+            try
+            {
+                _wuDrivers = await System.Threading.Tasks.Task.Run(() => DriverUpdateCheck.Get(force));
+            }
+            catch (Exception ex)
+            {
+                Log.Warn(ex, "DriverUpdateCheck");
+                _wuError = DriverUpdateCheck.Describe(ex);
+            }
+            finally
+            {
+                _wuChecking = false;
+            }
+            if (_lastResult != null) RenderDrivers(_lastResult);
+            else RenderDriverUpdateStatus(0);
+        }
+
+        private void RenderDriverUpdateStatus(int newerCount)
+        {
+            if (_lblDriversWu == null) return;
+            _btnDriversWuRecheck.Content = Localizer.S("hosting.wu_recheck");
+            _btnDriversWuRecheck.Visibility = _wuChecking ? Visibility.Collapsed : Visibility.Visible;
+            if (_wuChecking)
+                _lblDriversWu.Text = Localizer.S("hosting.wu_checking");
+            else if (_wuError != null)
+                _lblDriversWu.Text = Localizer.F("hosting.wu_failed", _wuError == "timeout" ? Localizer.S("hosting.wu_timeout") : _wuError);
+            else if (_wuDrivers == null)
+                _lblDriversWu.Text = "";
+            else
+            {
+                string when = _wuDrivers.CheckedAtValue.ToString("g", Localizer.Culture);
+                _lblDriversWu.Text = newerCount > 0
+                    ? Localizer.P("hosting.wu_newer_count", newerCount, when)
+                    : Localizer.F("hosting.wu_none_newer", when);
+            }
+        }
+
+        private UIElement BuildDriverRow(DriverInfo d, int crashes, DriverUpdateOffer newer, bool first)
         {
             Grid row = new Grid();
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -122,9 +192,23 @@ namespace WinCrashDoctor
                 b.Margin = new Thickness(0, 0, 6, 0);
                 badges.Children.Add(b);
             }
-            if (d.IsOld)
+            if (newer != null)
             {
-                Border b = MakePill(Localizer.F("hosting.old_years", (d.AgeDays / 365)), "WarnSoftBg", "WarnFg");
+                // Windows Update has a newer driver for this hardware: that is the one worth flagging.
+                Border b = MakePill(Localizer.F("hosting.wu_newer_version", newer.Version ?? newer.Date ?? "?"), "WarnSoftBg", "WarnFg");
+                b.Margin = new Thickness(0, 0, 6, 0);
+                b.ToolTip = Localizer.F("hosting.wu_newer_tooltip", newer.Title,
+                    newer.DateValue.HasValue ? Localizer.DayMonthYear(newer.DateValue.Value) : "?");
+                badges.Children.Add(b);
+            }
+            else if (d.IsOld)
+            {
+                // Old but nothing newer on Windows Update: shown in neutral grey, not as a warning.
+                bool checkedNothingNewer = _wuDrivers != null && _wuError == null && d.HardwareIds != null && d.HardwareIds.Count > 0;
+                Border b = checkedNothingNewer
+                    ? MakePill(Localizer.F("hosting.old_no_newer_on_wu", (d.AgeDays / 365)), "BgSubtle", "TextSecondary")
+                    : MakePill(Localizer.F("hosting.old_years", (d.AgeDays / 365)), "WarnSoftBg", "WarnFg");
+                if (checkedNothingNewer) b.ToolTip = Localizer.S("hosting.old_no_newer_on_wu_tooltip");
                 b.Margin = new Thickness(0, 0, 6, 0);
                 badges.Children.Add(b);
             }
@@ -133,9 +217,17 @@ namespace WinCrashDoctor
 
             Button upd = CreateFlatButton(Localizer.S("crashes.update"), "BgCard", "AccentText", "BorderCard", new Thickness(10, 4, 10, 4), 12);
             upd.VerticalAlignment = VerticalAlignment.Center;
-            upd.ToolTip = Localizer.S("hosting.searches_for_the_latest_version_from");
-            string q = d.Provider + " " + d.DeviceName + " driver download";
-            upd.Click += (s, e) => ExecuteQuickAction(null, q);
+            if (newer != null)
+            {
+                upd.ToolTip = Localizer.S("hosting.wu_open_optional_updates");
+                upd.Click += (s, e) => ExecuteQuickAction("tool:optionalupdates", null);
+            }
+            else
+            {
+                upd.ToolTip = Localizer.S("hosting.searches_for_the_latest_version_from");
+                string q = d.Provider + " " + d.DeviceName + " driver download";
+                upd.Click += (s, e) => ExecuteQuickAction(null, q);
+            }
             Grid.SetColumn(upd, 3);
             row.Children.Add(upd);
 

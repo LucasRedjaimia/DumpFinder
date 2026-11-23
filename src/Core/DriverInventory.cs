@@ -18,6 +18,8 @@ namespace WinCrashDoctor
         /// <summary>Kernel image file name, e.g. "nvlddmkm.sys" (null when the device has no service).</summary>
         public string ImageName { get; set; }
         public string ImagePath { get; set; }
+        /// <summary>Hardware and compatible IDs of the device(s) using this driver, matched against Windows Update offers.</summary>
+        public List<string> HardwareIds { get; set; }
 
         public int AgeDays { get { return Date.HasValue ? (int)(DateTime.Now - Date.Value).TotalDays : -1; } }
 
@@ -38,10 +40,16 @@ namespace WinCrashDoctor
             try
             {
                 var serviceByDevice = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                Query("SELECT DeviceID, Service FROM Win32_PnPEntity", mo =>
+                var idsByDevice = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+                Query("SELECT DeviceID, Service, HardwareID, CompatibleID FROM Win32_PnPEntity", mo =>
                 {
                     string id = Str(mo, "DeviceID"), svc = Str(mo, "Service");
                     if (id != null && svc != null) serviceByDevice[id] = svc;
+                    if (id != null)
+                    {
+                        var ids = Strs(mo, "HardwareID").Concat(Strs(mo, "CompatibleID")).ToList();
+                        if (ids.Count > 0) idsByDevice[id] = ids;
+                    }
                 });
 
                 var imageByService = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -51,7 +59,7 @@ namespace WinCrashDoctor
                     if (name != null && path != null) imageByService[name] = NormalizeKernelPath(path);
                 });
 
-                var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var seen = new Dictionary<string, DriverInfo>(StringComparer.OrdinalIgnoreCase);
                 Query("SELECT DeviceID, DeviceName, DeviceClass, DriverProviderName, DriverVersion, DriverDate, InfName FROM Win32_PnPSignedDriver", mo =>
                 {
                     string name = Str(mo, "DeviceName");
@@ -60,7 +68,18 @@ namespace WinCrashDoctor
                     if (provider.IndexOf("Microsoft", StringComparison.OrdinalIgnoreCase) >= 0) return;
 
                     string version = Str(mo, "DriverVersion");
-                    if (!seen.Add(name + "|" + version)) return;
+                    string devId = Str(mo, "DeviceID");
+                    List<string> devIds;
+                    if (devId == null || !idsByDevice.TryGetValue(devId, out devIds)) devIds = new List<string>();
+
+                    DriverInfo same;
+                    if (seen.TryGetValue(name + "|" + version, out same))
+                    {
+                        // Same driver on several devices (e.g. two identical USB ports): keep one row, match all their IDs.
+                        foreach (string hid in devIds)
+                            if (!same.HardwareIds.Contains(hid, StringComparer.OrdinalIgnoreCase)) same.HardwareIds.Add(hid);
+                        return;
+                    }
 
                     DateTime? date = null;
                     string raw = Str(mo, "DriverDate");
@@ -71,10 +90,9 @@ namespace WinCrashDoctor
                     }
 
                     string svc, image = null;
-                    string devId = Str(mo, "DeviceID");
                     if (devId != null && serviceByDevice.TryGetValue(devId, out svc)) imageByService.TryGetValue(svc, out image);
 
-                    result.Add(new DriverInfo
+                    var info = new DriverInfo
                     {
                         DeviceName = name.Trim(),
                         DeviceClass = Str(mo, "DeviceClass") ?? "",
@@ -83,8 +101,11 @@ namespace WinCrashDoctor
                         Date = date,
                         InfName = Str(mo, "InfName"),
                         ImagePath = image,
-                        ImageName = image != null ? Path.GetFileName(image) : null
-                    });
+                        ImageName = image != null ? Path.GetFileName(image) : null,
+                        HardwareIds = new List<string>(devIds)
+                    };
+                    seen[name + "|" + version] = info;
+                    result.Add(info);
                 });
             }
             catch (Exception ex)
@@ -147,6 +168,12 @@ namespace WinCrashDoctor
         {
             object v = mo[prop];
             return v == null ? null : v.ToString();
+        }
+
+        private static IEnumerable<string> Strs(ManagementObject mo, string prop)
+        {
+            var arr = mo[prop] as string[];
+            return arr == null ? Enumerable.Empty<string>() : arr.Where(s => !string.IsNullOrWhiteSpace(s));
         }
     }
 }

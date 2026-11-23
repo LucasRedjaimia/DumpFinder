@@ -570,6 +570,9 @@ namespace WinCrashDoctor
                             case "appsfeatures":
                                 Process.Start(new ProcessStartInfo { FileName = "ms-settings:appsfeatures", UseShellExecute = true });
                                 return;
+                            case "optionalupdates":
+                                Process.Start(new ProcessStartInfo { FileName = "ms-settings:windowsupdate-optionalupdates", UseShellExecute = true });
+                                return;
                             case "device_security":
                                 Process.Start(new ProcessStartInfo { FileName = "windowsdefender:device-security", UseShellExecute = true });
                                 return;
