@@ -160,6 +160,15 @@ public sealed class StabilityChart : Control
             dc.DrawEllipse(b, null, p, r, r);
         }
 
+        // Hovered day: a guide line down to the axis and a ring on its point, so the tooltip clearly belongs to it
+        if (_hover >= 0 && _hover < days.Count)
+        {
+            var hp = new Point(X(_hover, w), Y(days[_hover].Score, h));
+            double gx = Math.Round(hp.X) + 0.5;
+            dc.DrawLine(new Pen(LabelBrush, 1, new DashStyle(new double[] { 2, 3 }, 0)), new Point(gx, TopPad), new Point(gx, h - LabelBand));
+            dc.DrawEllipse(null, new Pen(LineBrush, 1.5), hp, 12, 12);   // around the crash marker too, without hiding its colour
+        }
+
         for (int i = 0; i < days.Count - 4; i += 7) DrawLabel(dc, Loc.DayMonth(days[i].Date), X(i, w), h, i == 0 ? 0 : 0.5);
         DrawLabel(dc, Loc.S("charts.today"), X(days.Count - 1, w), h, 1);
     }
@@ -171,25 +180,59 @@ public sealed class StabilityChart : Control
         dc.DrawText(ft, new Point(left, h - ft.Height));
     }
 
+    /// <summary>Day under the pointer (-1: none). The tooltip sits above that day's point, not where the pointer came in.</summary>
+    int _hover = -1;
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == DaysProperty) { _hover = -1; ToolTip.SetIsOpen(this, false); }   // new scan: the next move refills the tooltip
+    }
+
+    /// <summary>The hovered day's point on the line, in the chart's coordinates (NaN when nothing is hovered).</summary>
+    public Point HoverPoint => _hover < 0 || _hover >= D.Count ? new Point(double.NaN, double.NaN) : new Point(X(_hover, Bounds.Width), Y(D[_hover].Score, Bounds.Height));
+
     protected override void OnPointerMoved(PointerEventArgs e)
     {
         base.OnPointerMoved(e);
         var days = D;
         if (days.Count == 0 || Bounds.Width <= 12) return;
         double x = e.GetPosition(this).X;
-        int i = Math.Clamp((int)Math.Round((x - 6) / ((Bounds.Width - 12) / Math.Max(1, days.Count - 1))), 0, days.Count - 1);
+        SetHover(Math.Clamp((int)Math.Round((x - 6) / ((Bounds.Width - 12) / Math.Max(1, days.Count - 1))), 0, days.Count - 1));
+    }
+
+    /// <summary>
+    /// Shows the tooltip of day <paramref name="i"/> centred above its point (Windows: same fix). Avalonia places a
+    /// tooltip once, when it opens (Placement Pointer left it where the pointer came in while its text followed the
+    /// day), so it is reopened at the new point each time the hovered day changes.
+    /// </summary>
+    public void SetHover(int i)
+    {
+        var days = D;
+        if (i < 0 || i >= days.Count || i == _hover) return;
+        _hover = i;
         var d = days[i];
         int n = d.Events?.Count ?? 0;
         string head = d.Date.ToString("dddd d MMMM", Loc.Culture);
         string body = n == 0 ? Loc.S("charts.no_crash")
             : string.Join("\n", d.Events!.Take(4).Select(ev => "• " + CrashTimeline.CategoryName(ev.Category) + "  " + ev.Timestamp.ToString("HH:mm")));
+        var p = HoverPoint;
+        const double gap = 12;
+        ToolTip.SetIsOpen(this, false);
         ToolTip.SetTip(this, head + "\n" + body);
+        // Top: the tooltip's bottom centre sits on the chart's top centre, then moves by the offsets to the point.
+        ToolTip.SetPlacement(this, PlacementMode.Top);
+        ToolTip.SetHorizontalOffset(this, p.X - Bounds.Width / 2);
+        ToolTip.SetVerticalOffset(this, p.Y - gap);
         ToolTip.SetIsOpen(this, true);
+        InvalidateVisual();
     }
 
     protected override void OnPointerExited(PointerEventArgs e)
     {
         base.OnPointerExited(e);
+        _hover = -1;
         ToolTip.SetIsOpen(this, false);
+        InvalidateVisual();
     }
 }

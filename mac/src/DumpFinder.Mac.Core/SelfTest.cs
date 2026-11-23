@@ -261,7 +261,9 @@ public static class SelfTest
         try
         {
             LoginItem.AgentsDir = sentinelDir;
-            const string exe1 = "/Applications/Dump Finder.app/Contents/MacOS/DumpFinder", exe2 = "/Users/x/Apps/Dump & Finder.app/Contents/MacOS/DumpFinder";
+            // exe1 does not exist (the app was moved), so the agent follows exe2.
+            string exe1 = Path.Combine(sentinelDir, "gone", "Dump Finder.app/Contents/MacOS/DumpFinder");
+            const string exe2 = "/Users/x/Apps/Dump & Finder.app/Contents/MacOS/DumpFinder";
             bool on = LoginItem.Set(true, exe1) && LoginItem.IsEnabled;
             var plist = Path.Combine(sentinelDir, LoginItem.Label + ".plist");
             bool lint = !File.Exists("/usr/bin/plutil") || Proc.Run("/usr/bin/plutil", new[] { "-lint", plist }, 5000).ExitCode == 0;
@@ -272,6 +274,33 @@ public static class SelfTest
             bool refused = !LoginItem.Set(true, "/private/var/folders/x/AppTranslocation/y/Dump Finder.app/Contents/MacOS/DumpFinder");
             Check(on && lint && moved && lint2 && off && refused, "login item: written, valid plist, follows the app, removed, refused when translocated");
 
+
+            // Repoint rule (Windows Autostart.ShouldRepoint): only a missing binary or an older Dump Finder gives the agent away
+            const string reg = "/Applications/Dump Finder.app/Contents/MacOS/DumpFinder", cur = "/Users/x/Downloads/Dump Finder.app/Contents/MacOS/DumpFinder";
+            var v030 = new Version(0, 3, 0); var v031 = new Version(0, 3, 1);
+            Func<string, bool> yes = _ => true, no = _ => false;
+            Check(!LoginItem.ShouldRepoint(reg, true, cur, yes, _ => v031, v031)
+                  && !LoginItem.ShouldRepoint(reg, true, cur, yes, _ => new Version(0, 4, 0), v031)
+                  && !LoginItem.ShouldRepoint(reg, true, cur, yes, _ => null, v031)
+                  && !LoginItem.ShouldRepoint(reg, true, cur, _ => throw new IOException(), _ => null, v031)
+                  && !LoginItem.ShouldRepoint(reg, true, reg, no, _ => null, v031)
+                  && !LoginItem.ShouldRepoint(reg, false, cur, no, _ => null, v031),
+                  "login item: an existing copy of the same, a newer or an unknown version keeps the agent; off or same path: untouched");
+            Check(LoginItem.ShouldRepoint(reg, true, cur, no, _ => null, v031)
+                  && LoginItem.ShouldRepoint(reg, true, cur, yes, _ => v030, v031)
+                  && LoginItem.ShouldRepoint(null, true, cur, yes, _ => null, v031)
+                  && LoginItem.ShouldRepoint("relative/DumpFinder", true, cur, yes, _ => null, v031),
+                  "login item: a missing binary, an older Dump Finder or an unusable entry is repointed");
+            Check(LoginItem.RegisteredExe(LoginItem.Plist("/Users/x/Dump & Finder.app/Contents/MacOS/DumpFinder")) == "/Users/x/Dump & Finder.app/Contents/MacOS/DumpFinder"
+                  && LoginItem.RegisteredExe("<plist><dict></dict></plist>") is null, "login item: registered binary read back from the plist");
+            var bundle = Path.Combine(sentinelDir, "v", "Dump Finder.app", "Contents");
+            Directory.CreateDirectory(Path.Combine(bundle, "MacOS"));
+            File.WriteAllText(Path.Combine(bundle, "Info.plist"), "<plist><dict><key>CFBundleIdentifier</key><string>" + LoginItem.BundleId
+                + "</string><key>CFBundleShortVersionString</key><string>0.2.1</string></dict></plist>");
+            var bundleExe = Path.Combine(bundle, "MacOS", "DumpFinder");
+            bool versionRead = LoginItem.VersionOf(bundleExe) == new Version(0, 2, 1) && LoginItem.VersionOf("/usr/bin/true") is null;
+            File.WriteAllText(Path.Combine(bundle, "Info.plist"), "<plist><dict><key>CFBundleIdentifier</key><string>com.example.other</string><key>CFBundleShortVersionString</key><string>9.0.0</string></dict></plist>");
+            Check(versionRead && LoginItem.VersionOf(bundleExe) is null, "login item: version read from a Dump Finder bundle only");
             AppStore.Root = sentinelDir;
             bool firstEmpty = History.PeekNew(new[] { "a" }).Count == 0;
             History.MarkSeen(new[] { "a" });

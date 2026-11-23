@@ -104,15 +104,78 @@ public static class LoginItem
         catch (Exception e) when (e is IOException or UnauthorizedAccessException) { return false; }
     }
 
-    /// <summary>Keeps the agent pointing at the running binary if the user moved the app.</summary>
+    /// <summary>
+    /// Called on every normal launch (Windows Autostart.RefreshPathIfEnabled, same rule). Repoints the agent at the
+    /// running binary when the registered one is gone (the app was moved or deleted) or is an older Dump Finder (a new
+    /// version unzipped somewhere else while the old app is still there). Another copy of the same or an older version
+    /// (a second download, a dev build, `dotnet run`) never takes it over.
+    /// </summary>
     public static void RefreshPathIfEnabled(string exe)
     {
         try
         {
-            if (IsEnabled && !McpServer.IsTranslocated(exe) && !File.ReadAllText(PlistPath).Contains("<string>" + SecurityElement.Escape(exe) + "</string>", StringComparison.Ordinal))
+            if (!File.Exists(PlistPath) || McpServer.IsTranslocated(exe)) return;
+            if (ShouldRepoint(RegisteredExe(File.ReadAllText(PlistPath)), IsEnabled, exe, File.Exists, VersionOf, UpdateChecker.CurrentVersion))
                 Set(true, exe);
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+    }
+
+    /// <summary>
+    /// Pure decision behind <see cref="RefreshPathIfEnabled"/>. True only when the option is on, the agent does not
+    /// already name <paramref name="currentExe"/>, and the binary it names is unusable (no path, file missing) or an
+    /// existing Dump Finder older than <paramref name="currentVersion"/>. An unknown version (not Dump Finder, not in
+    /// an app bundle, unreadable) is left alone.
+    /// </summary>
+    public static bool ShouldRepoint(string? registeredExe, bool enabled, string currentExe, Func<string, bool> fileExists,
+                                     Func<string, Version?> versionOf, Version? currentVersion)
+    {
+        if (!enabled || string.IsNullOrEmpty(currentExe)) return false;
+        if (string.IsNullOrEmpty(registeredExe) || !registeredExe.StartsWith('/')) return true;   // launchd cannot start anything from it
+        if (string.Equals(registeredExe, currentExe, StringComparison.Ordinal)) return false;
+        bool exists;
+        try { exists = fileExists(registeredExe); }
+        catch (Exception) { exists = true; }                                                       // when in doubt, leave the user's agent alone
+        if (!exists) return true;
+        Version? registered;
+        try { registered = versionOf(registeredExe); }
+        catch (Exception) { registered = null; }
+        return registered is not null && currentVersion is not null && registered < currentVersion;
+    }
+
+    /// <summary>The binary the agent starts: the first ProgramArguments string, unescaped; null when there is none.</summary>
+    public static string? RegisteredExe(string plist)
+    {
+        var m = System.Text.RegularExpressions.Regex.Match(plist, @"<key>ProgramArguments</key>\s*<array>\s*<string>([^<]*)</string>");
+        return m.Success ? System.Net.WebUtility.HtmlDecode(m.Groups[1].Value).Trim() : null;
+    }
+
+    /// <summary>
+    /// The version of a Dump Finder binary, read from its bundle (…/Dump Finder.app/Contents/MacOS/DumpFinder →
+    /// Contents/Info.plist): null when it is not inside a Dump Finder bundle or the version cannot be read.
+    /// </summary>
+    public static Version? VersionOf(string exe)
+    {
+        try
+        {
+            var dir = Path.GetDirectoryName(exe);
+            if (dir is null || Path.GetFileName(dir) != "MacOS") return null;
+            var info = Path.Combine(Path.GetDirectoryName(dir)!, "Info.plist");
+            if (!File.Exists(info)) return null;
+            string text = File.ReadAllText(info);
+            if (PlistString(text, "CFBundleIdentifier") != BundleId) return null;
+            return Version.TryParse(PlistString(text, "CFBundleShortVersionString"), out var v) ? v : null;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException) { return null; }
+    }
+
+    /// <summary>Bundle identifier written by mac/build.sh.</summary>
+    public const string BundleId = "io.github.lucasredjaimia.dumpfinder";
+
+    static string? PlistString(string plist, string key)
+    {
+        var m = System.Text.RegularExpressions.Regex.Match(plist, "<key>" + key + @"</key>\s*<string>([^<]*)</string>");
+        return m.Success ? m.Groups[1].Value.Trim() : null;
     }
 
     public static string Plist(string exe) => $"""

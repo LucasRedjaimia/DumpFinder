@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using DumpFinder.Mac.Core;
@@ -312,9 +311,9 @@ public sealed partial class MainViewModel : Observable
         }
     }
 
-    public string VersionText => Loc.F("mac.settings.version",
-        Assembly.GetExecutingAssembly().GetName().Version is { } v ? $"{v.Major}.{v.Minor}.{v.Build}" : "?");
-    public string VersionShort => Assembly.GetExecutingAssembly().GetName().Version is { } v ? $"{v.Major}.{v.Minor}" : "";
+    public string VersionText => Loc.F("mac.settings.version", UpdateChecker.CurrentVersionText);
+    /// <summary>Title bar badge: the full version (0.3.1, not 0.3), so a fix release shows that the update happened.</summary>
+    public string VersionBadge => UpdateChecker.CurrentVersionText;
 
     // ---------- Toasts (Windows: bottom-right, 4.5 / 6 / 8 s by kind) ----------
     public ObservableCollection<ToastItem> Toasts { get; } = new();
