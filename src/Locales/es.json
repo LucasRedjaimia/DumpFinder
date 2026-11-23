@@ -507,6 +507,8 @@
   "system_health_scanner.download_ddu": "\uD83D\uDD0D Descargar DDU",
   "system_health_scanner.guide_removing_risky_oem_components_driv": "Guía: Eliminación de componentes y servicios OEM a riesgo",
   "system_health_scanner.1_click_neutralize_in_1_click": "1. Pulsa '⚡ Neutralizar en 1 clic' para detener los procesos.\r\n2. Desinstala las suites del fabricante desde Aplicaciones instaladas.\r\n3. Desactiva en la BIOS UEFI el asistente de descarga automática.",
+  "system_health_scanner.gigabyte_update_is_reinstalled_by_the_bios": "En una placa base Gigabyte, GigabyteUpdateService no es una aplicación instalada: está guardado en la BIOS y Windows lo vuelve a copiar en System32 en cada arranque (función WPBT). Desinstalarlo o borrarlo no basta: vuelve en el siguiente reinicio.\r\n1. Reinicia en la BIOS (tecla Supr al arrancar) y pasa al modo avanzado con F2.\r\n2. Ve a Settings → Miscellaneous y pon 'GIGABYTE Utilities Downloader Configuration' (según la versión de la BIOS: 'APP Center Download & Install') en Disabled. Guarda con F10.\r\n3. De vuelta en Windows, pulsa '⚡ Neutralizar componentes en 1 clic' para detener la copia ya instalada. Ya no volverá.",
+  "system_health_scanner.reinstalled_by_the_bios_at_every_boot": "reinstalado por la BIOS en cada arranque",
   "system_health_scanner.known_unstable_drivers_oem_bloat_service": "Controladores y servicios OEM conflictivos",
   "system_health_scanner.no_unstable_oem_services_active": "Ningún servicio inestable activo",
   "system_health_scanner.services_notorious_for_memory_leaks_or": "Los servicios conocidos por causar fugas de memoria o BSOD están desactivados.",

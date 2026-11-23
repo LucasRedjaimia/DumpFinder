@@ -507,6 +507,8 @@
   "system_health_scanner.download_ddu": "\uD83D\uDD0D DDU 다운로드",
   "system_health_scanner.guide_removing_risky_oem_components_driv": "가이드: 위험한 OEM 구성 요소 및 드라이버 제거",
   "system_health_scanner.1_click_neutralize_in_1_click": "1. '⚡ 한 번에 무력화'를 클릭하면 프로세스를 즉시 종료하고 해당 Windows 서비스를 사용 안 함으로 설정해요.\r\n2. '설치된 앱'을 열어 제조사 소프트웨어(Gigabyte Control Center, App Center, cFosSpeed)를 깨끗하게 제거하세요.\r\n3. Gigabyte/ASUS 메인보드: UEFI BIOS로 재부팅해 'Gigabyte Download Assistant' 또는 'Armoury Crate Auto Install'을 꺼서 Windows가 이를 다시 설치하지 못하게 하세요.",
+  "system_health_scanner.gigabyte_update_is_reinstalled_by_the_bios": "기가바이트 메인보드에서 GigabyteUpdateService는 설치된 앱이 아니에요. BIOS에 저장되어 있고, Windows가 부팅할 때마다 System32에 다시 복사해요(WPBT 기능). 제거하거나 삭제해도 다음 재부팅 때 다시 돌아와요.\r\n1. BIOS로 재부팅하고(부팅 시 Del 키) F2 키로 고급 모드로 전환하세요.\r\n2. Settings → Miscellaneous에서 'GIGABYTE Utilities Downloader Configuration'(BIOS 버전에 따라 'APP Center Download & Install')을 Disabled로 설정하세요. F10 키로 저장하세요.\r\n3. Windows로 돌아와 '⚡ 블로트웨어 한 번에 무력화'를 클릭해 이미 설치된 복사본을 멈추세요. 이제 다시 돌아오지 않아요.",
+  "system_health_scanner.reinstalled_by_the_bios_at_every_boot": "부팅할 때마다 BIOS가 다시 설치해요",
   "system_health_scanner.known_unstable_drivers_oem_bloat_service": "불안정하다고 알려진 드라이버 및 OEM 블로트 서비스",
   "system_health_scanner.no_unstable_oem_services_active": "실행 중인 불안정한 OEM 서비스 없음",
   "system_health_scanner.services_notorious_for_memory_leaks_or": "메모리 누수나 BSOD로 악명 높은 서비스(GigabyteUpdateService, cFosSpeed, 구형 RGB 링 드라이버)가 없거나 사용 안 함 상태예요.",

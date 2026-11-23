@@ -507,6 +507,8 @@
   "system_health_scanner.download_ddu": "\uD83D\uDD0D DDU をダウンロード",
   "system_health_scanner.guide_removing_risky_oem_components_driv": "ガイド: 危険な OEM コンポーネントとドライバーの削除",
   "system_health_scanner.1_click_neutralize_in_1_click": "1.「⚡ ワンクリックで無力化」をクリックすると、プロセスを即座に終了し、その Windows サービスを無効にします。\r\n2.「インストールされているアプリ」を開き、メーカーのソフトウェア スイート（Gigabyte Control Center、App Center、cFosSpeed）をきれいにアンインストールします。\r\n3. Gigabyte/ASUS のマザーボードでは: UEFI BIOS で再起動し、'Gigabyte Download Assistant' または 'Armoury Crate Auto Install' を無効にして、Windows に再インストールされないようにします。",
+  "system_health_scanner.gigabyte_update_is_reinstalled_by_the_bios": "Gigabyte のマザーボードでは、GigabyteUpdateService はインストールされたアプリではありません。BIOS に格納されており、Windows が起動のたびに System32 へコピーし直します（WPBT 機能）。アンインストールや削除をしても、次の再起動で元に戻ります。\r\n1. BIOS で再起動し（起動時に Del キー）、F2 キーで Advanced Mode に切り替えます。\r\n2. Settings → Miscellaneous を開き、「GIGABYTE Utilities Downloader Configuration」（BIOS のバージョンによっては「APP Center Download & Install」）を Disabled にします。F10 キーで保存します。\r\n3. Windows に戻ったら「⚡ 不要なソフトをワンクリックで無力化」をクリックし、すでにインストールされているコピーを停止します。これで再び戻ることはありません。",
+  "system_health_scanner.reinstalled_by_the_bios_at_every_boot": "起動のたびに BIOS によって再インストールされます",
   "system_health_scanner.known_unstable_drivers_oem_bloat_service": "不安定として知られるドライバーと不要な OEM サービス",
   "system_health_scanner.no_unstable_oem_services_active": "不安定な OEM サービスは動作していません",
   "system_health_scanner.services_notorious_for_memory_leaks_or": "メモリ リークや BSOD で悪名高いサービス（GigabyteUpdateService、cFosSpeed、古い RGB の Ring ドライバー）は存在しないか、無効になっています。",

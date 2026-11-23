@@ -507,6 +507,8 @@
   "system_health_scanner.download_ddu": "\uD83D\uDD0D DDU laden",
   "system_health_scanner.guide_removing_risky_oem_components_driv": "Leitfaden: Entfernen von riskanten OEM-Komponenten",
   "system_health_scanner.1_click_neutralize_in_1_click": "1. Klicke auf '⚡ Mit 1 Klick neutralisieren'.\r\n2. Deinstalliere OEM-Tools über Installierte Apps.\r\n3. Deaktiviere im UEFI-BIOS automatische Download-Assistenten.",
+  "system_health_scanner.gigabyte_update_is_reinstalled_by_the_bios": "Auf einem Gigabyte-Mainboard ist GigabyteUpdateService keine installierte App: Er ist im BIOS gespeichert, und Windows kopiert ihn bei jedem Start wieder nach System32 (WPBT-Funktion). Deinstallieren oder Löschen reicht nicht, er kommt beim nächsten Neustart zurück.\r\n1. Starte ins BIOS neu (beim Start Entf drücken) und wechsle mit F2 in den Advanced Mode.\r\n2. Öffne Settings → Miscellaneous und setze 'GIGABYTE Utilities Downloader Configuration' (je nach BIOS-Version: 'APP Center Download & Install') auf Disabled. Speichere mit F10.\r\n3. Klicke danach in Windows auf '⚡ Komponenten mit 1 Klick stoppen', um die bereits installierte Kopie zu stoppen. Sie kommt nicht mehr zurück.",
+  "system_health_scanner.reinstalled_by_the_bios_at_every_boot": "wird bei jedem Start vom BIOS neu installiert",
   "system_health_scanner.known_unstable_drivers_oem_bloat_service": "Bekannte instabile Treiber & OEM-Dienste",
   "system_health_scanner.no_unstable_oem_services_active": "Keine instabilen Dienste aktiv",
   "system_health_scanner.services_notorious_for_memory_leaks_or": "Bekannte Problem-Dienste (GigabyteUpdateService, cFosSpeed, alte RGB-Treiber) sind inaktiv.",
