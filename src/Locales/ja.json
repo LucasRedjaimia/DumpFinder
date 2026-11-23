@@ -753,7 +753,7 @@
   "hosting.wu_recheck": "再確認",
   "hosting.wu_newer_version": "更新あり · {0}",
   "hosting.wu_newer_tooltip": "Windows Update で「{0}」（ドライバーの日付 {1}）が提供されています。設定 › Windows Update › 詳細オプション › オプションの更新プログラム からインストールしてください。",
-  "hosting.old_no_newer_on_wu": "{0} 年 · Windows Update に新しい版なし",
+  "hosting.old_no_newer_on_wu": "{0} 年 · 新しい版なし",
   "hosting.old_no_newer_on_wu_tooltip": "このドライバーは古いですが、Windows Update にはこのハードウェア向けの新しいバージョンがありません。クラッシュの原因になっていなければ問題ありません。メーカーが自社サイトで新しいバージョンを公開していることもあります。",
   "hosting.wu_open_optional_updates": "このドライバーが提供されている Windows Update のオプションの更新プログラムを開きます。",
   "hosting.windows_tools": "Windows ツール",

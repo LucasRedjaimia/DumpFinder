@@ -753,7 +753,7 @@
   "hosting.wu_recheck": "Verifica di nuovo",
   "hosting.wu_newer_version": "Aggiornamento disponibile · {0}",
   "hosting.wu_newer_tooltip": "Windows Update offre '{0}' (driver del {1}). Installalo da Impostazioni › Windows Update › Opzioni avanzate › Aggiornamenti facoltativi.",
-  "hosting.old_no_newer_on_wu": "{0} anni · niente di più recente su Windows Update",
+  "hosting.old_no_newer_on_wu": "{0} anni · niente di più recente",
   "hosting.old_no_newer_on_wu_tooltip": "Questo driver è vecchio, ma Windows Update non ha una versione più recente per questo hardware. Non è un problema finché non causa crash. A volte il produttore pubblica una versione più recente sul proprio sito.",
   "hosting.wu_open_optional_updates": "Apre gli aggiornamenti facoltativi di Windows Update, dove viene proposto questo driver.",
   "hosting.windows_tools": "Strumenti Windows",

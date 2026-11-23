@@ -753,7 +753,7 @@
   "hosting.wu_recheck": "Erneut prüfen",
   "hosting.wu_newer_version": "Update verfügbar · {0}",
   "hosting.wu_newer_tooltip": "Windows Update bietet '{0}' an (Treiber vom {1}). Installiere ihn über Einstellungen › Windows Update › Erweiterte Optionen › Optionale Updates.",
-  "hosting.old_no_newer_on_wu": "{0} Jahre · nichts Neueres bei Windows Update",
+  "hosting.old_no_newer_on_wu": "{0} Jahre · nichts Neueres",
   "hosting.old_no_newer_on_wu_tooltip": "Dieser Treiber ist alt, aber Windows Update hat keine neuere Version für diese Hardware. Solange er keine Abstürze verursacht, ist das kein Problem. Manchmal veröffentlicht der Hersteller eine neuere Version auf seiner Website.",
   "hosting.wu_open_optional_updates": "Öffnet die optionalen Updates von Windows Update, wo dieser Treiber angeboten wird.",
   "hosting.windows_tools": "Windows-Tools",

@@ -753,7 +753,7 @@
   "hosting.wu_recheck": "Opnieuw controleren",
   "hosting.wu_newer_version": "Update beschikbaar · {0}",
   "hosting.wu_newer_tooltip": "Windows Update biedt '{0}' aan (stuurprogramma van {1}). Installeer het via Instellingen › Windows Update › Geavanceerde opties › Optionele updates.",
-  "hosting.old_no_newer_on_wu": "{0} jaar · niets nieuwers via Windows Update",
+  "hosting.old_no_newer_on_wu": "{0} jaar · niets nieuwers",
   "hosting.old_no_newer_on_wu_tooltip": "Dit stuurprogramma is oud, maar Windows Update heeft geen nieuwere versie voor deze hardware. Dat is geen probleem zolang het geen crashes veroorzaakt. De fabrikant publiceert soms een nieuwere versie op zijn website.",
   "hosting.wu_open_optional_updates": "Opent de optionele updates van Windows Update, waar dit stuurprogramma wordt aangeboden.",
   "hosting.windows_tools": "Windows-tools",

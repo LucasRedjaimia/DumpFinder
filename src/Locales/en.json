@@ -753,7 +753,7 @@
   "hosting.wu_recheck": "Check again",
   "hosting.wu_newer_version": "Update available · {0}",
   "hosting.wu_newer_tooltip": "Windows Update offers '{0}' (driver dated {1}). Install it from Settings › Windows Update › Advanced options › Optional updates.",
-  "hosting.old_no_newer_on_wu": "{0} years · nothing newer on Windows Update",
+  "hosting.old_no_newer_on_wu": "{0} years · nothing newer",
   "hosting.old_no_newer_on_wu_tooltip": "This driver is old, but Windows Update has no newer version for this hardware. That is not a problem as long as it does not cause crashes. The vendor sometimes publishes a newer version on its website.",
   "hosting.wu_open_optional_updates": "Opens Windows Update optional updates, where this driver is offered.",
   "hosting.windows_tools": "Windows tools",

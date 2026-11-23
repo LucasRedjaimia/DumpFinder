@@ -753,7 +753,7 @@
   "hosting.wu_recheck": "Volver a comprobar",
   "hosting.wu_newer_version": "Actualización disponible · {0}",
   "hosting.wu_newer_tooltip": "Windows Update ofrece '{0}' (controlador del {1}). Instálalo desde Configuración › Windows Update › Opciones avanzadas › Actualizaciones opcionales.",
-  "hosting.old_no_newer_on_wu": "{0} años · nada más reciente en Windows Update",
+  "hosting.old_no_newer_on_wu": "{0} años · nada más reciente",
   "hosting.old_no_newer_on_wu_tooltip": "Este controlador es antiguo, pero Windows Update no tiene una versión más reciente para este hardware. No es un problema mientras no cause fallos. A veces el fabricante publica una versión más reciente en su web.",
   "hosting.wu_open_optional_updates": "Abre las actualizaciones opcionales de Windows Update, donde se ofrece este controlador.",
   "hosting.windows_tools": "Herramientas Windows",

@@ -753,7 +753,7 @@
   "hosting.wu_recheck": "Revérifier",
   "hosting.wu_newer_version": "Mise à jour dispo · {0}",
   "hosting.wu_newer_tooltip": "Windows Update propose « {0} » (pilote du {1}). Installe-le depuis Paramètres › Windows Update › Options avancées › Mises à jour facultatives.",
-  "hosting.old_no_newer_on_wu": "{0} ans · rien de plus récent sur Windows Update",
+  "hosting.old_no_newer_on_wu": "{0} ans · rien de plus récent",
   "hosting.old_no_newer_on_wu_tooltip": "Ce pilote est ancien, mais Windows Update ne propose pas de version plus récente pour ce matériel. Ce n'est pas un problème tant qu'il ne cause pas de crash. Le fabricant publie parfois une version plus récente sur son site.",
   "hosting.wu_open_optional_updates": "Ouvre les mises à jour facultatives de Windows Update, où ce pilote est proposé.",
   "hosting.windows_tools": "Outils Windows",
